@@ -118,7 +118,25 @@ importers:
         specifier: ^18.3.0
         version: 18.3.31
 
+  plugins/console:
+    dependencies:
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/events:
+    dependencies:
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/hello:
+    dependencies:
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/logger:
     dependencies:
       '@wizard-harness/core':
         specifier: workspace:^

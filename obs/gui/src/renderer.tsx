@@ -6,10 +6,13 @@ import { RegistryView } from '../views/registry.js';
 interface PluginState {
   manifest: { id: string; version: string; name?: string };
   ui?: { title?: string; content?: string; width?: number; height?: number };
+  services: string[];
+  config: Record<string, unknown>;
 }
 
 interface RendererState {
   events: PluginEvent[];
+  config: Record<string, unknown>;
   plugins: PluginState[];
 }
 
@@ -28,8 +31,9 @@ async function main(): Promise<void> {
   const state = await window.wh.getState();
   createRoot(root).render(
     <RegistryView
-      plugins={state.plugins as unknown as Plugin[]}
+      plugins={state.plugins as unknown as (Plugin & { services?: string[]; config?: Record<string, unknown> })[]}
       events={state.events}
+      globalConfig={state.config}
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
     />,
   );
