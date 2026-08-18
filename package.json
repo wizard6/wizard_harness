@@ -1,0 +1,31 @@
+{
+  "name": "wizard-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "gen:events": "node --import tsx scripts/gen-events.ts",
+    "obs:cli": "node --import tsx obs/cli/src/main.ts",
+    "obs:tui": "node --import tsx obs/tui/src/main.tsx",
+    "obs:api": "node --import tsx obs/api/src/main.ts",
+    "gui:start": "pnpm --filter @wizard-harness/gui start"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  }
+}

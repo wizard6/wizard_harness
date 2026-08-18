@@ -1,0 +1,6 @@
+{
+  "name": "@wizard-harness/obs-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "各插件专属观测台占位（未来每插件一个子目录）"
+}

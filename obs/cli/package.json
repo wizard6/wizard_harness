@@ -1,0 +1,21 @@
+{
+  "name": "@wizard-harness/obs-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "wh-obs": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/main.js"
+    }
+  },
+  "dependencies": {
+    "@wizard-harness/core": "workspace:^"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
