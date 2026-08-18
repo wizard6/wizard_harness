@@ -20,7 +20,14 @@ export function createEventBus(): EventBus {
       };
     },
     emit(event: PluginEvent): void {
-      for (const sink of sinks) sink(event);
+      for (const sink of sinks) {
+        try {
+          sink(event);
+        } catch (err) {
+          // 单个 sink 异常隔离：不打断其它订阅者，也不向调用方抛出；错误留痕
+          console.error('[bus] sink error:', err);
+        }
+      }
     },
   };
 }

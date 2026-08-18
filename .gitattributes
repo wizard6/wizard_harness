@@ -1,0 +1,4 @@
+# 行尾统一 LF；Windows 检出时由 Git 自动处理
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

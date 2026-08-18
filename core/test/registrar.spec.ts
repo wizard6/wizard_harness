@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createEventBus,
   createFileSink,
@@ -10,7 +10,7 @@ import {
   InvalidPluginError,
   PluginNotFoundError,
 } from '../src/index.js';
-import type { PluginEvent } from '../src/index.js';
+import type { Plugin, PluginEvent } from '../src/index.js';
 import { makeEmittingPlugin, makeTrackedPlugin } from './fixtures.js';
 
 function setup() {
@@ -67,14 +67,19 @@ describe('registrar', () => {
     await expect(registrar.unregister('demo')).rejects.toBeInstanceOf(PluginNotFoundError);
   });
 
-  it('注册 / 命中 / 注销都会发统一格式观测事件', async () => {
+  it('注册 / 注销会发统一格式观测事件，查询（get/list/has）不发事件', async () => {
     const { registrar, events } = setup();
     const tp = makeTrackedPlugin();
     await registrar.register(tp.plugin);
     registrar.get('demo');
+    registrar.list();
+    registrar.has('demo');
     await registrar.unregister('demo');
     const actions = events.map((e) => e.action);
-    expect(actions).toEqual(expect.arrayContaining(['register', 'get', 'stop', 'unregister']));
+    expect(actions).toEqual(expect.arrayContaining(['register', 'stop', 'unregister']));
+    expect(actions).not.toContain('get');
+    expect(actions).not.toContain('list');
+    expect(actions).not.toContain('has');
     for (const e of events) {
       expect(e.actor).toBe('core.registrar');
       expect(e.id).toBeTruthy();
@@ -103,6 +108,61 @@ describe('registrar', () => {
     const pluginEvents = events.filter((e) => e.actor === 'plugin:emitter');
     expect(pluginEvents).toHaveLength(1);
     expect(pluginEvents[0]).toMatchObject({ action: 'hello', target: 'world' });
+  });
+
+  it('onStart 抛错时回滚注册并发出 start-failed 事件', async () => {
+    const { registrar, events } = setup();
+    const failing: Plugin = {
+      manifest: { id: 'boom', version: '1.0.0' },
+      async register() {},
+      async onStart() {
+        throw new Error('start exploded');
+      },
+    };
+    await expect(registrar.register(failing)).rejects.toThrow('start exploded');
+    expect(registrar.has('boom')).toBe(false);
+    expect(registrar.get('boom')).toBeUndefined();
+    const actions = events.map((e) => e.action);
+    expect(actions).toContain('register');
+    expect(actions).toContain('start-failed');
+    expect(actions).not.toContain('start');
+  });
+
+  it('依赖缺失时注册成功并发 dep-missing 警告事件；依赖满足时无警告', async () => {
+    const { registrar, events } = setup();
+    const withMissing: Plugin = {
+      manifest: { id: 'with-dep', version: '1.0.0', dependencies: ['nope'] },
+      async register() {},
+    };
+    await registrar.register(withMissing);
+    expect(registrar.has('with-dep')).toBe(true);
+    const warn = events.filter((e) => e.action === 'dep-missing');
+    expect(warn).toHaveLength(1);
+    expect(warn[0]).toMatchObject({ target: 'with-dep', payload: { dependencies: ['nope'] } });
+
+    const base = makeTrackedPlugin();
+    await registrar.register(base.plugin); // id: demo
+    const withOk: Plugin = {
+      manifest: { id: 'with-ok', version: '1.0.0', dependencies: ['demo'] },
+      async register() {},
+    };
+    await registrar.register(withOk);
+    const warnOk = events.filter((e) => e.action === 'dep-missing' && e.target === 'with-ok');
+    expect(warnOk).toHaveLength(0);
+  });
+
+  it('事件总线：单个 sink 抛错不打断其它订阅者，emit 不抛出', () => {
+    const bus = createEventBus();
+    const seen: PluginEvent[] = [];
+    bus.subscribe(() => {
+      throw new Error('sink boom');
+    });
+    bus.subscribe((e) => seen.push(e));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const event: PluginEvent = { id: '1', ts: 1, actor: 'a', action: 'x' };
+    expect(() => bus.emit(event)).not.toThrow();
+    expect(seen).toHaveLength(1);
+    spy.mockRestore();
   });
 
   it('文件持久化把事件写入 events.jsonl', async () => {

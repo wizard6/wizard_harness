@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { resolve } from 'node:path';
 import { queryEvents, readEvents, tailEvents } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
+import { registrySpec } from '@wizard-harness/obs-core';
 
 const FILE = process.env.WH_EVENTS || resolve(process.cwd(), 'docs/logs/events.jsonl');
 const PORT = Number(process.env.PORT || 8787);
@@ -58,7 +59,12 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const events = readEvents(FILE);
     const counts: Record<string, number> = {};
     for (const e of events) counts[e.action] = (counts[e.action] ?? 0) + 1;
-    sendJson(res, 200, { total: events.length, counts, plugins: currentPlugins(events) });
+    sendJson(res, 200, {
+      total: events.length,
+      counts,
+      plugins: currentPlugins(events),
+      summary: registrySpec.summarize?.(events),
+    });
     return;
   }
 

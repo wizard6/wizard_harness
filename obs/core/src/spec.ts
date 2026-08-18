@@ -10,10 +10,12 @@ export const registrySpec: ObsSpec = {
   summarize(events) {
     const reg = events.filter((e) => e.action === 'register').length;
     const unreg = events.filter((e) => e.action === 'unregister').length;
-    return `注册 ${reg} / 注销 ${unreg} / 事件 ${events.length}`;
+    const active = Math.max(0, reg - unreg);
+    return `当前 ${active}（注册 ${reg} / 注销 ${unreg} / 事件 ${events.length}）`;
   },
   theme: {
-    eventColors: { register: 'green', unregister: 'red', start: 'blue' },
+    // 亮色语义（深色底对比度友好）：绿=注册 / 红=注销 / 蓝=启动
+    eventColors: { register: '#7ee787', unregister: '#ff7b72', start: '#79c0ff' },
     panel: { bg: '#16161e', fg: '#e6e6ef' },
   },
 };

@@ -5,29 +5,10 @@
     <title>wizard-harness · 观测台</title>
     <style>
       body { font-family: system-ui, sans-serif; margin: 0; background: #16161e; color: #e6e6ef; }
-      header { padding: 12px 20px; border-bottom: 1px solid #2c2c3a; }
-      h1 { font-size: 18px; margin: 0; }
-      main { display: grid; grid-template-columns: 260px 1fr; gap: 16px; padding: 16px 20px; }
-      section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #8b8ba0; }
-      ul { list-style: none; padding: 0; margin: 0; }
-      li { padding: 6px 8px; border: 1px solid #2c2c3a; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
-      button { margin-left: 8px; }
-      code { color: #7ee787; }
-      .ev { color: #9cdcfe; }
     </style>
   </head>
   <body>
-    <header><h1>wizard-harness · 观测台</h1></header>
-    <main>
-      <section>
-        <h2>插件</h2>
-        <ul id="plugins"></ul>
-      </section>
-      <section>
-        <h2>事件时间线</h2>
-        <ul id="timeline"></ul>
-      </section>
-    </main>
-    <script src="./renderer.js"></script>
+    <div id="root"></div>
+    <script src="./renderer.bundle.js"></script>
   </body>
 </html>

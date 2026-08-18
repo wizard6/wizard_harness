@@ -8,19 +8,12 @@ export interface PluginManifest {
   version: string;
   name?: string;
   description?: string;
-  /** 声明输入 */
-  inputs?: string[];
-  /** 声明输出 */
-  outputs?: string[];
-  /** 声明副作用 */
-  sideEffects?: string[];
   /** 依赖的其它插件 id */
   dependencies?: string[];
 }
 
-/** 注入给插件的上下文 */
+/** 注入给插件的上下文（生存期环境：配置 + 观测出口；注册能力由壳显式提供，不塞进 ctx） */
 export interface PluginContext {
-  registrar: Registrar;
   config: Readonly<Record<string, unknown>>;
   /** 插件观测点：向事件总线发一条插件事件 */
   emit(event: Omit<PluginEvent, 'id' | 'ts' | 'actor'>): void;
@@ -48,10 +41,11 @@ export interface Plugin {
   ui?: PluginUi;
 }
 
-/** 注册成功的返回值 */
+/** 注册成功的返回值：插件本体 + 注册时间 + 该插件专属上下文 */
 export interface RegisteredPlugin {
   plugin: Plugin;
   registeredAt: number;
+  ctx: PluginContext;
 }
 
 /** 注册器接口：登记 / 查找 / 枚举 / 注销 */

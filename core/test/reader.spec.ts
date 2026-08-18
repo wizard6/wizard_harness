@@ -28,6 +28,12 @@ describe('events reader', () => {
     expect(events).toHaveLength(2);
   });
 
+  it('readEvents 文件不存在时返回空数组而非抛错', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'wh-r-'));
+    const events = readEvents(join(dir, 'missing.jsonl'));
+    expect(events).toEqual([]);
+  });
+
   it('queryEvents 按 actor/action/keyword 过滤并支持 limit', () => {
     const events = [
       makeEvent({ id: '1', actor: 'a', action: 'register', target: 'p1' }),

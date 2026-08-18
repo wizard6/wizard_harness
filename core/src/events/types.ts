@@ -11,6 +11,4 @@ export interface PluginEvent {
   target?: string;
   /** 任意负载，可选 */
   payload?: unknown;
-  /** 关联的追踪链 id，可选 */
-  trace_id?: string;
 }

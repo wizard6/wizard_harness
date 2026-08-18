@@ -13,6 +13,8 @@ export {
 } from './registrar/errors.js';
 export { createRegistrar } from './registrar/registrar.js';
 export type { CreateRegistrarOptions } from './registrar/registrar.js';
+export { discoverPlugins } from './discovery.js';
+export type { DiscoverOptions, DiscoverResult } from './discovery.js';
 export type {
   Plugin,
   PluginContext,

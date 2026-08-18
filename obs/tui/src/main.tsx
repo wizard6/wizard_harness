@@ -2,15 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Box, render, Text } from 'ink';
 import { readEvents, tailEvents } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
+import { registrySpec } from '@wizard-harness/obs-core';
 
 const FILE = 'docs/logs/events.jsonl';
-
-function colorOf(action: string): string {
-  if (action === 'register') return 'green';
-  if (action === 'unregister') return 'red';
-  if (action === 'start') return 'blue';
-  return 'gray';
-}
 
 function App(): React.ReactElement {
   const [events, setEvents] = useState<PluginEvent[]>([]);
@@ -21,7 +15,7 @@ function App(): React.ReactElement {
     return stop;
   }, []);
 
-  const registered = events.filter((e) => e.action === 'register').length;
+  const eventColors = registrySpec.theme?.eventColors ?? {};
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -29,17 +23,14 @@ function App(): React.ReactElement {
         <Text bold>wh-obs · TUI</Text>
         <Text dimColor> 实时事件面板（Ctrl+C 退出）</Text>
       </Box>
-      <Text>
-        已注册插件：<Text color="green">{registered}</Text>｜事件总数：{events.length}
-      </Text>
+      <Text>{registrySpec.summarize?.(events)}</Text>
       <Box flexDirection="column">
         {events
           .slice(-20)
           .reverse()
           .map((e) => (
-            <Text key={e.id} color={colorOf(e.action)}>
-              {new Date(e.ts).toISOString().slice(11, 19)} {e.actor} → {e.action}{' '}
-              {e.target ?? ''}
+            <Text key={e.id} color={eventColors[e.action] ?? 'gray'}>
+              {new Date(e.ts).toISOString().slice(11, 19)} {registrySpec.renderEvent?.(e) ?? ''}
             </Text>
           ))}
       </Box>

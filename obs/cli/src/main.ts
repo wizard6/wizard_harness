@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { queryEvents, readEvents, tailEvents } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
+import { registrySpec } from '@wizard-harness/obs-core';
 
 const DEFAULT_FILE = 'docs/logs/events.jsonl';
 
@@ -46,7 +47,7 @@ function parseArgs(argv: string[]): Args {
 function printEvent(e: PluginEvent): void {
   const t = new Date(e.ts).toISOString();
   const suffix = e.payload ? ' ' + JSON.stringify(e.payload) : '';
-  console.log(`[${t}] ${e.actor} → ${e.action}${e.target ? ' ' + e.target : ''}${suffix}`);
+  console.log(`[${t}] ${registrySpec.renderEvent?.(e) ?? ''}${suffix}`);
 }
 
 function usage(): never {

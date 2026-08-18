@@ -7,13 +7,11 @@ import type { Plugin, PluginContext, RegisteredPlugin, Registrar } from './types
 export interface CreateRegistrarOptions {
   bus: EventBus;
   config?: Readonly<Record<string, unknown>>;
-  /** 生成 trace_id 的函数；默认每次取新 id */
-  traceId?: () => string;
 }
 
 /** 注册器的标准实现。依赖向内：core 不依赖插件，只持有 Plugin 契约。 */
 export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
-  const { bus, config = {}, traceId = () => randomUUID() } = opts;
+  const { bus, config = {} } = opts;
   const registry = new Map<string, Plugin>();
 
   function emit(action: string, target?: string, payload?: unknown): void {
@@ -24,14 +22,12 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       action,
       target,
       payload,
-      trace_id: traceId(),
     };
     bus.emit(event);
   }
 
   function makeContext(plugin: Plugin): PluginContext {
     return {
-      registrar,
       config,
       emit(event) {
         bus.emit({
@@ -41,7 +37,6 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
           action: event.action,
           target: event.target,
           payload: event.payload,
-          trace_id: event.trace_id,
         });
       },
     };
@@ -62,11 +57,23 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     registry.set(plugin.manifest.id, plugin);
     const registeredAt = Date.now();
     emit('register', plugin.manifest.id, { version: plugin.manifest.version });
+    // dependencies 只声明不阻断：缺失时发警告事件（草稿约定：初版仅警告，不强报错）
+    const missing = (plugin.manifest.dependencies ?? []).filter((d) => !registry.has(d));
+    if (missing.length > 0) {
+      emit('dep-missing', plugin.manifest.id, { dependencies: missing });
+    }
     if (plugin.onStart) {
-      await plugin.onStart(ctx);
+      try {
+        await plugin.onStart(ctx);
+      } catch (err) {
+        // onStart 失败：回滚半注册状态，避免插件留在注册表且无 start 事件
+        registry.delete(plugin.manifest.id);
+        emit('start-failed', plugin.manifest.id, { error: String(err) });
+        throw err;
+      }
       emit('start', plugin.manifest.id);
     }
-    return { plugin, registeredAt };
+    return { plugin, registeredAt, ctx };
   }
 
   async function unregister(id: string): Promise<void> {
@@ -83,20 +90,15 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
   }
 
   function get(id: string): Plugin | undefined {
-    const found = registry.get(id);
-    if (found) emit('get', id);
-    return found;
+    return registry.get(id);
   }
 
   function list(): Plugin[] {
-    emit('list');
     return [...registry.values()];
   }
 
   function has(id: string): boolean {
-    const result = registry.has(id);
-    if (result) emit('has', id);
-    return result;
+    return registry.has(id);
   }
 
   const registrar: Registrar = { register, unregister, get, list, has };

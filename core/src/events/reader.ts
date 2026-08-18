@@ -1,9 +1,15 @@
 import { readFileSync } from 'node:fs';
 import type { PluginEvent } from './types.js';
 
-/** 读取整个 JSONL 事件文件 */
+/** 读取整个 JSONL 事件文件；文件不存在时返回空数组（冷启动容错） */
 export function readEvents(filePath: string): PluginEvent[] {
-  const text = readFileSync(filePath, 'utf8');
+  let text: string;
+  try {
+    text = readFileSync(filePath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw err;
+  }
   const events: PluginEvent[] = [];
   for (const line of text.split('\n')) {
     const trimmed = line.trim();

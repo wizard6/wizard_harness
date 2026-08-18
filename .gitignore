@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 docs/logs/*.jsonl
+obs/gui/electron/renderer.bundle.js
+obs/gui/electron/renderer.bundle.js.map
