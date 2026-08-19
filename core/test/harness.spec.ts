@@ -326,6 +326,31 @@ describe('createHarness', () => {
     expect(viaCtx).toBe(a);
   });
 
+  it('配置热更新：updateConfig 替换 ctx.config 并触发 onConfig 通知', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const seen: { next: unknown; prev: unknown; patch: unknown }[] = [];
+    let unsub: (() => void) | undefined;
+    const plugin: Plugin = {
+      manifest: { id: 'hot', version: '1.0.0', config: { level: 'info', file: '/a.log' } },
+      async register(c) {
+        unsub = c.onConfig((next, prev, patch) => seen.push({ next, prev, patch }));
+      },
+    };
+    await harness.registry.register(plugin);
+    harness.updateConfig('hot', { level: 'debug' });
+    // ctx.config 引用已更新
+    expect(harness.pluginContext('hot')?.config).toEqual({ level: 'debug', file: '/a.log' });
+    // onConfig 收到通知（新/旧/补丁）
+    expect(seen).toHaveLength(1);
+    expect(seen[0].patch).toEqual({ level: 'debug' });
+    expect(seen[0].next).toEqual({ level: 'debug', file: '/a.log' });
+    expect(seen[0].prev).toEqual({ level: 'info', file: '/a.log' });
+    // 取消订阅后不再通知
+    unsub?.();
+    harness.updateConfig('hot', { level: 'error' });
+    expect(seen).toHaveLength(1);
+  });
+
   it('基于事件的服务调用：call 成功并全程可观测（service-call/service-result）', async () => {
     const bus = createEventBus();
     const events: unknown[] = [];

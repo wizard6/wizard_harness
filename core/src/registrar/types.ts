@@ -165,6 +165,17 @@ export interface PluginContext {
     args?: unknown,
     opts?: { timeoutMs?: number },
   ): Promise<T>;
+  /**
+   * 配置热更新订阅：壳调用 harness.updateConfig 时收到通知。
+   * 返回取消订阅函数。回调参数：(新配置, 旧配置, 本次补丁)。
+   */
+  onConfig(
+    listener: (
+      next: Readonly<Record<string, unknown>>,
+      prev: Readonly<Record<string, unknown>>,
+      patch: Record<string, unknown>,
+    ) => void,
+  ): () => void;
   /** 事件观测侧：订阅总线 / 查最近事件历史（只读） */
   events: {
     subscribe(listener: (event: PluginEvent) => void): () => void;
@@ -239,6 +250,8 @@ export interface Registrar {
     args?: unknown,
     opts?: { timeoutMs?: number },
   ): Promise<T>;
+  /** 配置热更新：按插件 id 合并补丁，触发该插件 ctx.onConfig 通知（发 config-update 事件） */
+  updateConfig(pluginId: string, patch: Record<string, unknown>): void;
   /** 服务目录（壳视角：全表） */
   services: ServiceRegistry;
 }

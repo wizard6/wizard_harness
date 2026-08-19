@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { EventBus } from '../events/bus.js';
 import type { PluginEvent } from '../events/types.js';
 import { DuplicatePluginError, InvalidPluginError, PluginNotFoundError } from './errors.js';
+import { validateManifest } from './validate.js';
 import type {
   Plugin,
   PluginContext,
@@ -64,6 +65,13 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
   const effects = new Map<string, Array<() => void>>();
   /** 服务名 → (providerId → 绑定)。一名多提供方、一提供方多名。 */
   const bindings = new Map<string, Map<string, BindingEntry>>();
+  /** 运行时配置覆盖：pluginId → patch（优先级最高，热更新入口） */
+  const configOverrides = new Map<string, Record<string, unknown>>();
+  /** 配置热更新监听器：pluginId → Set<listener> */
+  const configListeners = new Map<
+    string,
+    Set<(next: Readonly<Record<string, unknown>>, prev: Readonly<Record<string, unknown>>, patch: Record<string, unknown>) => void>
+  >();
   const history: PluginEvent[] = [];
   bus.subscribe((e) => {
     history.push(e);
@@ -325,7 +333,28 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
 
   function mergedConfig(plugin: Plugin): Readonly<Record<string, unknown>> {
     const globalPart = (config[plugin.manifest.id] ?? {}) as Record<string, unknown>;
-    return { ...(plugin.manifest.config ?? {}), ...globalPart };
+    const override = configOverrides.get(plugin.manifest.id) ?? {};
+    return { ...(plugin.manifest.config ?? {}), ...globalPart, ...override };
+  }
+
+  /** 配置热更新：合并补丁到运行时覆盖层，替换 ctx.config 引用并通知订阅者 */
+  function updateConfig(pluginId: string, patch: Record<string, unknown>): void {
+    const ctx = contexts.get(pluginId);
+    const plugin = registry.get(pluginId);
+    if (!ctx || !plugin) return;
+    const prev = ctx.config;
+    const overridden = { ...(configOverrides.get(pluginId) ?? {}), ...patch };
+    configOverrides.set(pluginId, overridden);
+    const next = mergedConfig(plugin);
+    (ctx as { config: Readonly<Record<string, unknown>> }).config = next;
+    for (const cb of configListeners.get(pluginId) ?? []) {
+      try {
+        cb(next, prev, patch);
+      } catch (err) {
+        console.error(`[registrar] config 监听器抛错（${pluginId}）:`, err);
+      }
+    }
+    emit('config-update', pluginId, { patch });
   }
 
   function makeContext(plugin: Plugin): PluginContext {
@@ -334,6 +363,15 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     let self: PluginContext;
     const base: PluginContext = {
       config: mergedConfig(plugin),
+      onConfig(listener) {
+        let set = configListeners.get(viewerId);
+        if (!set) {
+          set = new Set();
+          configListeners.set(viewerId, set);
+        }
+        set.add(listener);
+        return () => set.delete(listener);
+      },
       emit(event) {
         bus.emit({
           id: randomUUID(),
@@ -425,9 +463,8 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     plugin: Plugin,
     opts: RegisterOptions = {},
   ): Promise<RegisteredPlugin> {
-    if (!plugin || !plugin.manifest || !plugin.manifest.id) {
-      throw new InvalidPluginError('缺少有效 manifest（含唯一 id）');
-    }
+    // 运行时 schema 校验：manifest 畸形尽早抛错
+    validateManifest(plugin);
     if (typeof plugin.register !== 'function') {
       throw new InvalidPluginError(`插件缺少 register 函数（${plugin.manifest.id}）`);
     }
@@ -555,6 +592,7 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     has,
     contextOf,
     call: (service, method, args, opts) => callService('shell', true, service, method, args, opts),
+    updateConfig,
     services,
   };
 }

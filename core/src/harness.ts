@@ -33,6 +33,8 @@ export interface SystemContext {
   status(): SystemStatus;
   /** 从系统视角切出单个插件的受限视图 */
   pluginContext(pluginId: string): PluginContext | undefined;
+  /** 配置热更新：按插件 id 合并补丁，触发该插件 ctx.onConfig 通知（发 config-update 事件） */
+  updateConfig(pluginId: string, patch: Record<string, unknown>): void;
   /**
    * Cordis 风格装配：按 inject/provides 拓扑排序后注册；
    * 缺必选 inject 的插件进入 pending（不加载）。
@@ -73,6 +75,7 @@ export function createHarness(opts: CreateHarnessOptions): SystemContext {
     },
     pluginContext: (pluginId) => registrar.contextOf(pluginId),
     boot: (plugins) => bootPlugins(registrar, plugins),
+    updateConfig: (pluginId, patch) => registrar.updateConfig(pluginId, patch),
   };
 }
 
