@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { EventBus } from './events/bus.js';
 import type { PluginEvent } from './events/types.js';
+import { bootPlugins } from './registrar/boot.js';
+import type { BootResult } from './registrar/boot.js';
 import { createRegistrar } from './registrar/registrar.js';
-import type { PluginContext, Registrar, ServiceRegistry } from './registrar/types.js';
+import type { Plugin, PluginContext, Registrar, ServiceRegistry } from './registrar/types.js';
 
 /** 系统运行快照 */
 export interface SystemStatus {
@@ -31,6 +33,11 @@ export interface SystemContext {
   status(): SystemStatus;
   /** 从系统视角切出单个插件的受限视图 */
   pluginContext(pluginId: string): PluginContext | undefined;
+  /**
+   * Cordis 风格装配：按 inject/provides 拓扑排序后注册；
+   * 缺必选 inject 的插件进入 pending（不加载）。
+   */
+  boot(plugins: Plugin[]): Promise<BootResult>;
 }
 
 export interface CreateHarnessOptions {
@@ -65,5 +72,8 @@ export function createHarness(opts: CreateHarnessOptions): SystemContext {
       };
     },
     pluginContext: (pluginId) => registrar.contextOf(pluginId),
+    boot: (plugins) => bootPlugins(registrar, plugins),
   };
 }
+
+export type { BootResult };

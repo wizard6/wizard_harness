@@ -107,23 +107,104 @@ describe('createHarness', () => {
     expect(trustedCtx?.services.get<{ secret: () => string }>('provider')?.secret()).toBe('s3cret');
   });
 
-  it('服务依赖缺失时注册成功并发 dep-missing 警告（services 字段）', async () => {
-    const bus = createEventBus();
-    const events: unknown[] = [];
-    bus.subscribe((e) => events.push(e));
-    const harness = createHarness({ bus });
-    const plugin: Plugin = {
-      manifest: { id: 'needs-svc', version: '1.0.0', services: ['logger', 'missing-svc'] },
+  it('S4：untrusted 提供方自见自己的 high 服务（high 门槛只拦他方）', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    let ownerCtx: PluginContext | undefined;
+    const owner: Plugin = {
+      manifest: {
+        id: 'owner',
+        version: '1.0.0',
+        provides: ['secret-store'],
+        highAccessServices: ['secret-store'], // 不设 trusted
+      },
+      api: { secret: () => 'top' },
+      async register(c) {
+        ownerCtx = c;
+      },
+    };
+    await harness.registry.register(owner);
+
+    // 提供方自己可见：get / 属性（括号访问，服务名含连字符）/ 显式 providerId 三条路径都拿得到
+    expect(ownerCtx?.services.get<{ secret: () => string }>('secret-store')?.secret()).toBe('top');
+    expect((ownerCtx as unknown as Record<string, unknown>)['secret-store']).toBeDefined();
+    expect(ownerCtx?.services.get('secret-store', 'owner')).toBeDefined();
+
+    // 其它 untrusted 插件仍被拦
+    let peerCtx: PluginContext | undefined;
+    const peer: Plugin = {
+      manifest: { id: 'peer', version: '1.0.0' },
+      async register(c) {
+        peerCtx = c;
+      },
+    };
+    await harness.registry.register(peer);
+    expect(peerCtx?.services.get('secret-store')).toBeUndefined();
+    expect(peerCtx?.services.providers('secret-store')).toEqual([]);
+  });
+
+  it('Cordis inject：boot 按依赖排序并注入；缺必选则 pending', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    let seen: string | undefined;
+    const logger: Plugin = {
+      manifest: { id: 'logger', version: '1.0.0', provides: ['logger'] },
+      api: {
+        info(msg: string) {
+          return msg;
+        },
+      },
       async register() {},
     };
-    await harness.registry.register(plugin);
-    expect(harness.registry.has('needs-svc')).toBe(true);
-    const warn = events.filter(
-      (e: { action?: string; payload?: { services?: string[] } }) =>
-        e.action === 'dep-missing' && e.payload?.services,
-    );
-    expect(warn).toHaveLength(1);
-    expect(warn[0].payload.services).toEqual(['logger', 'missing-svc']);
+    const greeter: Plugin = {
+      manifest: { id: 'greeter', version: '1.0.0' },
+      inject: ['logger'],
+      async register(ctx) {
+        // Cordis：ctx.get 或属性访问
+        seen = ctx.get<{ info: (m: string) => string }>('logger')?.info('hi');
+        expect((ctx as { logger?: { info: (m: string) => string } }).logger?.info('via-prop')).toBe(
+          'via-prop',
+        );
+      },
+    };
+    const orphan: Plugin = {
+      manifest: { id: 'orphan', version: '1.0.0' },
+      inject: ['nope'],
+      async register() {},
+    };
+    const result = await harness.boot([greeter, orphan, logger]);
+    expect(result.loaded.map((r) => r.plugin.manifest.id)).toEqual(['logger', 'greeter']);
+    expect(result.pending).toEqual([{ plugin: orphan, missing: ['nope'] }]);
+    expect(seen).toBe('hi');
+    expect(harness.registry.has('orphan')).toBe(false);
+  });
+
+  it('Cordis：卸载提供方时级联卸载 inject 依赖方', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.boot([
+      {
+        manifest: { id: 'logger', version: '1.0.0', provides: ['logger'] },
+        api: { info: () => '' },
+        async register() {},
+      },
+      {
+        manifest: { id: 'greeter', version: '1.0.0' },
+        inject: ['logger'],
+        async register() {},
+      },
+    ]);
+    expect(harness.registry.has('greeter')).toBe(true);
+    await harness.registry.unregister('logger');
+    expect(harness.registry.has('logger')).toBe(false);
+    expect(harness.registry.has('greeter')).toBe(false);
+  });
+
+  it('inject 未就绪时直接 register 会失败（应走 boot）', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const plugin: Plugin = {
+      manifest: { id: 'needs-svc', version: '1.0.0', inject: ['logger'] },
+      async register() {},
+    };
+    await expect(harness.registry.register(plugin)).rejects.toThrow(/inject 未就绪/);
+    expect(harness.registry.has('needs-svc')).toBe(false);
   });
 
   it('waitFor 等到服务出现；超时返回 undefined', async () => {
@@ -145,5 +226,76 @@ describe('createHarness', () => {
     // 永不出现的服务：超时返回 undefined
     const gone = await consumerCtx!.services.waitFor('never', 150);
     expect(gone).toBeUndefined();
+  });
+
+  it('服务与插件多对多：一插件多名、多名提供同一服务', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const alpha: Plugin = {
+      manifest: { id: 'alpha', version: '1.0.0', provides: ['clock', 'tick'] },
+      api: { kind: 'alpha' },
+      async register() {},
+    };
+    const beta: Plugin = {
+      manifest: { id: 'beta', version: '1.0.0', provides: ['clock'] },
+      api: { kind: 'beta' },
+      async register() {},
+    };
+    await harness.registry.register(alpha);
+    await harness.registry.register(beta);
+    expect(harness.services.list().sort()).toEqual(['clock', 'tick']);
+    expect(harness.services.providers('clock').sort()).toEqual(['alpha', 'beta']);
+    expect(harness.services.providedBy('alpha').sort()).toEqual(['clock', 'tick']);
+    expect(harness.services.get('clock', 'beta')).toEqual({ kind: 'beta' });
+    expect(harness.services.getAll('clock')).toEqual([{ kind: 'alpha' }, { kind: 'beta' }]);
+    expect(harness.services.get('tick')).toEqual({ kind: 'alpha' });
+    await harness.registry.unregister('alpha');
+    expect(harness.services.providers('clock')).toEqual(['beta']);
+    expect(harness.services.get('tick')).toBeUndefined();
+    expect(harness.services.get('clock')).toEqual({ kind: 'beta' });
+  });
+
+  it('服务作用域：plugin 私有对它人不可见；壳全表可见；注销撕绑定', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const owner: Plugin = {
+      manifest: {
+        id: 'owner',
+        version: '1.0.0',
+        provides: [{ name: 'secret-store', scope: 'plugin' }, 'public-api'],
+      },
+      api: { kind: 'owner' },
+      async register() {},
+    };
+    let peerCtx: PluginContext | undefined;
+    const peer: Plugin = {
+      manifest: { id: 'peer', version: '1.0.0' },
+      async register(c) {
+        peerCtx = c;
+      },
+    };
+    await harness.registry.register(owner);
+    await harness.registry.register(peer);
+
+    const metas = harness.services.bindings('secret-store');
+    expect(metas).toEqual([
+      { name: 'secret-store', providerId: 'owner', scope: 'plugin', access: 'low', lifetime: 'plugin' },
+    ]);
+    expect(harness.services.bindings('public-api')[0]?.scope).toBe('harness');
+
+    // 壳全表：两种都能取到
+    expect(harness.services.get('secret-store')).toEqual({ kind: 'owner' });
+    expect(harness.services.get('public-api')).toEqual({ kind: 'owner' });
+
+    // 同插件可见私有；其它插件看不见私有，仍看得见 harness
+    const ownerCtx = harness.pluginContext('owner');
+    expect(ownerCtx?.services.get('secret-store')).toEqual({ kind: 'owner' });
+    expect(peerCtx?.services.get('secret-store')).toBeUndefined();
+    expect(peerCtx?.services.list()).toContain('public-api');
+    expect(peerCtx?.services.list()).not.toContain('secret-store');
+    expect(peerCtx?.services.providers('secret-store')).toEqual([]);
+
+    await harness.registry.unregister('owner');
+    expect(harness.services.get('secret-store')).toBeUndefined();
+    expect(harness.services.get('public-api')).toBeUndefined();
+    expect(harness.services.bindings()).toEqual([]);
   });
 });
