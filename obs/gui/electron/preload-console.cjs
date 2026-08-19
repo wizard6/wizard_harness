@@ -4,4 +4,5 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('wh', {
   execCommand: (command) => ipcRenderer.invoke('wh:exec-command', command),
   eventsHistory: () => ipcRenderer.invoke('wh:events-history'),
+  windowControl: (action) => ipcRenderer.send('wh:window-control', action),
 });

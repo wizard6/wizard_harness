@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import type { Plugin, PluginEvent } from '@wizard-harness/core';
 import { RegistryView } from '../views/registry.js';
+import { TrafficLights } from './TrafficLights.js';
 
 interface PluginState {
   manifest: { id: string; version: string; name?: string };
@@ -21,6 +22,7 @@ declare global {
     wh: {
       getState(): Promise<RendererState>;
       openPlugin(id: string): Promise<void>;
+      windowControl(action: 'min' | 'max' | 'close'): void;
     };
   }
 }
@@ -35,6 +37,8 @@ async function main(): Promise<void> {
       events={state.events}
       globalConfig={state.config}
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
+      trailing={<TrafficLights />}
+      onHeaderDoubleClick={() => window.wh.windowControl('max')}
     />,
   );
 }
