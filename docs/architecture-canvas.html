@@ -53,6 +53,24 @@
   #bar button:hover { background: #2f2f48; }
   #bar .zoom { font-size: 12px; color: #a8a8bd; min-width: 46px; text-align: center;
     font-variant-numeric: tabular-nums; }
+  #search { width: 190px; background: #26263a; color: #e6e6ef; border: 1px solid #33334a;
+    border-radius: 8px; padding: 5px 10px; font-size: 12px; outline: none; }
+  #search::placeholder { color: #6a6a82; }
+  #search:focus { border-color: #4a6aa0; }
+  #results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+    background: #1b1b28; border: 1px solid #33334a; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,.5); display: none; max-height: 300px; overflow-y: auto; }
+  #results.open { display: block; }
+  #results .item { padding: 7px 12px; font-size: 12px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+  #results .item:hover, #results .item.sel { background: #26263a; }
+  #results .item .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  #results .item .id { margin-left: auto; color: #7ee787; font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; }
+  #results .empty { padding: 8px 12px; font-size: 11.5px; color: #a8a8bd; }
+  .node.hl { animation: hl 1.6s ease; }
+  @keyframes hl {
+    0%, 55% { border-color: #ffd866; box-shadow: 0 0 0 3px rgba(255,216,102,.45), 0 8px 24px rgba(255,216,102,.25); }
+    100% { border-color: #2c2c3e; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+  }
   /* legend */
   #legend { position: fixed; left: 14px; bottom: 14px; z-index: 50; background: rgba(22,22,32,.92);
     border: 1px solid #2c2c3e; border-radius: 12px; padding: 10px 12px; font-size: 11px;
@@ -84,6 +102,8 @@
 
 <div id="bar">
   <span class="title">wizard-harness 架构大画布<small>大画布可缩放 · 拖拽 · 点节点看详情</small></span>
+  <input id="search" placeholder="搜索组件…（如 registrar / 事件）" autocomplete="off" spellcheck="false" />
+  <div id="results"></div>
   <button id="btn-fit" title="缩放到全部内容">全览</button>
   <button id="btn-out">−</button>
   <span class="zoom" id="zoomv">100%</span>
@@ -446,6 +466,71 @@ document.getElementById('btn-in').onclick = () => zoomBy(1.25);
 document.getElementById('btn-out').onclick = () => zoomBy(0.8);
 document.getElementById('btn-fit').onclick = fit;
 document.getElementById('btn-reset').onclick = resetLayout;
+
+/* ============================= 搜索 / 定位 ============================= */
+const searchInput = document.getElementById('search');
+const resultsBox = document.getElementById('results');
+let resultIdx = -1;
+
+function searchItems(q) {
+  const t = q.trim().toLowerCase();
+  if (!t) return [];
+  return NODES.filter((n) =>
+    (n.id + ' ' + n.title + ' ' + n.sub + ' ' + (n.badge || []).join(' ')).toLowerCase().includes(t),
+  );
+}
+function renderResults(items) {
+  resultsBox.innerHTML = '';
+  if (!items.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = '无匹配组件';
+    resultsBox.appendChild(e);
+    resultsBox.classList.add('open');
+    return;
+  }
+  items.slice(0, 8).forEach((n, i) => {
+    const d = document.createElement('div');
+    d.className = 'item' + (i === resultIdx ? ' sel' : '');
+    d.innerHTML = '<span class="dot" style="background:' + n.color + '"></span>' + n.title +
+      ' <span class="id">' + n.id + '</span>';
+    d.onclick = () => focusNode(n.id);
+    d.onmousemove = () => { resultIdx = i; syncSel(); };
+    resultsBox.appendChild(d);
+  });
+  resultsBox.classList.add('open');
+}
+function syncSel() {
+  [...resultsBox.children].forEach((c, i) => c.classList.toggle('sel', i === resultIdx));
+}
+function focusNode(id) {
+  const n = NODES.find((x) => x.id === id);
+  if (!n) return;
+  const rect = vp.getBoundingClientRect();
+  const k2 = Math.max(view.k, 1.0);
+  const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+  view.k = k2;
+  view.x = rect.width / 2 - cx * k2;
+  view.y = rect.height / 2 - cy * k2;
+  apply();
+  const el = nodeEls.get(id);
+  if (el) {
+    el.classList.remove('hl');
+    void el.offsetWidth; /* 强制重排，保证连续定位动画可重放 */
+    el.classList.add('hl');
+  }
+  resultsBox.classList.remove('open');
+}
+searchInput.addEventListener('input', () => { resultIdx = -1; renderResults(searchItems(searchInput.value)); });
+searchInput.addEventListener('keydown', (e) => {
+  const items = searchItems(searchInput.value);
+  const shown = Math.min(items.length, 8);
+  if (e.key === 'ArrowDown') { e.preventDefault(); resultIdx = Math.min(resultIdx + 1, shown - 1); syncSel(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); resultIdx = Math.max(resultIdx - 1, 0); syncSel(); }
+  else if (e.key === 'Enter') { const n = items[resultIdx >= 0 ? resultIdx : 0]; if (n) focusNode(n.id); }
+  else if (e.key === 'Escape') { searchInput.value = ''; resultsBox.classList.remove('open'); }
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('#bar')) resultsBox.classList.remove('open'); });
 
 /* ============================= 详情 ============================= */
 const modal = document.getElementById('modal');
