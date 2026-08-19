@@ -25,7 +25,12 @@ export interface CreateRegistrarOptions {
 }
 
 type BindingEntry = {
+  /** 预建对象（api 即服务形态）；提供 factory 时可为 undefined */
   service: unknown;
+  /** 懒加载工厂（可选）：首次 get 创建并缓存单例 */
+  factory?: (ctx: PluginContext) => unknown;
+  /** factory 创建的实例缓存 */
+  instance?: unknown;
   access: ServiceAccess;
   scope: ServiceScope;
   lifetime: ServiceLifetime;
@@ -87,6 +92,18 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     };
   }
 
+  /** 取服务实例：factory 懒加载（首次创建并缓存），否则返回预建对象 */
+  function ensureInstance(entry: BindingEntry): unknown {
+    if (entry.factory) {
+      if (entry.instance === undefined) {
+        const providerCtx = contexts.get(entry.providerId);
+        entry.instance = entry.factory(providerCtx as PluginContext);
+      }
+      return entry.instance;
+    }
+    return entry.service;
+  }
+
   const services: ServiceRegistry = {
     register(name, service, opts = {}) {
       const providerId = opts.providerId ?? opts.pluginId ?? name;
@@ -101,19 +118,31 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
         throw new Error(`服务已存在：${name}（提供者 ${providerId}）`);
       }
       const access = opts.access ?? 'low';
-      bucket.set(providerId, { service, access, scope, lifetime, providerId });
+      const entry: BindingEntry = {
+        service,
+        access,
+        scope,
+        lifetime,
+        providerId,
+        ...(opts.factory ? { factory: opts.factory } : {}),
+      };
+      bucket.set(providerId, entry);
       emit('service-register', name, { access, lifetime, providerId, scope });
     },
     get<T = unknown>(name: string, providerId?: string): T | undefined {
       const bucket = bindings.get(name);
       if (!bucket || bucket.size === 0) return undefined;
-      if (providerId) return bucket.get(providerId)?.service as T | undefined;
-      return bucket.values().next().value?.service as T | undefined;
+      if (providerId) {
+        const entry = bucket.get(providerId);
+        return entry ? (ensureInstance(entry) as T) : undefined;
+      }
+      const first = bucket.values().next().value;
+      return first ? (ensureInstance(first) as T) : undefined;
     },
     getAll<T = unknown>(name: string): T[] {
       const bucket = bindings.get(name);
       if (!bucket) return [];
-      return [...bucket.values()].map((e) => e.service as T);
+      return [...bucket.values()].map((e) => ensureInstance(e) as T);
     },
     providers(name) {
       const bucket = bindings.get(name);
@@ -172,7 +201,8 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
   }
 
   function pickVisible(name: string, viewerPluginId: string, trusted: boolean): unknown {
-    return visibleEntries(name, viewerPluginId, trusted)[0]?.service;
+    const first = visibleEntries(name, viewerPluginId, trusted)[0];
+    return first ? ensureInstance(first) : undefined;
   }
 
   function dropPluginServices(providerId: string): void {
@@ -220,6 +250,71 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       get<T = unknown>(name: string): T | undefined {
         return pickVisible(name, viewerId, trusted) as T | undefined;
       },
+      async call<T = unknown>(
+        service: string,
+        method: string,
+        args?: unknown,
+        opts?: { timeoutMs?: number },
+      ): Promise<T> {
+        const timeoutMs = opts?.timeoutMs ?? 5000;
+        const svc = pickVisible(service, viewerId, trusted);
+        if (svc === undefined) throw new Error(`服务不可用：${service}`);
+        const fn = (svc as Record<string, unknown>)[method];
+        if (typeof fn !== 'function') throw new Error(`服务 ${service} 无方法 ${method}`);
+        const requestId = randomUUID();
+        // 请求事件（可观测、可审计、可拦截）
+        bus.emit({
+          id: randomUUID(),
+          ts: Date.now(),
+          actor: `plugin:${viewerId}`,
+          action: 'service-call',
+          target: service,
+          payload: { method, args, requestId },
+        });
+        return new Promise<T>((resolve, reject) => {
+          let done = false;
+          const finish = (action: () => void) => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            unsubscribe();
+            action();
+          };
+          const timer = setTimeout(
+            () => finish(() => reject(new Error(`服务调用超时：${service}.${method}`))),
+            timeoutMs,
+          );
+          const unsubscribe = bus.subscribe((e) => {
+            if (e.action !== 'service-result' || e.target !== requestId) return;
+            const p = e.payload as { ok?: boolean; result?: unknown; error?: string };
+            finish(() => (p.ok ? resolve(p.result as T) : reject(new Error(p.error ?? '调用失败'))));
+          });
+          // 服务中心路由：调用提供方，结果经事件通道广播
+          const callArgs =
+            args === undefined ? [] : Array.isArray(args) ? args : [args];
+          Promise.resolve(fn.apply(svc, callArgs))
+            .then((result) => {
+              bus.emit({
+                id: randomUUID(),
+                ts: Date.now(),
+                actor: 'core.registrar',
+                action: 'service-result',
+                target: requestId,
+                payload: { ok: true, result },
+              });
+            })
+            .catch((err: unknown) => {
+              bus.emit({
+                id: randomUUID(),
+                ts: Date.now(),
+                actor: 'core.registrar',
+                action: 'service-result',
+                target: requestId,
+                payload: { ok: false, error: String(err) },
+              });
+            });
+        });
+      },
       services: {
         get<T = unknown>(name: string, providerId?: string): T | undefined {
           if (providerId) {
@@ -230,12 +325,12 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
             if (entry.providerId !== viewerId && entry.access === 'high' && !trusted) {
               return undefined;
             }
-            return entry.service as T;
+            return ensureInstance(entry) as T;
           }
           return pickVisible(name, viewerId, trusted) as T | undefined;
         },
         getAll<T = unknown>(name: string): T[] {
-          return visibleEntries(name, viewerId, trusted).map((e) => e.service as T);
+          return visibleEntries(name, viewerId, trusted).map((e) => ensureInstance(e) as T);
         },
         providers(name) {
           return visibleEntries(name, viewerId, trusted).map((e) => e.providerId);

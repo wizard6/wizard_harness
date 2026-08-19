@@ -298,4 +298,85 @@ describe('createHarness', () => {
     expect(harness.services.get('public-api')).toBeUndefined();
     expect(harness.services.bindings()).toEqual([]);
   });
+
+  it('服务支持懒加载 factory：首次 get 创建并缓存单例，未 get 不创建', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const provider: Plugin = {
+      manifest: { id: 'lazy-provider', version: '1.0.0' },
+      async register() {},
+    };
+    await harness.registry.register(provider);
+    let calls = 0;
+    harness.services.register('lazy-svc', undefined, {
+      providerId: 'lazy-provider',
+      factory: (ctx) => {
+        calls += 1;
+        return { hasConfig: typeof ctx?.config === 'object' };
+      },
+    });
+    expect(calls).toBe(0); // 未 get 不创建
+    const a = harness.services.get<{ hasConfig: boolean }>('lazy-svc');
+    expect(calls).toBe(1); // 首次 get 创建
+    expect(a?.hasConfig).toBe(true); // factory 拿到提供方插件的 ctx
+    const b = harness.services.get('lazy-svc');
+    expect(calls).toBe(1); // 单例缓存，不再创建
+    expect(a).toBe(b);
+    // 插件 ctx 视角也能取到（可见链同样触发实例化）
+    const viaCtx = harness.pluginContext('lazy-provider')?.services.get('lazy-svc');
+    expect(viaCtx).toBe(a);
+  });
+
+  it('基于事件的服务调用：call 成功并全程可观测（service-call/service-result）', async () => {
+    const bus = createEventBus();
+    const events: unknown[] = [];
+    bus.subscribe((e) => events.push(e));
+    const harness = createHarness({ bus });
+    let consumerCtx: PluginContext | undefined;
+    const provider: Plugin = {
+      manifest: { id: 'calc', version: '1.0.0' },
+      api: {
+        add(a: number, b: number) {
+          return a + b;
+        },
+        async slow() {
+          return 'done';
+        },
+      },
+      async register() {},
+    };
+    await harness.registry.register(provider);
+    const consumer: Plugin = {
+      manifest: { id: 'user', version: '1.0.0' },
+      async register(c) {
+        consumerCtx = c;
+      },
+    };
+    await harness.registry.register(consumer);
+    const result = await consumerCtx!.call<number>('calc', 'add', [2, 3]);
+    expect(result).toBe(5);
+    const actions = events.map((e: { action?: string }) => e.action);
+    expect(actions).toContain('service-call');
+    expect(actions).toContain('service-result');
+  });
+
+  it('基于事件的服务调用：方法不存在 / 服务不可用 / 超时均 reject', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    let consumerCtx: PluginContext | undefined;
+    const provider: Plugin = {
+      manifest: { id: 's1', version: '1.0.0' },
+      api: { ok() { return 1; }, hang() { return new Promise(() => {}); } },
+      async register() {},
+    };
+    await harness.registry.register(provider);
+    const consumer: Plugin = {
+      manifest: { id: 'u1', version: '1.0.0' },
+      async register(c) {
+        consumerCtx = c;
+      },
+    };
+    await harness.registry.register(consumer);
+    await expect(consumerCtx!.call('s1', 'missing')).rejects.toThrow('无方法');
+    await expect(consumerCtx!.call('ghost', 'x')).rejects.toThrow('服务不可用');
+    await expect(consumerCtx!.call('s1', 'hang', undefined, { timeoutMs: 100 })).rejects.toThrow('超时');
+  });
 });

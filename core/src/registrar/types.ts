@@ -89,6 +89,12 @@ export interface ServiceRegisterOptions {
   scope?: ServiceScope;
   /** 生命周期分层，默认 'plugin'；壳/核心注册长活服务请显式传 'host' */
   lifetime?: ServiceLifetime;
+  /**
+   * 懒加载工厂：提供 factory 时，首次被 get 才调用创建实例并缓存（单例）。
+   * factory 参数为该服务提供方插件的上下文（可取 config / services）。
+   * 不提供 factory 时按普通预建对象绑定（api 即服务默认形态）。
+   */
+  factory?: (ctx: PluginContext) => unknown;
 }
 
 /**
@@ -148,6 +154,17 @@ export interface PluginContext {
      */
     waitFor<T = unknown>(name: string, timeoutMs?: number): Promise<T | undefined>;
   };
+  /**
+   * 基于事件的服务调用（事件化 RPC）：
+   * 向服务中心发送 service-call 事件 → 路由到该服务的提供方执行 → 收 service-result 事件。
+   * 调用全程可观测、可审计；与直接 services.get(...).method() 等价但走事件通道。
+   */
+  call<T = unknown>(
+    service: string,
+    method: string,
+    args?: unknown,
+    opts?: { timeoutMs?: number },
+  ): Promise<T>;
   /** 事件观测侧：订阅总线 / 查最近事件历史（只读） */
   events: {
     subscribe(listener: (event: PluginEvent) => void): () => void;
