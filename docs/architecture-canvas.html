@@ -181,7 +181,7 @@ const PERSPECTIVE_NODES = {
   'plugin-service': ['boot', 'registrar', 'services', 'ctx', 'hello', 'logger', 'events', 'console', 'contract'],
   'assembly': ['gui', 'api', 'assemble', 'harness', 'discover', 'boot', 'registrar', 'hello', 'logger', 'events', 'console'],
   'events': ['hello', 'logger', 'events', 'console', 'bus', 'persist', 'jsonl', 'reader', 'cli', 'tui', 'obscore', 'obsspec', 'gui', 'api'],
-  'context': ['harness', 'ctx', 'services', 'bus', 'registrar', 'contract', 'hello', 'logger'],
+  'context': ['harness', 'ctx', 'services', 'bus', 'registrar', 'contract', 'hello', 'logger', 'effects'],
   'docs': ['jsonl', 'confirmed', 'legacy'],
 };
 
@@ -212,7 +212,7 @@ const NODES = [
     badge: ['core/src/shell.ts'] },
   { id: 'harness', group: 'core', x: 150, y: 820, w: 250, h: 104, color: '#79c0ff',
     title: 'SystemContext · 系统上下文', sub: '系统主入口：持有注册表、服务目录、配置；查状态快照、批量装配插件、切出插件视图（PluginContext）',
-    badge: ['core/src/harness.ts'] },
+    badge: ['core/src/harness.ts', 'emit · status · pluginContext · boot'] },
   { id: 'discover', group: 'core', x: 150, y: 960, w: 250, h: 104, color: '#79c0ff',
     title: 'discoverPlugins · 发现', sub: '扫描插件目录（WH_PLUGINS_DIR），识别插件包逐个加载；单个失败不影响其它',
     badge: ['core/src/discovery.ts'] },
@@ -244,6 +244,9 @@ const NODES = [
     title: 'core 契约 · 依赖方向',
     sub: '插件依赖的接口清单（Plugin / PluginContext / Registrar 等），由 core 导出；core 本身不依赖任何插件',
     badge: ['core/src/index.ts · @wizard-harness/core'] },
+  { id: 'effects', group: 'core', x: 2100, y: 900, w: 250, h: 104, color: '#ff7b72',
+    title: '副作用卸载 · ctx.effect', sub: '插件注册撤销钩子；卸载时 registrar 按注册逆序（LIFO）自动执行——onStop 抛错也执行，单个失败不影响其它',
+    badge: ['LIFO · finally 兜底 · 失败隔离'] },
   /* —— 业务插件 —— */
   { id: 'hello', group: 'plugins', x: 150, y: 1560, w: 260, h: 104, color: '#e3b341',
     title: 'hello · 最小示例', sub: '最小示例：提供 greet 服务，注入并使用 logger，注册时发一条事件',
@@ -281,6 +284,7 @@ const LINKS = [
   { from: 'registrar', to: 'ctx', kind: 'blue', label: '生命周期注入' },
   { from: 'registrar', to: 'services', kind: 'blue', label: '维护绑定表' },
   { from: 'ctx', to: 'services', kind: 'blue', label: '消费入口' },
+  { from: 'ctx', to: 'effects', kind: 'blue', label: '注册撤销钩子' },
   { from: 'registrar', to: 'hello', kind: 'blue', label: '生命周期' },
   { from: 'registrar', to: 'logger', kind: 'blue', label: '生命周期' },
   { from: 'registrar', to: 'events', kind: 'blue', label: '生命周期' },
