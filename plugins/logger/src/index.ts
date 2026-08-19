@@ -2,6 +2,7 @@ import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin, PluginContext } from '@wizard-harness/core';
+import type { LoggerService } from '@wizard-harness/contracts';
 
 /**
  * logger 插件：提供 logger 服务（写日志文件 + 广播观测事件）。
@@ -29,7 +30,8 @@ function log(l: string, msg: string): string {
   return line;
 }
 
-const api = {
+/** api 即服务：实现契约层 LoggerService（core/src/services/logger.ts） */
+const api: LoggerService = {
   log,
   debug: (msg: string): string => log('debug', msg),
   info: (msg: string): string => log('info', msg),

@@ -12,7 +12,8 @@
     }
   },
   "dependencies": {
-    "@wizard-harness/core": "workspace:^"
+    "@wizard-harness/core": "workspace:^",
+    "@wizard-harness/contracts": "workspace:^"
   },
   "wizardHarness": {
     "plugin": true

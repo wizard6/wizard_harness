@@ -1,4 +1,6 @@
 import type { Plugin } from '@wizard-harness/core';
+// 副作用导入：引入 @wizard-harness/contracts 的类型增强，使 ctx.logger 获得完整类型
+import '@wizard-harness/contracts';
 
 /**
  * hello 插件：最小真实插件包。
@@ -16,8 +18,8 @@ const helloPlugin: Plugin = {
   inject: ['logger'],
   register(ctx) {
     ctx.emit({ action: 'hello', target: 'world', payload: { from: 'plugin:hello' } });
-    const logger = ctx.get<{ info?: (m: string) => string }>('logger');
-    logger?.info?.('hello 插件已注入 logger');
+    // 契约层 LoggerService：ctx.logger ≡ ctx.get('logger')，类型完整无需猜测
+    ctx.logger?.info?.('hello 插件已注入 logger');
   },
   onStart(ctx) {
     ctx.emit({ action: 'start', target: 'hello' });

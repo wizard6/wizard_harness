@@ -2,18 +2,13 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { TextDecoder } from 'node:util';
 import type { Plugin } from '@wizard-harness/core';
+import type { ConsoleService, ExecResult } from '@wizard-harness/contracts';
 
 /**
  * console 插件：提供 shell 命令执行能力（Agent 基座的"手"）。
  * api.exec 即服务；弹窗为命令控制台界面。
  */
 const execP = promisify(exec);
-
-export interface ExecResult {
-  stdout: string;
-  stderr: string;
-  code: number | null;
-}
 
 /** 智能解码：优先 UTF-8 严格解码，失败（Windows GBK 输出）回退 GBK */
 function decode(buf: Buffer): string {
@@ -27,7 +22,8 @@ function decode(buf: Buffer): string {
 /** Windows 下先切 UTF-8 代码页：同时解决输出与中文参数编码 */
 const CMD_PREFIX = process.platform === 'win32' ? 'chcp 65001 >nul && ' : '';
 
-const api = {
+/** api 即服务：实现契约层 ConsoleService（core/src/services/console.ts） */
+const api: ConsoleService = {
   async exec(command: string, opts?: { timeoutMs?: number }): Promise<ExecResult> {
     try {
       const { stdout, stderr } = await execP(CMD_PREFIX + command, {

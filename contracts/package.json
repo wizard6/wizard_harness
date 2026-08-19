@@ -1,5 +1,5 @@
 {
-  "name": "@wizard-harness/plugin-events",
+  "name": "@wizard-harness/contracts",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,15 +11,12 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "@wizard-harness/core": "workspace:^",
-    "@wizard-harness/contracts": "workspace:^"
-  },
-  "wizardHarness": {
-    "plugin": true
-  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wizard-harness/core": "workspace:^"
   }
 }

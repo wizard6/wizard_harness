@@ -1,17 +1,11 @@
 import type { Plugin, PluginContext, PluginEvent } from '@wizard-harness/core';
+import type { EventsService, EventQuery } from '@wizard-harness/contracts';
 
 /**
  * events 插件：把事件总线能力暴露为服务。
  * 其它插件/壳通过 services.get('events') 获得：发布、订阅、查历史。
  */
 let ctx: PluginContext | undefined;
-
-export interface EventQuery {
-  actor?: string;
-  action?: string;
-  target?: string;
-  limit?: number;
-}
 
 function matches(e: PluginEvent, q: EventQuery): boolean {
   if (q.actor && e.actor !== q.actor) return false;
@@ -20,7 +14,8 @@ function matches(e: PluginEvent, q: EventQuery): boolean {
   return true;
 }
 
-const api = {
+/** api 即服务：实现契约层 EventsService（core/src/services/events.ts） */
+const api: EventsService = {
   /** 发布一条事件（actor 为 plugin:events） */
   publish(action: string, target?: string, payload?: unknown): void {
     ctx?.emit({ action, target, payload });
