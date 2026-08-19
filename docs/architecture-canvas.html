@@ -382,6 +382,9 @@ function fit() {
 const vp = document.getElementById('viewport');
 let drag = null;
 
+/* 屏蔽右键菜单（画布内右键不再弹出浏览器菜单） */
+vp.addEventListener('contextmenu', (e) => e.preventDefault());
+
 vp.addEventListener('pointerdown', (e) => {
   const nodeEl = e.target.closest('.node');
   if (nodeEl) {
