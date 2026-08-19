@@ -45,6 +45,7 @@ Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm 
 
 ```
 core/                 注册器、事件总线、分发器、插件发现、运行时装配、JSONL 读写
+contracts/            服务契约层（服务名 ↔ 接口绑定：LoggerService / EventsService / ConsoleService，独立于任何插件）
 obs/spec/             观测契约（ObsSpec）
 obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
