@@ -22,6 +22,8 @@ declare global {
     wh: {
       getState(): Promise<RendererState>;
       openPlugin(id: string): Promise<void>;
+      reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
+      unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
     };
   }
 }
@@ -54,6 +56,8 @@ function App(): React.ReactElement | null {
       events={state.events}
       globalConfig={state.config}
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
+      onReload={(id) => void window.wh.reloadPlugin(id)}
+      onUnregister={(id) => void window.wh.unregisterPlugin(id)}
     />
   );
 }

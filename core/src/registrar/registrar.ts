@@ -426,8 +426,10 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
         async waitFor<T = unknown>(name: string, timeoutMs = 5000): Promise<T | undefined> {
           const deadline = Date.now() + timeoutMs;
           for (;;) {
-            const svc = pickVisible(name, viewerId, trusted);
-            if (svc !== undefined) return svc as T;
+            // 只查绑定存在（不触发懒加载实例化）；出现后再取实例
+            if (visibleEntries(name, viewerId, trusted).length > 0) {
+              return pickVisible(name, viewerId, trusted) as T | undefined;
+            }
             if (Date.now() >= deadline) return undefined;
             await new Promise((r) => setTimeout(r, 100));
           }

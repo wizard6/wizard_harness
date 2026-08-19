@@ -287,6 +287,26 @@ ipcMain.handle('wh:get-state', () => ({
 
 ipcMain.handle('wh:open-plugin', (_evt, id) => openPluginWindow(id));
 
+// 插件管理操作（观测台）：热重载 / 卸载
+ipcMain.handle('wh:reload-plugin', async (_evt, id) => {
+  if (!harness) return { ok: false, error: 'harness 未就绪' };
+  try {
+    const r = await harness.reload(String(id));
+    return { ok: true, version: r.plugin.plugin.manifest.version, cascaded: r.cascaded };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+ipcMain.handle('wh:unregister-plugin', async (_evt, id) => {
+  if (!harness) return { ok: false, error: 'harness 未就绪' };
+  try {
+    await harness.registry.unregister(String(id));
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
 // 控制台插件命令执行通道（弹窗 preload 调用）
 ipcMain.handle('wh:exec-command', async (_evt, command) => {
   const svc = harness?.services.get('console');

@@ -116,7 +116,9 @@ describe('两阶段生命周期（boot：全部 register → 按拓扑序统一 
         throw new Error('boom');
       },
     });
-    await expect(h.boot([ok, bad])).rejects.toThrow('boom');
+    const result = await h.boot([ok, bad]);
+    // 失败聚合：bad 的 onStart 失败被收集而非中断整个 boot
+    expect(result.failures).toEqual([{ id: 'bad', error: expect.stringContaining('boom') }]);
     expect(h.registry.has('bad')).toBe(false);
     expect(h.registry.has('ok')).toBe(true);
     expect(events.some((e) => e.action === 'start-failed' && e.target === 'bad')).toBe(true);

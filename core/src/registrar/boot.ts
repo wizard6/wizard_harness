@@ -1,11 +1,13 @@
 import type { Plugin, RegisteredPlugin, Registrar } from './types.js';
 import { normalizeInject, normalizeProvides } from './types.js';
 
-/** boot 结果：已加载 / 因缺 inject 挂起（Cordis PENDING） */
+/** boot 结果：已加载 / 因缺 inject 挂起 / 启动失败的插件 */
 export interface BootResult {
   loaded: RegisteredPlugin[];
   /** 必选服务在本批插件里始终不存在 → 不加载（对齐 Cordis PENDING） */
   pending: { plugin: Plugin; missing: string[] }[];
+  /** 阶段二启动失败的插件（其自身已回滚，其它插件不受影响） */
+  failures: { id: string; error: string }[];
 }
 
 /**
@@ -112,9 +114,14 @@ export async function bootPlugins(registrar: Registrar, plugins: Plugin[]): Prom
   for (const p of ordered) {
     loaded.push(await registrar.register(p, { deferStart: true }));
   }
-  // 阶段二：按拓扑序统一启动（所有服务已就绪）
+  // 阶段二：按拓扑序统一启动（所有服务已就绪）；单个失败隔离（自身已回滚），不中断其余
+  const failures: { id: string; error: string }[] = [];
   for (const r of loaded) {
-    await r.start?.();
+    try {
+      await r.start?.();
+    } catch (err) {
+      failures.push({ id: r.plugin.manifest.id, error: String(err) });
+    }
   }
-  return { loaded, pending };
+  return { loaded, pending, failures };
 }

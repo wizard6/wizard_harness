@@ -9,6 +9,10 @@ export interface RegistryPanelProps {
   /** 系统级全局配置（由壳注入） */
   globalConfig?: Record<string, unknown>;
   onOpenPlugin?: (id: string) => void;
+  /** 热重载该插件 */
+  onReload?: (id: string) => Promise<unknown> | void;
+  /** 卸载该插件 */
+  onUnregister?: (id: string) => Promise<unknown> | void;
   /** 标题栏右侧槽（桌面壳放入交通灯） */
   trailing?: React.ReactNode;
   /** 双击标题栏（桌面壳用于最大化） */
@@ -54,6 +58,8 @@ export function RegistryPanel({
   events = [],
   globalConfig = {},
   onOpenPlugin,
+  onReload,
+  onUnregister,
   trailing,
   onHeaderDoubleClick,
 }: RegistryPanelProps): React.ReactElement {
@@ -404,6 +410,25 @@ export function RegistryPanel({
                   {p.ui && onOpenPlugin && (
                     <button className="panel-btn" onClick={() => onOpenPlugin(p.manifest.id)}>
                       弹窗
+                    </button>
+                  )}
+                  {onReload && (
+                    <button
+                      className="panel-btn"
+                      title="热重载该插件（重新扫描 dist 并替换）"
+                      onClick={() => void onReload(p.manifest.id)}
+                    >
+                      ↻ 重载
+                    </button>
+                  )}
+                  {onUnregister && (
+                    <button
+                      className="panel-btn"
+                      style={{ borderColor: 'rgba(255,123,114,.4)', color: '#ff7b72' }}
+                      title="卸载该插件（onStop + effect 撤销 + 服务摘除）"
+                      onClick={() => void onUnregister(p.manifest.id)}
+                    >
+                      卸载
                     </button>
                   )}
                 </div>
