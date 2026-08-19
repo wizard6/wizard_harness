@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>wizard-harness · 架构大画布</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #101018; color: #e6e6ef;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable",
+      "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  #viewport { position: fixed; inset: 0; overflow: hidden; cursor: grab; }
+  #viewport.panning { cursor: grabbing; }
+  #canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0;
+    width: 3000px; height: 2100px;
+    background-color: #14141e;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.016) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px; }
+  #lines { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  .group { position: absolute; border: 1px dashed rgba(255,255,255,.10); border-radius: 18px;
+    background: rgba(255,255,255,.018); pointer-events: none; }
+  .group .gt { position: absolute; top: 10px; left: 16px; font-size: 12px; letter-spacing: .12em;
+    color: rgba(255,255,255,.42); text-transform: uppercase; }
+  .group .gsub { position: absolute; top: 28px; left: 16px; font-size: 11px; color: rgba(255,255,255,.22); }
+  .node { position: absolute; background: #1b1b28; border: 1px solid #2c2c3e; border-radius: 12px;
+    padding: 12px 14px; cursor: grab; user-select: none; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    transition: border-color .12s, box-shadow .12s; }
+  .node:hover { border-color: #4a6aa0; box-shadow: 0 6px 18px rgba(74,106,160,.28); }
+  .node.dragging { cursor: grabbing; border-color: #79c0ff; box-shadow: 0 8px 24px rgba(121,192,255,.35); }
+  .node .t { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .node .t .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .node .s { margin-top: 5px; font-size: 11.5px; color: #a8a8bd; line-height: 1.5; }
+  .node .b { margin-top: 7px; font-size: 10.5px; color: #7ee787; font-family: ui-monospace, Consolas, monospace; }
+  .node .b span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px;
+    border: 1px solid rgba(126,231,135,.25); background: rgba(126,231,135,.07); }
+  .node.warn { border-color: #9e6a03; }
+  .node.warn .b { color: #e3b341; }
+  .node.warn .b span { border-color: rgba(227,179,65,.35); background: rgba(227,179,65,.08); }
+  /* top bar */
+  #bar { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: flex; align-items: center; gap: 8px; background: rgba(22,22,32,.92);
+    border: 1px solid #2c2c3e; border-radius: 12px; padding: 8px 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45); backdrop-filter: blur(8px); }
+  #bar .title { font-size: 13px; font-weight: 600; margin-right: 6px; }
+  #bar .title small { color: #7ee787; font-weight: 400; margin-left: 6px; }
+  #bar button { background: #26263a; color: #e6e6ef; border: 1px solid #33334a; border-radius: 8px;
+    font-size: 12px; padding: 4px 10px; cursor: pointer; }
+  #bar button:hover { background: #2f2f48; }
+  #bar .zoom { font-size: 12px; color: #a8a8bd; min-width: 46px; text-align: center;
+    font-variant-numeric: tabular-nums; }
+  /* legend */
+  #legend { position: fixed; left: 14px; bottom: 14px; z-index: 50; background: rgba(22,22,32,.92);
+    border: 1px solid #2c2c3e; border-radius: 12px; padding: 10px 12px; font-size: 11px;
+    color: #a8a8bd; box-shadow: 0 8px 24px rgba(0,0,0,.45); backdrop-filter: blur(8px); }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend svg { display: block; }
+  #legend .swatch { display: inline-block; }
+  #hint { position: fixed; right: 14px; bottom: 14px; z-index: 50; font-size: 11px; color: rgba(255,255,255,.30); }
+  /* modal */
+  #modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center;
+    background: rgba(8,8,14,.62); backdrop-filter: blur(3px); }
+  #modal.open { display: flex; }
+  #modal .card { width: 460px; max-width: 92vw; background: #1b1b28; border: 1px solid #33334a;
+    border-radius: 14px; padding: 20px 22px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  #modal .mhead { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  #modal .mhead .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  #modal .mhead h2 { font-size: 16px; font-weight: 600; flex: 1; }
+  #modal .mhead .x { background: none; border: none; color: #a8a8bd; font-size: 18px; cursor: pointer; }
+  #modal .mdesc { font-size: 13px; line-height: 1.75; color: #cfcfe0; }
+  #modal .mmeta { margin-top: 14px; font-size: 11px; color: #7ee787;
+    font-family: ui-monospace, Consolas, monospace; }
+  #modal .mmeta span { display: inline-block; margin: 0 6px 6px 0; padding: 2px 9px; border-radius: 10px;
+    border: 1px solid rgba(126,231,135,.25); background: rgba(126,231,135,.07); }
+  #modal .mlinks { margin-top: 10px; font-size: 11px; color: #79c0ff; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="canvas"></div></div>
+
+<div id="bar">
+  <span class="title">wizard-harness 架构大画布<small>大画布可缩放 · 拖拽 · 点节点看详情</small></span>
+  <button id="btn-fit" title="缩放到全部内容">全览</button>
+  <button id="btn-out">−</button>
+  <span class="zoom" id="zoomv">100%</span>
+  <button id="btn-in">＋</button>
+  <button id="btn-reset" title="恢复默认布局">重置布局</button>
+</div>
+
+<div id="legend">
+  <div style="font-weight:600;color:#e6e6ef;margin-bottom:6px;">图例</div>
+  <div class="row"><span class="swatch"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#79c0ff" stroke-width="2" marker-end="url(#arrow-blue)"/></svg></span>装配链路（运行时壳 → core → 插件）</div>
+  <div class="row"><span class="swatch"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#7ee787" stroke-width="2" marker-end="url(#arrow-green)"/></svg></span>事件 / 数据流（观测链路）</div>
+  <div class="row"><span class="swatch"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#e3b341" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow-orange)"/></svg></span>服务依赖（inject / provides）</div>
+  <div class="row"><span class="swatch"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#d2a8ff" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow-purple)"/></svg></span>依赖 core 契约（core 不依赖插件）</div>
+  <div class="row" style="color:#e3b341;">⚠ 黄色节点 = 已知遗留 / 待触发项</div>
+</div>
+<div id="hint">滚轮缩放 · 空白拖拽平移 · 节点可拖动 · 单击节点看详情</div>
+
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="card">
+    <div class="mhead"><span class="dot" id="m-dot"></span><h2 id="m-title"></h2>
+      <button class="x" onclick="closeModal()">✕</button></div>
+    <div class="mdesc" id="m-desc"></div>
+    <div class="mmeta" id="m-meta"></div>
+    <div class="mlinks" id="m-links"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================= 数据 ============================= */
+const GROUP_DEFS = [
+  { id: 'runtime',  x: 80,  y: 90,  w: 1240, h: 400, t: '运行时壳 · Runtime Shells',   s: '加载插件（GUI / API 共用 assembleRuntime）' },
+  { id: 'observer', x: 1400, y: 90,  w: 1120, h: 400, t: '观测器壳 · Observers',        s: '只读 events.jsonl（CLI / TUI）' },
+  { id: 'core',     x: 80,  y: 560, w: 2440, h: 800, t: 'core 内核 · 契约 / 装配 / 事件', s: 'core 不依赖插件；插件依赖 core 契约' },
+  { id: 'plugins',  x: 80,  y: 1440, w: 1500, h: 480, t: '业务插件 · plugins/',         s: 'provides / inject 服务声明，生命周期受 registrar 管理' },
+  { id: 'data',     x: 1660, y: 1440, w: 1260, h: 480, t: '数据与文档 · docs/',          s: '事件日志、确认稿、遗留项' },
+];
+
+const NODES = [
+  /* —— 运行时壳 —— */
+  { id: 'gui', group: 'runtime', x: 150, y: 180, w: 260, h: 96, color: '#79c0ff',
+    title: 'GUI · Electron 运行时台', sub: 'pnpm gui:start；装配 plugins/ + 弹窗交互；Renderer（RegistryView + TrafficLights）；IPC 桥 wh:exec-command / open-plugin / window-control',
+    badge: ['@wizard-harness/gui'] },
+  { id: 'api', group: 'runtime', x: 540, y: 180, w: 260, h: 96, color: '#79c0ff',
+    title: 'API · HTTP 运行时壳', sub: 'pnpm obs:api；GET /events /events/stream /state /plugins /services；POST /rpc 白名单（WH_EXPOSE 默认全拒）',
+    badge: ['@wizard-harness/api'] },
+  /* —— 观测器壳 —— */
+  { id: 'cli', group: 'observer', x: 1480, y: 180, w: 250, h: 92, color: '#7ee787',
+    title: 'CLI 事件回放', sub: 'pnpm obs:cli；查询 / 回放 / tail events.jsonl',
+    badge: ['@wizard-harness/cli'] },
+  { id: 'tui', group: 'observer', x: 1830, y: 180, w: 250, h: 92, color: '#7ee787',
+    title: 'TUI 实时面板', sub: 'pnpm obs:tui；ink 实时事件面板，读同一份 jsonl',
+    badge: ['@wizard-harness/tui'] },
+  { id: 'obscore', group: 'observer', x: 1480, y: 330, w: 250, h: 92, color: '#7ee787',
+    title: '注册表观测面板', sub: 'registrySpec + RegistryPanel（React），内嵌于 GUI',
+    badge: ['@wizard-harness/obs-core'] },
+  { id: 'obsspec', group: 'observer', x: 1830, y: 330, w: 250, h: 92, color: '#7ee787',
+    title: '观测契约 ObsSpec', sub: 'obs/spec：注册表观测契约定义',
+    badge: ['@wizard-harness/obs-spec'] },
+  /* —— core 内核 —— */
+  { id: 'assemble', group: 'core', x: 150, y: 650, w: 250, h: 92, color: '#79c0ff',
+    title: 'assembleRuntime · shell.ts', sub: 'GUI / API 共用：createHarness → discoverPlugins → disabled / experimental 过滤 → boot；消费 dep-missing 打印警告',
+    badge: ['core/src/shell.ts'] },
+  { id: 'harness', group: 'core', x: 150, y: 820, w: 250, h: 80, color: '#79c0ff',
+    title: 'createHarness · harness.ts', sub: 'SystemContext：status / pluginContext / boot；事件注入 id·ts·actor',
+    badge: ['core/src/harness.ts'] },
+  { id: 'discover', group: 'core', x: 150, y: 960, w: 250, h: 92, color: '#79c0ff',
+    title: 'discoverPlugins · discovery.ts', sub: '目录扫描、识别标记、按 dist 加载、失败隔离；WH_PLUGINS_DIR / WH_DISABLED',
+    badge: ['core/src/discovery.ts'] },
+  { id: 'boot', group: 'core', x: 150, y: 1110, w: 250, h: 92, color: '#79c0ff',
+    title: 'boot · 拓扑装配', sub: 'inject → provides 拓扑排序；缺必选服务 → PENDING 不加载；成环检测',
+    badge: ['core/src/registrar/boot.ts'] },
+  { id: 'registrar', group: 'core', x: 150, y: 1260, w: 250, h: 92, color: '#79c0ff',
+    title: 'registrar · 注册器', sub: 'register → onStart → onStop → unregister；服务绑定表（一名多提供方）；scope / access / lifetime 分层；必选服务消失级联卸载；LIFO 副作用撤销',
+    badge: ['core/src/registrar/registrar.ts'] },
+  { id: 'bus', group: 'core', x: 640, y: 650, w: 250, h: 92, color: '#7ee787',
+    title: 'EventBus · 观察者式', sub: '订阅 sink 广播 PluginEvent；sink 异常隔离；一事件多消费者',
+    badge: ['core/src/events/bus.ts'] },
+  { id: 'dispatcher', group: 'core', x: 640, y: 880, w: 250, h: 92, color: '#d2a8ff',
+    title: 'Dispatcher · 五种分发', sub: 'emit 通知 / waterfall 改数据 / serial 排队 / parallel 并发 / bail 抢答；库级，待接入 PluginContext',
+    badge: ['core/src/events/dispatcher.ts', '⚠ 待接入 ctx'] },
+  { id: 'persist', group: 'core', x: 640, y: 1110, w: 250, h: 92, color: '#7ee787',
+    title: 'persistence · jsonl 落盘', sub: 'createFileSink：事件同步落盘 docs/logs/events.jsonl',
+    badge: ['core/src/events/persistence.ts'] },
+  { id: 'reader', group: 'core', x: 980, y: 1110, w: 250, h: 92, color: '#7ee787',
+    title: 'reader · 事件读取', sub: 'queryEvents / readEvents / tailEvents，供 CLI / TUI 查询',
+    badge: ['core/src/events/reader.ts'] },
+  { id: 'contract', group: 'core', x: 1500, y: 650, w: 520, h: 120, color: '#d2a8ff',
+    title: 'core 契约 · 依赖方向',
+    sub: 'Plugin / PluginManifest / PluginContext / Registrar / ServiceRegistry / Dispatcher 全部由 core/src/index.ts 导出；依赖方向：core 不依赖插件，插件依赖 core 契约。',
+    badge: ['@wizard-harness/core'] },
+  /* —— 业务插件 —— */
+  { id: 'hello', group: 'plugins', x: 150, y: 1560, w: 260, h: 100, color: '#e3b341',
+    title: 'hello · 最小示例', sub: 'provides hello / greeter；inject ["logger"]；api.greet；弹窗 UI；register 发观测事件',
+    badge: ['provides: hello, greeter', 'inject: logger'] },
+  { id: 'logger', group: 'plugins', x: 470, y: 1560, w: 260, h: 100, color: '#e3b341',
+    title: 'logger · 日志插件', sub: 'provides logger；写 docs/logs/app.log + 广播观测事件；tier core',
+    badge: ['provides: logger'] },
+  { id: 'events', group: 'plugins', x: 790, y: 1560, w: 260, h: 100, color: '#e3b341',
+    title: 'events · 事件插件', sub: 'provides events：发布 / 订阅 / 查询历史；tier core',
+    badge: ['provides: events'] },
+  { id: 'console', group: 'plugins', x: 1110, y: 1560, w: 260, h: 100, color: '#e3b341',
+    title: 'console · 控制台', sub: 'provides console：shell exec 服务 + 弹窗控制台；trusted + highAccessServices',
+    badge: ['provides: console', 'trusted · high'] },
+  /* —— 数据与文档 —— */
+  { id: 'jsonl', group: 'data', x: 1730, y: 1560, w: 400, h: 100, color: '#7ee787',
+    title: 'docs/logs/events.jsonl', sub: '运行时壳实时写入（GUI / API 共用），观测器壳只读；不存在时先 pnpm gen:events',
+    badge: ['pnpm gen:events'] },
+  { id: 'confirmed', group: 'data', x: 1730, y: 1720, w: 400, h: 100, color: '#79c0ff',
+    title: 'docs/confirmed · 确认稿', sub: '基座定位与边界 / 注册器功能 / 骨架修复 / 人机协作规范；+ 设计评审.md + 项目体检.md（73/73）',
+    badge: ['意图类契约 · ≤300 字'] },
+  { id: 'legacy', group: 'data', x: 2180, y: 1560, w: 400, h: 150, color: '#e3b341', warn: true,
+    title: '⚠ 已知遗留 · 待触发/待设计',
+    sub: 'Dispatcher 未接入 PluginContext；GUI 弹窗 IPC 硬编码（通用 UI 桥待设计）；manifest.dependencies 仅警告不阻断；配置无 schema 校验',
+    badge: ['无阻断'] },
+];
+
+const LINKS = [
+  /* 装配链路（蓝） */
+  { from: 'gui', to: 'assemble', kind: 'blue', label: '装配 plugins/' },
+  { from: 'api', to: 'assemble', kind: 'blue', label: '装配 plugins/' },
+  { from: 'assemble', to: 'harness', kind: 'blue', label: 'createHarness' },
+  { from: 'harness', to: 'discover', kind: 'blue', label: '发现插件' },
+  { from: 'discover', to: 'boot', kind: 'blue', label: 'inject 拓扑' },
+  { from: 'boot', to: 'registrar', kind: 'blue', label: '注册 + 启动' },
+  { from: 'registrar', to: 'hello', kind: 'blue', label: '生命周期' },
+  { from: 'registrar', to: 'logger', kind: 'blue', label: '生命周期' },
+  { from: 'registrar', to: 'events', kind: 'blue', label: '生命周期' },
+  { from: 'registrar', to: 'console', kind: 'blue', label: '生命周期' },
+  /* 事件 / 数据流（绿） */
+  { from: 'hello', to: 'bus', kind: 'green', label: 'ctx.emit' },
+  { from: 'logger', to: 'bus', kind: 'green', label: 'ctx.emit' },
+  { from: 'events', to: 'bus', kind: 'green', label: 'ctx.emit' },
+  { from: 'console', to: 'bus', kind: 'green', label: 'ctx.emit' },
+  { from: 'gui', to: 'bus', kind: 'green', label: '实时总线' },
+  { from: 'api', to: 'bus', kind: 'green', label: 'SSE 订阅' },
+  { from: 'bus', to: 'persist', kind: 'green', label: '落盘' },
+  { from: 'persist', to: 'jsonl', kind: 'green', label: '写 events.jsonl' },
+  { from: 'jsonl', to: 'reader', kind: 'green', label: '只读' },
+  { from: 'reader', to: 'cli', kind: 'green', label: '查询 / tail' },
+  { from: 'reader', to: 'tui', kind: 'green', label: '实时面板' },
+  /* 观测契约（青，虚线） */
+  { from: 'obsspec', to: 'obscore', kind: 'cyan', label: 'ObsSpec' },
+  { from: 'obscore', to: 'gui', kind: 'cyan', label: '面板内嵌' },
+  /* 服务依赖（橙，虚线） */
+  { from: 'hello', to: 'logger', kind: 'orange', label: "inject ['logger']" },
+  /* 依赖 core 契约（紫，虚线） */
+  { from: 'hello', to: 'contract', kind: 'purple', label: '依赖 core 契约' },
+];
+
+const KIND = {
+  blue:   { stroke: '#79c0ff', dash: '' },
+  green:  { stroke: '#7ee787', dash: '' },
+  cyan:   { stroke: '#56d4dd', dash: '7 5' },
+  orange: { stroke: '#e3b341', dash: '7 5' },
+  purple: { stroke: '#d2a8ff', dash: '7 5' },
+};
+
+/* ============================= 渲染 ============================= */
+const canvas = document.getElementById('canvas');
+const ns = 'http://www.w3.org/2000/svg';
+
+const svg = document.createElementNS(ns, 'svg');
+svg.setAttribute('id', 'lines');
+svg.setAttribute('width', '3000');
+svg.setAttribute('height', '2100');
+svg.setAttribute('viewBox', '0 0 3000 2100');
+canvas.appendChild(svg);
+
+const defs = document.createElementNS(ns, 'defs');
+for (const [name, color] of [['arrow-blue', '#79c0ff'], ['arrow-green', '#7ee787'], ['arrow-cyan', '#56d4dd'], ['arrow-orange', '#e3b341'], ['arrow-purple', '#d2a8ff']]) {
+  const mk = document.createElementNS(ns, 'marker');
+  mk.setAttribute('id', name);
+  mk.setAttribute('markerWidth', '8'); mk.setAttribute('markerHeight', '8');
+  mk.setAttribute('refX', '7'); mk.setAttribute('refY', '4');
+  mk.setAttribute('orient', 'auto');
+  const p = document.createElementNS(ns, 'path');
+  p.setAttribute('d', 'M0,0 L8,4 L0,8 z');
+  p.setAttribute('fill', color);
+  mk.appendChild(p);
+  defs.appendChild(mk);
+}
+svg.appendChild(defs);
+
+const nodeEls = new Map();
+function renderGroups() {
+  for (const g of GROUP_DEFS) {
+    const el = document.createElement('div');
+    el.className = 'group';
+    el.style.left = g.x + 'px'; el.style.top = g.y + 'px';
+    el.style.width = g.w + 'px'; el.style.height = g.h + 'px';
+    el.innerHTML = '<div class="gt">' + g.t + '</div><div class="gsub">' + g.s + '</div>';
+    canvas.appendChild(el);
+  }
+}
+function renderNodes() {
+  for (const n of NODES) {
+    const el = document.createElement('div');
+    el.className = 'node' + (n.warn ? ' warn' : '');
+    el.dataset.id = n.id;
+    el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+    el.style.width = n.w + 'px'; el.style.height = n.h + 'px';
+    let html = '<div class="t"><span class="dot" style="background:' + n.color + '"></span>' + n.title + '</div>';
+    html += '<div class="s">' + n.sub + '</div>';
+    if (n.badge) html += '<div class="b">' + n.badge.map((b) => '<span>' + b + '</span>').join('') + '</div>';
+    el.innerHTML = html;
+    canvas.appendChild(el);
+    nodeEls.set(n.id, el);
+  }
+}
+
+function edgePoint(n, tx, ty, tw, th) {
+  const sx = n.x + n.w / 2, sy = n.y + n.h / 2;
+  const cxp = tx + tw / 2, cyp = ty + th / 2;
+  const dx = cxp - sx, dy = cyp - sy;
+  if (dx === 0 && dy === 0) return [cxp, cyp];
+  const sx2 = dx !== 0 ? (tw / 2) / Math.abs(dx) : Infinity;
+  const sy2 = dy !== 0 ? (th / 2) / Math.abs(dy) : Infinity;
+  const s = Math.min(sx2, sy2);
+  return [cxp - dx * s, cyp - dy * s];
+}
+
+let pathGroup;
+function drawLinks() {
+  if (pathGroup) pathGroup.remove();
+  pathGroup = document.createElementNS(ns, 'g');
+  for (const l of LINKS) {
+    const a = nodeEls.get(l.from), b = nodeEls.get(l.to);
+    if (!a || !b) continue;
+    const k = KIND[l.kind];
+    const sx = a.offsetLeft + a.offsetWidth / 2;
+    const sy = a.offsetTop + a.offsetHeight / 2;
+    const [ex, ey] = edgePoint({ x: a.offsetLeft, y: a.offsetTop, w: a.offsetWidth, h: a.offsetHeight },
+      b.offsetLeft, b.offsetTop, b.offsetWidth, b.offsetHeight);
+    const p = document.createElementNS(ns, 'path');
+    const midx = (sx + ex) / 2, midy = (sy + ey) / 2 - 18;
+    p.setAttribute('d', 'M' + sx + ',' + sy + ' Q' + midx + ',' + midy + ' ' + ex + ',' + ey);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', k.stroke);
+    p.setAttribute('stroke-width', '2');
+    if (k.dash) p.setAttribute('stroke-dasharray', k.dash);
+    p.setAttribute('marker-end', 'url(#arrow-' + l.kind + ')');
+    pathGroup.appendChild(p);
+    if (l.label) {
+      const t = document.createElementNS(ns, 'text');
+      const lx = (sx + ex) / 2, ly = (sy + ey) / 2 - 22;
+      t.setAttribute('x', lx); t.setAttribute('y', ly);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('fill', k.stroke);
+      t.setAttribute('font-size', '10.5');
+      t.setAttribute('font-family', 'ui-monospace, Consolas, monospace');
+      t.textContent = l.label;
+      pathGroup.appendChild(t);
+    }
+  }
+  svg.appendChild(pathGroup);
+}
+
+/* ============================= 视图 / 交互 ============================= */
+const view = { x: 0, y: 0, k: 1 };
+const DEFAULTS = NODES.map((n) => ({ x: n.x, y: n.y }));
+
+function apply() {
+  canvas.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
+  document.getElementById('zoomv').textContent = Math.round(view.k * 100) + '%';
+}
+function resetLayout() {
+  NODES.forEach((n, i) => { n.x = DEFAULTS[i].x; n.y = DEFAULTS[i].y; });
+  nodeEls.forEach((el, id) => {
+    const n = NODES.find((x) => x.id === id);
+    el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+  });
+  drawLinks();
+}
+function fit() {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of NODES) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + n.w); maxY = Math.max(maxY, n.y + n.h);
+  }
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const k = Math.min((vw - 80) / (maxX - minX), (vh - 80) / (maxY - minY), 1.2);
+  view.k = k;
+  view.x = (vw - (maxX - minX) * k) / 2 - minX * k;
+  view.y = (vh - (maxY - minY) * k) / 2 - minY * k;
+  apply();
+}
+
+const vp = document.getElementById('viewport');
+let drag = null;
+
+vp.addEventListener('pointerdown', (e) => {
+  const nodeEl = e.target.closest('.node');
+  if (nodeEl) {
+    const n = NODES.find((x) => x.id === nodeEl.dataset.id);
+    drag = { type: 'node', n, startX: e.clientX, startY: e.clientY, ox: n.x, oy: n.y, moved: false };
+    nodeEl.classList.add('dragging');
+  } else {
+    drag = { type: 'pan', startX: e.clientX, startY: e.clientY, ox: view.x, oy: view.y };
+    vp.classList.add('panning');
+  }
+  vp.setPointerCapture(e.pointerId);
+});
+vp.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+  if (drag.type === 'pan') {
+    view.x = drag.ox + dx; view.y = drag.oy + dy;
+    apply();
+  } else {
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    const n = drag.n;
+    n.x = drag.ox + dx / view.k; n.y = drag.oy + dy / view.k;
+    const el = nodeEls.get(n.id);
+    el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+    drawLinks();
+  }
+});
+function endDrag(e) {
+  if (drag && drag.type === 'node') {
+    const el = nodeEls.get(drag.n.id);
+    el.classList.remove('dragging');
+    if (!drag.moved) openModal(drag.n);
+  }
+  drag = null;
+  vp.classList.remove('panning');
+}
+vp.addEventListener('pointerup', endDrag);
+vp.addEventListener('pointercancel', endDrag);
+
+vp.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = vp.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const k2 = Math.min(3, Math.max(0.1, view.k * Math.exp(-e.deltaY * 0.0012)));
+  const wx = (mx - view.x) / view.k, wy = (my - view.y) / view.k;
+  view.x = mx - wx * k2; view.y = my - wy * k2; view.k = k2;
+  apply();
+}, { passive: false });
+
+function zoomBy(f) {
+  const rect = vp.getBoundingClientRect();
+  const mx = rect.width / 2, my = rect.height / 2;
+  const k2 = Math.min(3, Math.max(0.1, view.k * f));
+  const wx = (mx - view.x) / view.k, wy = (my - view.y) / view.k;
+  view.x = mx - wx * k2; view.y = my - wy * k2; view.k = k2;
+  apply();
+}
+document.getElementById('btn-in').onclick = () => zoomBy(1.25);
+document.getElementById('btn-out').onclick = () => zoomBy(0.8);
+document.getElementById('btn-fit').onclick = fit;
+document.getElementById('btn-reset').onclick = resetLayout;
+
+/* ============================= 详情 ============================= */
+const modal = document.getElementById('modal');
+function openModal(n) {
+  document.getElementById('m-dot').style.background = n.color;
+  document.getElementById('m-title').textContent = n.title;
+  document.getElementById('m-desc').textContent = n.sub;
+  const meta = document.getElementById('m-meta');
+  meta.innerHTML = '';
+  if (n.badge) for (const b of n.badge) {
+    const s = document.createElement('span'); s.textContent = b; meta.appendChild(s);
+  }
+  const links = document.getElementById('m-links');
+  links.innerHTML = '';
+  const rel = LINKS.filter((l) => l.from === n.id || l.to === n.id);
+  if (rel.length) {
+    links.textContent = '关联：' + rel.map((l) => l.from + ' → ' + l.to + (l.label ? '（' + l.label + '）' : '')).join('；');
+  }
+  modal.classList.add('open');
+}
+function closeModal() { modal.classList.remove('open'); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* ============================= 启动 ============================= */
+renderGroups();
+renderNodes();
+drawLinks();
+fit();
+</script>
+</body>
+</html>
