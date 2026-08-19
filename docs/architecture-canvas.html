@@ -38,6 +38,13 @@
   .node .b { margin-top: 7px; font-size: 10.5px; color: #7ee787; font-family: ui-monospace, Consolas, monospace; }
   .node .b span { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px;
     border: 1px solid rgba(126,231,135,.25); background: rgba(126,231,135,.07); }
+  .node .mlist { margin-top: 8px; border-top: 1px solid #262634; padding-top: 6px; }
+  .node .mlist.cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; }
+  .node .mi { display: flex; gap: 8px; font-size: 10.5px; line-height: 1.55; }
+  .node .mi .mn { color: #79c0ff; font-family: ui-monospace, Consolas, monospace; min-width: 104px; }
+  .node .mlist.cols .mi { gap: 6px; }
+  .node .mlist.cols .mn { min-width: 0; }
+  .node .mi .md { color: #a8a8bd; }
   .node.warn { border-color: #9e6a03; }
   .node.warn .b { color: #e3b341; }
   .node.warn .b span { border-color: rgba(227,179,65,.35); background: rgba(227,179,65,.08); }
@@ -207,24 +214,39 @@ const NODES = [
     title: '观测契约 ObsSpec', sub: '观测契约：定义注册表、服务、事件如何被展示，各观测壳共用',
     badge: ['契约定义'] },
   /* —— core 内核 —— */
-  { id: 'assemble', group: 'core', x: 150, y: 650, w: 250, h: 104, color: '#79c0ff',
+  { id: 'assemble', group: 'core', x: 150, y: 610, w: 250, h: 104, color: '#79c0ff',
     title: 'assembleRuntime · 装配', sub: 'GUI 和 API 共用的装配入口：发现插件 → 剔除禁用项 → 按依赖排序逐个加载',
     badge: ['core/src/shell.ts'] },
-  { id: 'harness', group: 'core', x: 150, y: 820, w: 250, h: 104, color: '#79c0ff',
-    title: 'SystemContext · 系统上下文', sub: '系统主入口：持有注册表、服务目录、配置；查状态快照、批量装配插件、切出插件视图（PluginContext）',
-    badge: ['core/src/harness.ts', 'emit · status · pluginContext · boot'] },
-  { id: 'discover', group: 'core', x: 150, y: 960, w: 250, h: 104, color: '#79c0ff',
+  { id: 'harness', group: 'core', x: 150, y: 749, w: 250, h: 104, color: '#79c0ff',
+    title: 'SystemContext · 系统上下文', sub: '系统主入口：持有注册表、服务目录、配置，可切出插件视图',
+    badge: ['core/src/harness.ts'],
+    methods: [
+      ['emit', '系统级事件出口'],
+      ['status', '运行快照'],
+      ['pluginContext', '切出插件视图'],
+      ['boot', '批量装配插件'],
+    ] },
+  { id: 'discover', group: 'core', x: 150, y: 970, w: 250, h: 104, color: '#79c0ff',
     title: 'discoverPlugins · 发现', sub: '扫描插件目录（WH_PLUGINS_DIR），识别插件包逐个加载；单个失败不影响其它',
     badge: ['core/src/discovery.ts'] },
-  { id: 'boot', group: 'core', x: 150, y: 1110, w: 250, h: 104, color: '#79c0ff',
+  { id: 'boot', group: 'core', x: 150, y: 1109, w: 250, h: 104, color: '#79c0ff',
     title: 'boot · 拓扑装配', sub: '按“谁提供谁先装”排序：先装服务提供方再装消费方；缺必选服务就挂起不加载',
     badge: ['core/src/registrar/boot.ts'] },
-  { id: 'registrar', group: 'core', x: 150, y: 1256, w: 250, h: 104, color: '#79c0ff',
+  { id: 'registrar', group: 'core', x: 150, y: 1248, w: 250, h: 104, color: '#79c0ff',
     title: 'registrar · 注册器', sub: '生命周期管家：注册→启动→停止→注销；服务多对多绑定，提供方卸载时级联卸载',
     badge: ['core/src/registrar/registrar.ts'] },
   { id: 'ctx', group: 'core', x: 480, y: 1248, w: 250, h: 104, color: '#79c0ff',
-    title: 'PluginContext · 上下文', sub: '插件拿到的“遥控器”：读配置、发事件、注册清理钩子、取别的插件服务、订阅事件',
-    badge: ['config·emit·effect·services·events'] },
+    title: 'PluginContext · 上下文', sub: '插件与内核的唯一桥梁：所有能力经它进出',
+    badge: ['ctx.xxx ≡ ctx.get("xxx")'],
+    methodsCols: true,
+    methods: [
+      ['config', '合并配置'],
+      ['emit', '发事件'],
+      ['effect', '副作用'],
+      ['get', '取服务'],
+      ['services', '服务查询'],
+      ['events', '订阅·历史'],
+    ] },
   { id: 'bus', group: 'core', x: 640, y: 650, w: 250, h: 104, color: '#7ee787',
     title: 'EventBus · 事件总线', sub: '事件中转站：插件发的事件广播给所有订阅者；某个订阅者出错不影响其它',
     badge: ['core/src/events/bus.ts'] },
@@ -234,8 +256,8 @@ const NODES = [
   { id: 'persist', group: 'core', x: 640, y: 1110, w: 250, h: 104, color: '#7ee787',
     title: 'persistence · 落盘', sub: '把事件逐行写进 docs/logs/events.jsonl，观测壳读的就是这份文件',
     badge: ['core/src/events/persistence.ts'] },
-  { id: 'services', group: 'core', x: 1020, y: 940, w: 250, h: 104, color: '#ff9d5c',
-    title: '服务目录 · ServiceRegistry', sub: '能力登记表：服务名 × 提供方多对多；scope 可见范围 + access 权限 + lifetime（host 长活 / plugin 借用）；提供方卸载时级联卸载',
+  { id: 'services', group: 'core', x: 480, y: 990, w: 250, h: 104, color: '#ff9d5c',
+    title: '服务目录 · ServiceRegistry', sub: '服务名 × 提供方多对多登记表；scope / access / lifetime 分层；提供方卸载时级联卸载',
     badge: ['get·getAll·providers·waitFor·bindings'] },
   { id: 'reader', group: 'core', x: 980, y: 1110, w: 250, h: 104, color: '#7ee787',
     title: 'reader · 事件读取', sub: '读 events.jsonl：条件查询、读全部、实时 tail，供 CLI / TUI 使用',
@@ -367,6 +389,13 @@ function renderNodes() {
     /* 高度不预设：由内容自适应撑开，避免文字被截断 */
     let html = '<div class="t"><span class="dot" style="background:' + n.color + '"></span>' + n.title + '</div>';
     html += '<div class="s">' + n.sub + '</div>';
+    if (n.methods) {
+      html += '<div class="mlist' + (n.methodsCols ? ' cols' : '') + '">';
+      for (const [name, desc] of n.methods) {
+        html += '<div class="mi"><span class="mn">' + name + '</span><span class="md">' + desc + '</span></div>';
+      }
+      html += '</div>';
+    }
     if (n.badge) html += '<div class="b">' + n.badge.map((b) => '<span>' + b + '</span>').join('') + '</div>';
     el.innerHTML = html;
     canvas.appendChild(el);
