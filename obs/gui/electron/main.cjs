@@ -84,17 +84,24 @@ function injectPluginChrome(win, title) {
 let core;
 let harness;
 let registrar;
+let bus;
 const events = [];
 let plugins = [];
 
 async function init() {
   core = await import('@wizard-harness/core');
-  const bus = core.createEventBus();
+  bus = core.createEventBus();
   bus.subscribe((e) => events.push(e));
   // 与 CLI / TUI / API 共用同一份事件账本（仓库根 docs/logs/events.jsonl）
   // 用相对 main.cjs 的稳定路径，避免受启动 cwd（obs/gui）影响
   const eventsFile = path.resolve(__dirname, '..', '..', '..', 'docs', 'logs', 'events.jsonl');
   mkdirSync(path.dirname(eventsFile), { recursive: true });
+  // 预填历史：启动时把已落盘的 jsonl 载入内存（重启不丢历史）
+  try {
+    events.push(...core.readEvents(eventsFile));
+  } catch {
+    // 文件不存在/损坏时忽略，冷启动从空开始
+  }
   bus.subscribe(core.createFileSink(eventsFile));
 
   // 壳配置：不想启动的插件 id 写进 disabledPlugins
@@ -114,6 +121,87 @@ async function init() {
   // 冒烟：通过服务目录调用 logger 服务
   const logger = harness.services.get('logger');
   if (logger && typeof logger.info === 'function') logger.info('harness 启动，服务就绪');
+
+  startGateway();
+}
+
+/**
+ * 跨进程事件网关（HTTP）：
+ * - POST /call          { service, method, args } → 事件化调用服务（壳视角）
+ * - POST /publish       { action, target?, payload? } → 向总线发布一条事件
+ * - GET  /events/stream SSE → 订阅总线事件流（跨进程观测/转发）
+ * 端口默认 8790（避开 obs:api 的 8787），可用 WH_GATEWAY_PORT 覆盖。
+ */
+function startGateway() {
+  const http = require('node:http');
+  const port = Number(process.env.WH_GATEWAY_PORT ?? 8790);
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+
+    if (req.method === 'GET' && url.pathname === '/events/stream') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      });
+      res.write('retry: 1000\n\n');
+      const stop = bus.subscribe((e) => res.write(`data: ${JSON.stringify(e)}\n\n`));
+      req.on('close', stop);
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body = '';
+      for await (const chunk of req) body += chunk;
+      let data = {};
+      try {
+        data = JSON.parse(body || '{}');
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'JSON 解析失败' }));
+        return;
+      }
+
+      if (url.pathname === '/call') {
+        const { service, method, args, timeoutMs } = data;
+        try {
+          const result = await registrar.call(service, method, args, { timeoutMs });
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true, result }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: String(err) }));
+        }
+        return;
+      }
+
+      if (url.pathname === '/publish') {
+        const { action, target, payload } = data;
+        if (typeof action !== 'string' || !action) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: '缺少 action' }));
+          return;
+        }
+        bus.emit({
+          id: require('node:crypto').randomUUID(),
+          ts: Date.now(),
+          actor: 'gateway',
+          action,
+          target: target ?? undefined,
+          payload,
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+    }
+
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'not found' }));
+  });
+  server.listen(port, () => {
+    console.log(`[gateway] 跨进程事件网关 http://localhost:${port}（/call /publish /events/stream）`);
+  });
 }
 
 function createWindow() {

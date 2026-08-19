@@ -232,6 +232,13 @@ export interface Registrar {
   has(id: string): boolean;
   /** 已注册插件的上下文（供 harness 派生视角） */
   contextOf(id: string): PluginContext | undefined;
+  /** 壳视角的事件化服务调用（trusted 全权，跨进程网关复用） */
+  call<T = unknown>(
+    service: string,
+    method: string,
+    args?: unknown,
+    opts?: { timeoutMs?: number },
+  ): Promise<T>;
   /** 服务目录（壳视角：全表） */
   services: ServiceRegistry;
 }

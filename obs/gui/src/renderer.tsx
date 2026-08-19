@@ -1,8 +1,8 @@
 // Electron 渲染进程入口：装载 obs-core 的 RegistryPanel（经 views/registry.tsx 包装）
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Plugin, PluginEvent } from '@wizard-harness/core';
 import { RegistryView } from '../views/registry.js';
-import { TrafficLights } from './TrafficLights.js';
 
 interface PluginState {
   manifest: { id: string; version: string; name?: string };
@@ -22,25 +22,42 @@ declare global {
     wh: {
       getState(): Promise<RendererState>;
       openPlugin(id: string): Promise<void>;
-      windowControl(action: 'min' | 'max' | 'close'): void;
     };
   }
 }
 
-async function main(): Promise<void> {
-  const root = document.getElementById('root');
-  if (!root) throw new Error('missing #root mount point');
-  const state = await window.wh.getState();
-  createRoot(root).render(
+function App(): React.ReactElement | null {
+  const [state, setState] = useState<RendererState | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const refresh = async () => {
+      try {
+        const s = await window.wh.getState();
+        if (alive) setState(s);
+      } catch {
+        // 主进程未就绪时静默重试
+      }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 1500);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  if (!state) return null;
+  return (
     <RegistryView
       plugins={state.plugins as unknown as (Plugin & { services?: string[]; config?: Record<string, unknown> })[]}
       events={state.events}
       globalConfig={state.config}
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
-      trailing={<TrafficLights />}
-      onHeaderDoubleClick={() => window.wh.windowControl('max')}
-    />,
+    />
   );
 }
 
-void main();
+const root = document.getElementById('root');
+if (!root) throw new Error('missing #root mount point');
+createRoot(root).render(<App />);

@@ -127,6 +127,7 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
         ...(opts.factory ? { factory: opts.factory } : {}),
       };
       bucket.set(providerId, entry);
+      attachServiceHandler(name, providerId);
       emit('service-register', name, { access, lifetime, providerId, scope });
     },
     get<T = unknown>(name: string, providerId?: string): T | undefined {
@@ -175,10 +176,12 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       if (!bucket) return;
       if (providerId) {
         if (!bucket.delete(providerId)) return;
+        detachServiceHandler(name, providerId);
         emit('service-unregister', name, { providerId });
         if (bucket.size === 0) bindings.delete(name);
         return;
       }
+      for (const pid of [...bucket.keys()]) detachServiceHandler(name, pid);
       bindings.delete(name);
       emit('service-unregister', name);
     },
@@ -200,9 +203,112 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     });
   }
 
+  /** 服务订阅器（真事件驱动执行）：提供方是事件总线上的订阅者，不与被调用方直接引用 */
+  const handlerUnsubs = new Map<string, () => void>();
+
+  function attachServiceHandler(name: string, providerId: string): void {
+    const key = `${name}:${providerId}`;
+    if (handlerUnsubs.has(key)) return;
+    const unsubscribe = bus.subscribe((e) => {
+      if (e.action !== 'service-call' || e.target !== name) return;
+      const { method, args, requestId, providerId: targetProvider } = e.payload as {
+        method?: string;
+        args?: unknown;
+        requestId?: string;
+        providerId?: string;
+      };
+      if (!requestId || typeof method !== 'string') return;
+      // 精确路由：仅被指定的提供方响应（多提供方时只有路由目标执行，不广播）
+      if (targetProvider !== undefined && targetProvider !== providerId) return;
+      const entry = bindings.get(name)?.get(providerId);
+      const svc = entry ? ensureInstance(entry) : undefined;
+      const emitResult = (payload: { ok: boolean; result?: unknown; error?: string }) => {
+        bus.emit({
+          id: randomUUID(),
+          ts: Date.now(),
+          actor: `plugin:${providerId}`,
+          action: 'service-result',
+          target: requestId,
+          payload,
+        });
+      };
+      if (!svc || typeof (svc as Record<string, unknown>)[method] !== 'function') {
+        emitResult({ ok: false, error: `服务 ${name}（${providerId}）无方法 ${method}` });
+        return;
+      }
+      // 延迟到派发栈外执行：避免同步方法阻塞事件总线的其它订阅者
+      setImmediate(() => {
+        const callArgs = args === undefined ? [] : Array.isArray(args) ? args : [args];
+        const fn = (svc as Record<string, unknown>)[method] as
+          | ((...a: unknown[]) => unknown)
+          | undefined;
+        Promise.resolve(fn!.apply(svc, callArgs))
+          .then((result) => emitResult({ ok: true, result }))
+          .catch((err: unknown) => emitResult({ ok: false, error: String(err) }));
+      });
+    });
+    handlerUnsubs.set(key, unsubscribe);
+  }
+
+  function detachServiceHandler(name: string, providerId: string): void {
+    const key = `${name}:${providerId}`;
+    handlerUnsubs.get(key)?.();
+    handlerUnsubs.delete(key);
+  }
+
   function pickVisible(name: string, viewerPluginId: string, trusted: boolean): unknown {
     const first = visibleEntries(name, viewerPluginId, trusted)[0];
     return first ? ensureInstance(first) : undefined;
+  }
+
+  /**
+   * 事件化服务调用（请求-响应，全程走事件总线）。
+   * viewerId=发起方（插件 id 或 'shell'）；trusted=发起方是否可信（high 门槛）。
+   */
+  function callService<T = unknown>(
+    viewerId: string,
+    trusted: boolean,
+    service: string,
+    method: string,
+    args?: unknown,
+    opts?: { timeoutMs?: number },
+  ): Promise<T> {
+    const timeoutMs = opts?.timeoutMs ?? 5000;
+    // 路由决策：选首个可见提供方，请求精确发给它（多提供方时不广播）
+    const target = visibleEntries(service, viewerId, trusted)[0];
+    if (!target) {
+      return Promise.reject(new Error(`服务不可用：${service}`));
+    }
+    const requestId = randomUUID();
+    return new Promise<T>((resolve, reject) => {
+      let done = false;
+      const finish = (action: () => void) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        unsubscribe();
+        action();
+      };
+      const timer = setTimeout(
+        () => finish(() => reject(new Error(`服务调用超时：${service}.${method}（requestId=${requestId}）`))),
+        timeoutMs,
+      );
+      // 先订阅结果（同步总线：若先 emit 再订阅，同步响应会丢失）
+      const unsubscribe = bus.subscribe((e) => {
+        if (e.action !== 'service-result' || e.target !== requestId) return;
+        const p = e.payload as { ok?: boolean; result?: unknown; error?: string };
+        finish(() => (p.ok ? resolve(p.result as T) : reject(new Error(`${p.error ?? '调用失败'}（requestId=${requestId}）`))));
+      });
+      // 后发请求事件：经事件总线到达提供方订阅器执行（双方零直接引用）
+      bus.emit({
+        id: randomUUID(),
+        ts: Date.now(),
+        actor: `plugin:${viewerId}`,
+        action: 'service-call',
+        target: service,
+        payload: { method, args, requestId, providerId: target.providerId },
+      });
+    });
   }
 
   function dropPluginServices(providerId: string): void {
@@ -250,71 +356,7 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       get<T = unknown>(name: string): T | undefined {
         return pickVisible(name, viewerId, trusted) as T | undefined;
       },
-      async call<T = unknown>(
-        service: string,
-        method: string,
-        args?: unknown,
-        opts?: { timeoutMs?: number },
-      ): Promise<T> {
-        const timeoutMs = opts?.timeoutMs ?? 5000;
-        const svc = pickVisible(service, viewerId, trusted);
-        if (svc === undefined) throw new Error(`服务不可用：${service}`);
-        const fn = (svc as Record<string, unknown>)[method];
-        if (typeof fn !== 'function') throw new Error(`服务 ${service} 无方法 ${method}`);
-        const requestId = randomUUID();
-        // 请求事件（可观测、可审计、可拦截）
-        bus.emit({
-          id: randomUUID(),
-          ts: Date.now(),
-          actor: `plugin:${viewerId}`,
-          action: 'service-call',
-          target: service,
-          payload: { method, args, requestId },
-        });
-        return new Promise<T>((resolve, reject) => {
-          let done = false;
-          const finish = (action: () => void) => {
-            if (done) return;
-            done = true;
-            clearTimeout(timer);
-            unsubscribe();
-            action();
-          };
-          const timer = setTimeout(
-            () => finish(() => reject(new Error(`服务调用超时：${service}.${method}`))),
-            timeoutMs,
-          );
-          const unsubscribe = bus.subscribe((e) => {
-            if (e.action !== 'service-result' || e.target !== requestId) return;
-            const p = e.payload as { ok?: boolean; result?: unknown; error?: string };
-            finish(() => (p.ok ? resolve(p.result as T) : reject(new Error(p.error ?? '调用失败'))));
-          });
-          // 服务中心路由：调用提供方，结果经事件通道广播
-          const callArgs =
-            args === undefined ? [] : Array.isArray(args) ? args : [args];
-          Promise.resolve(fn.apply(svc, callArgs))
-            .then((result) => {
-              bus.emit({
-                id: randomUUID(),
-                ts: Date.now(),
-                actor: 'core.registrar',
-                action: 'service-result',
-                target: requestId,
-                payload: { ok: true, result },
-              });
-            })
-            .catch((err: unknown) => {
-              bus.emit({
-                id: randomUUID(),
-                ts: Date.now(),
-                actor: 'core.registrar',
-                action: 'service-result',
-                target: requestId,
-                payload: { ok: false, error: String(err) },
-              });
-            });
-        });
-      },
+      call: (service, method, args, opts) => callService(viewerId, trusted, service, method, args, opts),
       services: {
         get<T = unknown>(name: string, providerId?: string): T | undefined {
           if (providerId) {
@@ -505,5 +547,14 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     return contexts.get(id);
   }
 
-  return { register, unregister, get, list, has, contextOf, services };
+  return {
+    register,
+    unregister,
+    get,
+    list,
+    has,
+    contextOf,
+    call: (service, method, args, opts) => callService('shell', true, service, method, args, opts),
+    services,
+  };
 }
