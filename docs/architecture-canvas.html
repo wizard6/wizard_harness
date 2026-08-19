@@ -28,6 +28,7 @@
   .group .gsub { position: absolute; top: 28px; left: 16px; font-size: 11px; color: rgba(255,255,255,.22); }
   .node { position: absolute; background: #1b1b28; border: 1px solid #2c2c3e; border-radius: 12px;
     padding: 12px 14px; cursor: grab; user-select: none; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    overflow: hidden;
     transition: border-color .12s, box-shadow .12s; }
   .node:hover { border-color: #4a6aa0; box-shadow: 0 6px 18px rgba(74,106,160,.28); }
   .node.dragging { cursor: grabbing; border-color: #79c0ff; box-shadow: 0 8px 24px rgba(121,192,255,.35); }
@@ -116,90 +117,90 @@
 const GROUP_DEFS = [
   { id: 'runtime',  x: 80,  y: 90,  w: 1240, h: 400, t: '运行时壳 · Runtime Shells',   s: '加载插件（GUI / API 共用 assembleRuntime）' },
   { id: 'observer', x: 1400, y: 90,  w: 1120, h: 400, t: '观测器壳 · Observers',        s: '只读 events.jsonl（CLI / TUI）' },
-  { id: 'core',     x: 80,  y: 560, w: 2440, h: 800, t: 'core 内核 · 契约 / 装配 / 事件', s: 'core 不依赖插件；插件依赖 core 契约' },
-  { id: 'plugins',  x: 80,  y: 1440, w: 1500, h: 480, t: '业务插件 · plugins/',         s: 'provides / inject 服务声明，生命周期受 registrar 管理' },
+  { id: 'core',     x: 80,  y: 560, w: 2440, h: 880, t: 'core 内核 · 契约 / 装配 / 事件', s: 'core 不依赖插件；插件依赖 core 契约' },
+  { id: 'plugins',  x: 80,  y: 1460, w: 1500, h: 460, t: '业务插件 · plugins/',         s: 'provides / inject 服务声明，生命周期受 registrar 管理' },
   { id: 'data',     x: 1660, y: 1440, w: 1260, h: 480, t: '数据与文档 · docs/',          s: '事件日志、确认稿、遗留项' },
 ];
 
 const NODES = [
   /* —— 运行时壳 —— */
-  { id: 'gui', group: 'runtime', x: 150, y: 180, w: 260, h: 96, color: '#79c0ff',
-    title: 'GUI · Electron 运行时台', sub: 'pnpm gui:start；装配 plugins/ + 弹窗交互；Renderer（RegistryView + TrafficLights）；IPC 桥 wh:exec-command / open-plugin / window-control',
-    badge: ['@wizard-harness/gui'] },
-  { id: 'api', group: 'runtime', x: 540, y: 180, w: 260, h: 96, color: '#79c0ff',
-    title: 'API · HTTP 运行时壳', sub: 'pnpm obs:api；GET /events /events/stream /state /plugins /services；POST /rpc 白名单（WH_EXPOSE 默认全拒）',
-    badge: ['@wizard-harness/api'] },
+  { id: 'gui', group: 'runtime', x: 150, y: 180, w: 260, h: 104, color: '#79c0ff',
+    title: 'GUI · Electron 运行时台', sub: '桌面窗口：启动时装配插件并弹出它们自带的界面（Hello 弹窗、控制台）',
+    badge: ['pnpm gui:start'] },
+  { id: 'api', group: 'runtime', x: 540, y: 180, w: 260, h: 104, color: '#79c0ff',
+    title: 'API · HTTP 运行时壳', sub: 'HTTP 服务：查事件、实时事件流、看装配状态、按白名单调插件服务（默认全拒）',
+    badge: ['pnpm obs:api'] },
   /* —— 观测器壳 —— */
-  { id: 'cli', group: 'observer', x: 1480, y: 180, w: 250, h: 92, color: '#7ee787',
-    title: 'CLI 事件回放', sub: 'pnpm obs:cli；查询 / 回放 / tail events.jsonl',
-    badge: ['@wizard-harness/cli'] },
-  { id: 'tui', group: 'observer', x: 1830, y: 180, w: 250, h: 92, color: '#7ee787',
-    title: 'TUI 实时面板', sub: 'pnpm obs:tui；ink 实时事件面板，读同一份 jsonl',
-    badge: ['@wizard-harness/tui'] },
-  { id: 'obscore', group: 'observer', x: 1480, y: 330, w: 250, h: 92, color: '#7ee787',
-    title: '注册表观测面板', sub: 'registrySpec + RegistryPanel（React），内嵌于 GUI',
-    badge: ['@wizard-harness/obs-core'] },
-  { id: 'obsspec', group: 'observer', x: 1830, y: 330, w: 250, h: 92, color: '#7ee787',
-    title: '观测契约 ObsSpec', sub: 'obs/spec：注册表观测契约定义',
-    badge: ['@wizard-harness/obs-spec'] },
+  { id: 'cli', group: 'observer', x: 1480, y: 180, w: 250, h: 104, color: '#7ee787',
+    title: 'CLI 事件回放', sub: '终端命令：按条件查询事件、回放、实时跟随（tail）',
+    badge: ['pnpm obs:cli'] },
+  { id: 'tui', group: 'observer', x: 1830, y: 180, w: 250, h: 104, color: '#7ee787',
+    title: 'TUI 实时面板', sub: '终端面板：事件实时滚动展示，按类型着色高亮',
+    badge: ['pnpm obs:tui'] },
+  { id: 'obscore', group: 'observer', x: 1480, y: 330, w: 250, h: 104, color: '#7ee787',
+    title: '注册表观测面板', sub: 'React 面板：展示注册表与服务绑定情况，内嵌在 GUI 窗口里',
+    badge: ['React'] },
+  { id: 'obsspec', group: 'observer', x: 1830, y: 330, w: 250, h: 104, color: '#7ee787',
+    title: '观测契约 ObsSpec', sub: '观测契约：定义注册表、服务、事件如何被展示，各观测壳共用',
+    badge: ['契约定义'] },
   /* —— core 内核 —— */
-  { id: 'assemble', group: 'core', x: 150, y: 650, w: 250, h: 92, color: '#79c0ff',
-    title: 'assembleRuntime · shell.ts', sub: 'GUI / API 共用：createHarness → discoverPlugins → disabled / experimental 过滤 → boot；消费 dep-missing 打印警告',
+  { id: 'assemble', group: 'core', x: 150, y: 650, w: 250, h: 104, color: '#79c0ff',
+    title: 'assembleRuntime · 装配', sub: 'GUI 和 API 共用的装配入口：发现插件 → 剔除禁用项 → 按依赖排序逐个加载',
     badge: ['core/src/shell.ts'] },
-  { id: 'harness', group: 'core', x: 150, y: 820, w: 250, h: 80, color: '#79c0ff',
-    title: 'createHarness · harness.ts', sub: 'SystemContext：registry / services / config / emit / status / pluginContext / boot；事件注入 id·ts·actor',
+  { id: 'harness', group: 'core', x: 150, y: 820, w: 250, h: 104, color: '#79c0ff',
+    title: 'SystemContext · 系统上下文', sub: '系统主入口：持有注册表、服务目录、配置；查状态快照、批量装配插件、切出插件视图（PluginContext）',
     badge: ['core/src/harness.ts'] },
-  { id: 'discover', group: 'core', x: 150, y: 960, w: 250, h: 92, color: '#79c0ff',
-    title: 'discoverPlugins · discovery.ts', sub: '目录扫描、识别标记、按 dist 加载、失败隔离；WH_PLUGINS_DIR / WH_DISABLED',
+  { id: 'discover', group: 'core', x: 150, y: 960, w: 250, h: 104, color: '#79c0ff',
+    title: 'discoverPlugins · 发现', sub: '扫描插件目录（WH_PLUGINS_DIR），识别插件包逐个加载；单个失败不影响其它',
     badge: ['core/src/discovery.ts'] },
-  { id: 'boot', group: 'core', x: 150, y: 1110, w: 250, h: 92, color: '#79c0ff',
-    title: 'boot · 拓扑装配', sub: 'inject → provides 拓扑排序；缺必选服务 → PENDING 不加载；成环检测',
+  { id: 'boot', group: 'core', x: 150, y: 1110, w: 250, h: 104, color: '#79c0ff',
+    title: 'boot · 拓扑装配', sub: '按“谁提供谁先装”排序：先装服务提供方再装消费方；缺必选服务就挂起不加载',
     badge: ['core/src/registrar/boot.ts'] },
-  { id: 'registrar', group: 'core', x: 150, y: 1260, w: 250, h: 92, color: '#79c0ff',
-    title: 'registrar · 注册器', sub: 'register → onStart → onStop → unregister；服务绑定表（一名多提供方）；scope / access / lifetime 分层；必选服务消失级联卸载；LIFO 副作用撤销',
+  { id: 'registrar', group: 'core', x: 150, y: 1256, w: 250, h: 104, color: '#79c0ff',
+    title: 'registrar · 注册器', sub: '生命周期管家：注册→启动→停止→注销；服务多对多绑定，提供方卸载时级联卸载',
     badge: ['core/src/registrar/registrar.ts'] },
-  { id: 'ctx', group: 'core', x: 480, y: 1250, w: 250, h: 100, color: '#79c0ff',
-    title: 'PluginContext · 插件上下文', sub: '插件唯一可见面（受限视图）：config / emit / effect（LIFO）/ get·services（scope+high 门槛）/ events 订阅·历史；Proxy 属性注入 ctx.logger；引用纪律：host 长活 · plugin 借用',
-    badge: ['ctx 键：config·effect·emit·get·services·events', 'declare module 可扩展'] },
-  { id: 'bus', group: 'core', x: 640, y: 650, w: 250, h: 92, color: '#7ee787',
-    title: 'EventBus · 观察者式', sub: '订阅 sink 广播 PluginEvent；sink 异常隔离；一事件多消费者',
+  { id: 'ctx', group: 'core', x: 480, y: 1248, w: 250, h: 104, color: '#79c0ff',
+    title: 'PluginContext · 上下文', sub: '插件拿到的“遥控器”：读配置、发事件、注册清理钩子、取别的插件服务、订阅事件',
+    badge: ['config·emit·effect·services·events'] },
+  { id: 'bus', group: 'core', x: 640, y: 650, w: 250, h: 104, color: '#7ee787',
+    title: 'EventBus · 事件总线', sub: '事件中转站：插件发的事件广播给所有订阅者；某个订阅者出错不影响其它',
     badge: ['core/src/events/bus.ts'] },
-  { id: 'dispatcher', group: 'core', x: 640, y: 880, w: 250, h: 92, color: '#d2a8ff',
-    title: 'Dispatcher · 五种分发', sub: 'emit 通知 / waterfall 改数据 / serial 排队 / parallel 并发 / bail 抢答；库级，待接入 PluginContext',
-    badge: ['core/src/events/dispatcher.ts', '⚠ 待接入 ctx'] },
-  { id: 'persist', group: 'core', x: 640, y: 1110, w: 250, h: 92, color: '#7ee787',
-    title: 'persistence · jsonl 落盘', sub: 'createFileSink：事件同步落盘 docs/logs/events.jsonl',
+  { id: 'dispatcher', group: 'core', x: 640, y: 880, w: 250, h: 104, color: '#d2a8ff',
+    title: 'Dispatcher · 分发器', sub: '按事件名注册处理器，五种模式：通知 / 链式改数据 / 排队 / 并发 / 抢答',
+    badge: ['⚠ 五种模式待接入插件上下文'] },
+  { id: 'persist', group: 'core', x: 640, y: 1110, w: 250, h: 104, color: '#7ee787',
+    title: 'persistence · 落盘', sub: '把事件逐行写进 docs/logs/events.jsonl，观测壳读的就是这份文件',
     badge: ['core/src/events/persistence.ts'] },
-  { id: 'reader', group: 'core', x: 980, y: 1110, w: 250, h: 92, color: '#7ee787',
-    title: 'reader · 事件读取', sub: 'queryEvents / readEvents / tailEvents，供 CLI / TUI 查询',
+  { id: 'reader', group: 'core', x: 980, y: 1110, w: 250, h: 104, color: '#7ee787',
+    title: 'reader · 事件读取', sub: '读 events.jsonl：条件查询、读全部、实时 tail，供 CLI / TUI 使用',
     badge: ['core/src/events/reader.ts'] },
   { id: 'contract', group: 'core', x: 1500, y: 650, w: 520, h: 120, color: '#d2a8ff',
     title: 'core 契约 · 依赖方向',
-    sub: 'Plugin / PluginManifest / PluginContext / Registrar / ServiceRegistry / Dispatcher 全部由 core/src/index.ts 导出；依赖方向：core 不依赖插件，插件依赖 core 契约。',
-    badge: ['@wizard-harness/core'] },
+    sub: '插件依赖的接口清单（Plugin / PluginContext / Registrar 等），由 core 导出；core 本身不依赖任何插件',
+    badge: ['core/src/index.ts · @wizard-harness/core'] },
   /* —— 业务插件 —— */
-  { id: 'hello', group: 'plugins', x: 150, y: 1560, w: 260, h: 100, color: '#e3b341',
-    title: 'hello · 最小示例', sub: 'provides hello / greeter；inject ["logger"]；api.greet；弹窗 UI；register 发观测事件',
-    badge: ['provides: hello, greeter', 'inject: logger'] },
-  { id: 'logger', group: 'plugins', x: 470, y: 1560, w: 260, h: 100, color: '#e3b341',
-    title: 'logger · 日志插件', sub: 'provides logger；写 docs/logs/app.log + 广播观测事件；tier core',
+  { id: 'hello', group: 'plugins', x: 150, y: 1560, w: 260, h: 104, color: '#e3b341',
+    title: 'hello · 最小示例', sub: '最小示例：提供 greet 服务，注入并使用 logger，注册时发一条事件',
+    badge: ['inject: logger'] },
+  { id: 'logger', group: 'plugins', x: 470, y: 1560, w: 260, h: 104, color: '#e3b341',
+    title: 'logger · 日志插件', sub: '写日志文件，同时把日志广播成事件；被 hello 等插件注入使用',
     badge: ['provides: logger'] },
-  { id: 'events', group: 'plugins', x: 790, y: 1560, w: 260, h: 100, color: '#e3b341',
-    title: 'events · 事件插件', sub: 'provides events：发布 / 订阅 / 查询历史；tier core',
+  { id: 'events', group: 'plugins', x: 790, y: 1560, w: 260, h: 104, color: '#e3b341',
+    title: 'events · 事件插件', sub: '把事件总线能力包装成服务：发布、订阅、查历史',
     badge: ['provides: events'] },
-  { id: 'console', group: 'plugins', x: 1110, y: 1560, w: 260, h: 100, color: '#e3b341',
-    title: 'console · 控制台', sub: 'provides console：shell exec 服务 + 弹窗控制台；trusted + highAccessServices',
-    badge: ['provides: console', 'trusted · high'] },
+  { id: 'console', group: 'plugins', x: 1110, y: 1560, w: 260, h: 104, color: '#e3b341',
+    title: 'console · 控制台', sub: '弹窗里执行 shell 命令并回显结果；trusted 高权限插件',
+    badge: ['provides: console · trusted'] },
   /* —— 数据与文档 —— */
-  { id: 'jsonl', group: 'data', x: 1730, y: 1560, w: 400, h: 100, color: '#7ee787',
-    title: 'docs/logs/events.jsonl', sub: '运行时壳实时写入（GUI / API 共用），观测器壳只读；不存在时先 pnpm gen:events',
+  { id: 'jsonl', group: 'data', x: 1730, y: 1560, w: 400, h: 104, color: '#7ee787',
+    title: 'docs/logs/events.jsonl', sub: '事件落盘文件：GUI / API 实时写入，CLI / TUI 只读；可用 pnpm gen:events 生成演示数据',
     badge: ['pnpm gen:events'] },
-  { id: 'confirmed', group: 'data', x: 1730, y: 1720, w: 400, h: 100, color: '#79c0ff',
-    title: 'docs/confirmed · 确认稿', sub: '基座定位与边界 / 注册器功能 / 骨架修复 / 人机协作规范；+ 设计评审.md + 项目体检.md（73/73）',
-    badge: ['意图类契约 · ≤300 字'] },
+  { id: 'confirmed', group: 'data', x: 1730, y: 1720, w: 400, h: 104, color: '#79c0ff',
+    title: 'docs/confirmed · 确认稿', sub: '人类确认过的意图契约（≤300 字）：基座定位与边界 / 注册器功能 / 骨架修复 等',
+    badge: ['意图契约'] },
   { id: 'legacy', group: 'data', x: 2180, y: 1560, w: 400, h: 150, color: '#e3b341', warn: true,
     title: '⚠ 已知遗留 · 待触发/待设计',
-    sub: 'Dispatcher 未接入 PluginContext；GUI 弹窗 IPC 硬编码（通用 UI 桥待设计）；manifest.dependencies 仅警告不阻断；配置无 schema 校验',
+    sub: 'Dispatcher 还没接进插件上下文；GUI 弹窗 IPC 写死；dependencies 只警告不阻断；配置无 schema 校验',
     badge: ['无阻断'] },
 ];
 
@@ -288,13 +289,16 @@ function renderNodes() {
     el.className = 'node' + (n.warn ? ' warn' : '');
     el.dataset.id = n.id;
     el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
-    el.style.width = n.w + 'px'; el.style.height = n.h + 'px';
+    el.style.width = n.w + 'px';
+    /* 高度不预设：由内容自适应撑开，避免文字被截断 */
     let html = '<div class="t"><span class="dot" style="background:' + n.color + '"></span>' + n.title + '</div>';
     html += '<div class="s">' + n.sub + '</div>';
     if (n.badge) html += '<div class="b">' + n.badge.map((b) => '<span>' + b + '</span>').join('') + '</div>';
     el.innerHTML = html;
     canvas.appendChild(el);
     nodeEls.set(n.id, el);
+    /* 回写实际渲染高度，供 fit / 连线 / 校验使用 */
+    n.h = el.offsetHeight;
   }
 }
 
