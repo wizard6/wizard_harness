@@ -71,6 +71,29 @@
     0%, 55% { border-color: #ffd866; box-shadow: 0 0 0 3px rgba(255,216,102,.45), 0 8px 24px rgba(255,216,102,.25); }
     100% { border-color: #2c2c3e; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
   }
+  #viewpanel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; width: 240px;
+    background: #1b1b28; border: 1px solid #33334a; border-radius: 10px; padding: 10px 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.5); display: none; }
+  #viewpanel.open { display: block; }
+  #viewpanel .vp-title { font-size: 11px; color: #6a6a82; letter-spacing: .08em; margin-bottom: 6px; }
+  #viewpanel .vp-persp { padding: 6px 8px; border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+    border: 1px solid transparent; }
+  #viewpanel .vp-persp:hover { background: #26263a; }
+  #viewpanel .vp-persp.on { background: rgba(74,106,160,.18); border-color: #4a6aa0; }
+  #viewpanel .vp-pname { font-size: 12px; font-weight: 600; }
+  #viewpanel .vp-pdesc { font-size: 10.5px; color: #6a6a82; margin-top: 2px; }
+  #viewpanel .vp-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 5px 0; cursor: pointer; }
+  #viewpanel .vp-row:hover { color: #fff; }
+  #viewpanel .vp-row input { accent-color: #4a6aa0; margin: 0; }
+  #viewpanel .vp-cnt { margin-left: auto; color: #e3b341; font-size: 10.5px; }
+  #viewpanel .vp-sep { border-top: 1px solid #262634; margin: 8px 0; }
+  #viewpanel button { width: 100%; background: #26263a; color: #e6e6ef; border: 1px solid #33334a;
+    border-radius: 8px; padding: 6px 0; font-size: 12px; cursor: pointer; }
+  #viewpanel button:hover { background: #2f2f48; }
+  #modal .mfoot { margin-top: 16px; display: flex; justify-content: flex-end; }
+  #modal .mfoot button { background: #3a2a2a; color: #ff7b72; border: 1px solid #5a3535;
+    border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer; }
+  #modal .mfoot button:hover { background: #4a3030; }
   /* legend */
   #legend { position: fixed; left: 14px; bottom: 14px; z-index: 50; background: rgba(22,22,32,.92);
     border: 1px solid #2c2c3e; border-radius: 12px; padding: 10px 12px; font-size: 11px;
@@ -109,6 +132,8 @@
   <span class="zoom" id="zoomv">100%</span>
   <button id="btn-in">＋</button>
   <button id="btn-reset" title="恢复默认布局">重置布局</button>
+  <button id="btn-view" title="视图过滤：隐藏部分节点防干扰">视图</button>
+  <div id="viewpanel"></div>
 </div>
 
 <div id="legend">
@@ -128,6 +153,7 @@
     <div class="mdesc" id="m-desc"></div>
     <div class="mmeta" id="m-meta"></div>
     <div class="mlinks" id="m-links"></div>
+    <div class="mfoot"><button id="m-hide">隐藏此节点</button></div>
   </div>
 </div>
 
@@ -141,6 +167,23 @@ const GROUP_DEFS = [
   { id: 'plugins',  x: 80,  y: 1460, w: 1500, h: 460, t: '业务插件 · plugins/',         s: 'provides / inject 服务声明，生命周期受 registrar 管理' },
   { id: 'data',     x: 1660, y: 1440, w: 1260, h: 480, t: '数据与文档 · docs/',          s: '事件日志、确认稿、遗留项' },
 ];
+
+/* 聚焦视角：围绕一个理解问题的节点子集 */
+const PERSPECTIVES = [
+  { id: 'all', name: '全部视图', desc: '显示所有节点与连线' },
+  { id: 'plugin-service', name: '插件 · 服务链', desc: '插件 provides 注册进服务目录，消费方经 ctx 注入' },
+  { id: 'assembly', name: '装配 · 启动链', desc: '运行时壳 → 发现 → 拓扑装配 → 插件生命周期' },
+  { id: 'events', name: '事件 · 观测链', desc: '插件 emit → 事件总线 → 落盘 → CLI/TUI 观测' },
+  { id: 'context', name: '上下文 · DI 枢纽', desc: 'SystemContext / PluginContext 与能力入口' },
+  { id: 'docs', name: '数据 · 文档与遗留', desc: '事件日志 / 确认稿 / 遗留项' },
+];
+const PERSPECTIVE_NODES = {
+  'plugin-service': ['boot', 'registrar', 'services', 'ctx', 'hello', 'logger', 'events', 'console', 'contract'],
+  'assembly': ['gui', 'api', 'assemble', 'harness', 'discover', 'boot', 'registrar', 'hello', 'logger', 'events', 'console'],
+  'events': ['hello', 'logger', 'events', 'console', 'bus', 'persist', 'jsonl', 'reader', 'cli', 'tui', 'obscore', 'obsspec', 'gui', 'api'],
+  'context': ['harness', 'ctx', 'services', 'bus', 'registrar', 'contract', 'hello', 'logger'],
+  'docs': ['jsonl', 'confirmed', 'legacy'],
+};
 
 const NODES = [
   /* —— 运行时壳 —— */
@@ -191,6 +234,9 @@ const NODES = [
   { id: 'persist', group: 'core', x: 640, y: 1110, w: 250, h: 104, color: '#7ee787',
     title: 'persistence · 落盘', sub: '把事件逐行写进 docs/logs/events.jsonl，观测壳读的就是这份文件',
     badge: ['core/src/events/persistence.ts'] },
+  { id: 'services', group: 'core', x: 1020, y: 940, w: 250, h: 104, color: '#ff9d5c',
+    title: '服务目录 · ServiceRegistry', sub: '能力登记表：服务名 × 提供方多对多；scope 可见范围 + access 权限 + lifetime（host 长活 / plugin 借用）；提供方卸载时级联卸载',
+    badge: ['get·getAll·providers·waitFor·bindings'] },
   { id: 'reader', group: 'core', x: 980, y: 1110, w: 250, h: 104, color: '#7ee787',
     title: 'reader · 事件读取', sub: '读 events.jsonl：条件查询、读全部、实时 tail，供 CLI / TUI 使用',
     badge: ['core/src/events/reader.ts'] },
@@ -233,6 +279,8 @@ const LINKS = [
   { from: 'discover', to: 'boot', kind: 'blue', label: 'inject 拓扑' },
   { from: 'boot', to: 'registrar', kind: 'blue', label: '注册 + 启动' },
   { from: 'registrar', to: 'ctx', kind: 'blue', label: '生命周期注入' },
+  { from: 'registrar', to: 'services', kind: 'blue', label: '维护绑定表' },
+  { from: 'ctx', to: 'services', kind: 'blue', label: '消费入口' },
   { from: 'registrar', to: 'hello', kind: 'blue', label: '生命周期' },
   { from: 'registrar', to: 'logger', kind: 'blue', label: '生命周期' },
   { from: 'registrar', to: 'events', kind: 'blue', label: '生命周期' },
@@ -293,6 +341,7 @@ for (const [name, color] of [['arrow-blue', '#79c0ff'], ['arrow-green', '#7ee787
 svg.appendChild(defs);
 
 const nodeEls = new Map();
+const groupEls = new Map();
 function renderGroups() {
   for (const g of GROUP_DEFS) {
     const el = document.createElement('div');
@@ -301,6 +350,7 @@ function renderGroups() {
     el.style.width = g.w + 'px'; el.style.height = g.h + 'px';
     el.innerHTML = '<div class="gt">' + g.t + '</div><div class="gsub">' + g.s + '</div>';
     canvas.appendChild(el);
+    groupEls.set(g.id, el);
   }
 }
 function renderNodes() {
@@ -340,6 +390,7 @@ function drawLinks() {
   for (const l of LINKS) {
     const a = nodeEls.get(l.from), b = nodeEls.get(l.to);
     if (!a || !b) continue;
+    if (a.style.display === 'none' || b.style.display === 'none') continue; /* 隐藏节点不画线 */
     const k = KIND[l.kind];
     const sx = a.offsetLeft + a.offsetWidth / 2;
     const sy = a.offsetTop + a.offsetHeight / 2;
@@ -386,8 +437,11 @@ function resetLayout() {
   drawLinks();
 }
 function fit() {
+  /* 只按当前可见节点取景 */
+  const vis = NODES.filter((n) => !hiddenNodes.has(n.id) && !hiddenGroups.has(n.group));
+  if (!vis.length) return;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const n of NODES) {
+  for (const n of vis) {
     minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
     maxX = Math.max(maxX, n.x + n.w); maxY = Math.max(maxY, n.y + n.h);
   }
@@ -506,6 +560,10 @@ function syncSel() {
 function focusNode(id) {
   const n = NODES.find((x) => x.id === id);
   if (!n) return;
+  /* 搜索定位 = 找回：目标被隐藏时自动恢复显示 */
+  if (hiddenNodes.has(id)) hiddenNodes.delete(id);
+  if (hiddenGroups.has(n.group)) hiddenGroups.delete(n.group);
+  applyVisibility();
   const rect = vp.getBoundingClientRect();
   const k2 = Math.max(view.k, 1.0);
   const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
@@ -530,7 +588,113 @@ searchInput.addEventListener('keydown', (e) => {
   else if (e.key === 'Enter') { const n = items[resultIdx >= 0 ? resultIdx : 0]; if (n) focusNode(n.id); }
   else if (e.key === 'Escape') { searchInput.value = ''; resultsBox.classList.remove('open'); }
 });
-document.addEventListener('click', (e) => { if (!e.target.closest('#bar')) resultsBox.classList.remove('open'); });
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bar')) {
+    resultsBox.classList.remove('open');
+    viewPanel.classList.remove('open');
+  }
+});
+
+/* ============================= 视图过滤（隐藏部分节点防干扰） ============================= */
+const hiddenGroups = new Set();
+const hiddenNodes = new Set();
+let currentPerspective = 'all';
+const viewBtn = document.getElementById('btn-view');
+const viewPanel = document.getElementById('viewpanel');
+
+function buildViewPanel() {
+  viewPanel.innerHTML = '';
+  const t1 = document.createElement('div');
+  t1.className = 'vp-title'; t1.textContent = '聚焦视角';
+  viewPanel.appendChild(t1);
+  for (const p of PERSPECTIVES) {
+    const row = document.createElement('div');
+    row.className = 'vp-persp' + (p.id === currentPerspective ? ' on' : '');
+    row.dataset.p = p.id;
+    const nm = document.createElement('div');
+    nm.className = 'vp-pname'; nm.textContent = p.name;
+    const ds = document.createElement('div');
+    ds.className = 'vp-pdesc'; ds.textContent = p.desc;
+    row.append(nm, ds);
+    row.addEventListener('click', () => applyPerspective(p.id));
+    viewPanel.appendChild(row);
+  }
+  const sep = document.createElement('div');
+  sep.className = 'vp-sep';
+  viewPanel.appendChild(sep);
+  const t2 = document.createElement('div');
+  t2.className = 'vp-title'; t2.textContent = '按分组微调';
+  viewPanel.appendChild(t2);
+  for (const g of GROUP_DEFS) {
+    const label = document.createElement('label');
+    label.className = 'vp-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true; cb.dataset.g = g.id;
+    cb.addEventListener('change', () => toggleGroup(g.id, cb.checked));
+    const span = document.createElement('span');
+    span.textContent = g.t;
+    const cnt = document.createElement('span');
+    cnt.className = 'vp-cnt'; cnt.dataset.cnt = g.id;
+    label.append(cb, span, cnt);
+    viewPanel.appendChild(label);
+  }
+}
+function applyPerspective(id) {
+  currentPerspective = id;
+  hiddenGroups.clear();
+  hiddenNodes.clear();
+  if (id !== 'all') {
+    const focus = new Set(PERSPECTIVE_NODES[id] || []);
+    for (const n of NODES) if (!focus.has(n.id)) hiddenNodes.add(n.id);
+  }
+  syncViewUI();
+  applyVisibility();
+}
+function syncViewUI() {
+  for (const row of viewPanel.querySelectorAll('.vp-persp')) {
+    row.classList.toggle('on', row.dataset.p === currentPerspective);
+  }
+  for (const g of GROUP_DEFS) {
+    const cb = viewPanel.querySelector('[data-g="' + g.id + '"]');
+    if (cb) cb.checked = !hiddenGroups.has(g.id);
+  }
+}
+function toggleGroup(gid, on) {
+  if (on) hiddenGroups.delete(gid); else hiddenGroups.add(gid);
+  applyVisibility();
+}
+function applyVisibility() {
+  for (const g of GROUP_DEFS) {
+    const el = groupEls.get(g.id);
+    if (el) el.style.display = hiddenGroups.has(g.id) ? 'none' : '';
+  }
+  for (const n of NODES) {
+    const el = nodeEls.get(n.id);
+    const hidden = hiddenNodes.has(n.id) || hiddenGroups.has(n.group);
+    if (el) el.style.display = hidden ? 'none' : '';
+  }
+  updateGroupCounts();
+  drawLinks();
+}
+function updateGroupCounts() {
+  for (const g of GROUP_DEFS) {
+    const cnt = viewPanel.querySelector('[data-cnt="' + g.id + '"]');
+    if (!cnt) continue;
+    const k = NODES.filter((n) => n.group === g.id && hiddenNodes.has(n.id)).length;
+    cnt.textContent = k ? '(' + k + ' 隐藏)' : '';
+  }
+}
+function hideNode(id) {
+  hiddenNodes.add(id);
+  applyVisibility();
+  closeModal();
+}
+function showAll() { applyPerspective('all'); }
+viewBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  viewPanel.classList.toggle('open');
+});
+buildViewPanel();
 
 /* ============================= 详情 ============================= */
 const modal = document.getElementById('modal');
@@ -550,6 +714,7 @@ function openModal(n) {
     links.textContent = '关联：' + rel.map((l) => l.from + ' → ' + l.to + (l.label ? '（' + l.label + '）' : '')).join('；');
   }
   modal.classList.add('open');
+  document.getElementById('m-hide').onclick = () => hideNode(n.id);
 }
 function closeModal() { modal.classList.remove('open'); }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
