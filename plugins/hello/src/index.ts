@@ -9,10 +9,15 @@ const helloPlugin: Plugin = {
     id: 'hello',
     version: '0.1.0',
     name: 'Hello 插件',
-    description: '最小真实插件示例',
+    description: '最小真实插件示例（Cordis 风格 inject logger）',
+    provides: ['hello', 'greeter'],
   },
+  // Cordis：export const inject = ['logger']
+  inject: ['logger'],
   register(ctx) {
     ctx.emit({ action: 'hello', target: 'world', payload: { from: 'plugin:hello' } });
+    const logger = ctx.get<{ info?: (m: string) => string }>('logger');
+    logger?.info?.('hello 插件已注入 logger');
   },
   onStart(ctx) {
     ctx.emit({ action: 'start', target: 'hello' });

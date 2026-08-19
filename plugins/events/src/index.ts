@@ -48,6 +48,7 @@ const eventsPlugin: Plugin = {
     version: '0.1.0',
     name: '事件总线插件',
     description: '把事件总线能力暴露为服务：发布 / 订阅 / 查询历史',
+    provides: ['events'],
     config: { buffer: 500 },
     tier: 'core',
   },

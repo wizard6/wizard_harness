@@ -48,6 +48,7 @@ const loggerPlugin: Plugin = {
     version: '0.1.0',
     name: '日志插件',
     description: '提供 logger 服务：写日志文件并广播观测事件',
+    provides: ['logger'],
     config: { level: 'info', file: 'docs/logs/app.log' },
     tier: 'core',
   },

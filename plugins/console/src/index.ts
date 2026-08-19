@@ -53,6 +53,7 @@ const consolePlugin: Plugin = {
     version: '0.1.0',
     name: '控制台插件',
     description: '提供 shell 命令执行服务（exec）与弹窗控制台',
+    provides: ['console'],
     config: { timeoutMs: 15000 },
     tier: 'core',
     trusted: true,
