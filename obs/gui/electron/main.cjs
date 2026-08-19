@@ -130,12 +130,25 @@ async function init() {
  * - POST /call          { service, method, args } → 事件化调用服务（壳视角）
  * - POST /publish       { action, target?, payload? } → 向总线发布一条事件
  * - GET  /events/stream SSE → 订阅总线事件流（跨进程观测/转发）
+ * 安全基线：默认仅监听 127.0.0.1（WH_GATEWAY_HOST 可显式放开）；
+ * 设置 WH_GATEWAY_TOKEN 后所有请求需带 X-WH-Token 头（跨网络/远程场景）。
  * 端口默认 8790（避开 obs:api 的 8787），可用 WH_GATEWAY_PORT 覆盖。
  */
 function startGateway() {
   const http = require('node:http');
   const port = Number(process.env.WH_GATEWAY_PORT ?? 8790);
+  const host = process.env.WH_GATEWAY_HOST ?? '127.0.0.1';
+  const token = process.env.WH_GATEWAY_TOKEN ?? '';
   const server = http.createServer(async (req, res) => {
+    // 鉴权：设置 token 后校验请求头，避免局域网任意请求触达
+    if (token) {
+      const got = req.headers['x-wh-token'];
+      if (got !== token) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: '未授权（缺少或错误的 X-WH-Token）' }));
+        return;
+      }
+    }
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
     if (req.method === 'GET' && url.pathname === '/events/stream') {
@@ -199,8 +212,10 @@ function startGateway() {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: false, error: 'not found' }));
   });
-  server.listen(port, () => {
-    console.log(`[gateway] 跨进程事件网关 http://localhost:${port}（/call /publish /events/stream）`);
+  server.listen(port, host, () => {
+    console.log(
+      `[gateway] 跨进程事件网关 http://${host}:${port}（/call /publish /events/stream${token ? '，已启用 token 鉴权' : ''}）`,
+    );
   });
 }
 
@@ -227,6 +242,8 @@ function openPluginWindow(id) {
   const plugin = plugins.find((p) => p.manifest.id === id);
   if (!plugin || !plugin.ui) return;
   const title = plugin.ui.title || plugin.manifest.id;
+  // 安全：仅 trusted 插件的弹窗注入 execCommand（任意命令执行能力）；其余插件只给低风险的事件历史
+  const preload = plugin.manifest.trusted ? 'preload-console.cjs' : 'preload-safe.cjs';
   const popup = new BrowserWindow(
     glassOptions({
       width: plugin.ui.width || 360,
@@ -235,7 +252,7 @@ function openPluginWindow(id) {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: path.join(__dirname, 'preload-console.cjs'),
+        preload: path.join(__dirname, preload),
       },
     }),
   );

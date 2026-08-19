@@ -51,7 +51,7 @@ export async function assembleRuntime(
 ): Promise<AssembleRuntimeResult> {
   const { bus, config = {}, name = 'wizard-harness', pluginsDir } = opts;
 
-  const harness = createHarness({ bus, config, name });
+  const harness = createHarness({ bus, config, name, pluginsDir });
 
   // dep-missing 警告落地（骨架修复确认稿第 3 条）：register 阶段 emit，壳侧转可读警告
   bus.subscribe((e: PluginEvent) => {

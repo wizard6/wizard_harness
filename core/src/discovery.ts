@@ -14,6 +14,8 @@ export interface DiscoverOptions {
   skipPrefix?: string;
   /** 加载插件模块的实现（默认加载 <dir>/<name>/dist/index.js；测试可注入） */
   load?: (dirName: string, distPath: string) => Promise<unknown>;
+  /** 绕过 ESM 模块缓存（热重载用）：import URL 追加 ?t=<ms> */
+  cacheBust?: boolean;
 }
 
 const isPluginPackage = (pkg: Record<string, unknown>): boolean =>
@@ -33,7 +35,13 @@ export async function discoverPlugins(
   opts: DiscoverOptions = {},
 ): Promise<DiscoverResult> {
   const skipPrefix = opts.skipPrefix ?? '_';
-  const load = opts.load ?? ((_name: string, distPath: string) => import(pathToFileURL(distPath).href));
+  let bustSeq = 0;
+  const load =
+    opts.load ??
+    ((_name: string, distPath: string) =>
+      import(
+        pathToFileURL(distPath).href + (opts.cacheBust ? `?t=${Date.now()}-${++bustSeq}` : '')
+      ));
   const warnings: string[] = [];
   const plugins: Plugin[] = [];
 

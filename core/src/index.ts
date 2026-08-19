@@ -37,6 +37,7 @@ export type {
   ProvidedEntry,
   RegisterOptions,
   RegisteredPlugin,
+  ReloadResult,
   Registrar,
   ServiceAccess,
   ServiceBinding,

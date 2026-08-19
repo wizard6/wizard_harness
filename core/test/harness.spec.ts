@@ -404,4 +404,87 @@ describe('createHarness', () => {
     await expect(consumerCtx!.call('ghost', 'x')).rejects.toThrow('服务不可用');
     await expect(consumerCtx!.call('s1', 'hang', undefined, { timeoutMs: 100 })).rejects.toThrow('超时');
   });
+
+  it('热重载：新 api 生效、onStop 执行、其它插件不受影响、服务替换', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    let stopCalls = 0;
+    const oldVersion: Plugin = {
+      manifest: { id: 'hot', version: '1.0.0', provides: ['hot'] },
+      api: { greet: () => 'old' },
+      async register() {},
+      async onStop() {
+        stopCalls += 1;
+      },
+    };
+    const bystander: Plugin = {
+      manifest: { id: 'bystander', version: '1.0.0' },
+      async register() {},
+    };
+    await harness.registry.register(oldVersion);
+    await harness.registry.register(bystander);
+
+    const newVersion: Plugin = {
+      manifest: { id: 'hot', version: '2.0.0', provides: ['hot'] },
+      api: { greet: () => 'new' },
+      async register() {},
+    };
+    const result = await harness.registry.reload('hot', newVersion);
+
+    expect(stopCalls).toBe(1); // 旧插件 onStop 执行
+    expect(result.replaced.version).toBe('1.0.0');
+    // 新 api 生效（事件化调用走新实现）
+    const svc = harness.services.get<{ greet: () => string }>('hot');
+    expect(svc?.greet()).toBe('new');
+    // 其它插件不受影响
+    expect(harness.registry.has('bystander')).toBe(true);
+    expect(harness.registry.has('hot')).toBe(true);
+  });
+
+  it('热重载：不存在抛错、id 不一致抛错、级联卸载依赖方', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const provider: Plugin = {
+      manifest: { id: 'p', version: '1.0.0', provides: ['svc'] },
+      api: { ok: () => 1 },
+      async register() {},
+    };
+    const consumer: Plugin = {
+      manifest: { id: 'c', version: '1.0.0', inject: { svc: true } },
+      async register() {},
+    };
+    await harness.registry.register(provider);
+    await harness.registry.register(consumer);
+    // 不存在
+    await expect(harness.registry.reload('ghost', provider)).rejects.toThrow();
+    // id 不一致
+    const wrong: Plugin = { manifest: { id: 'other', version: '1.0.0' }, async register() {} };
+    await expect(harness.registry.reload('p', wrong)).rejects.toThrow('id 不一致');
+    // 正常 reload：级联卸载依赖方 c
+    const next: Plugin = { manifest: { id: 'p', version: '2.0.0', provides: ['svc'] }, api: { ok: () => 2 }, async register() {} };
+    const r = await harness.registry.reload('p', next);
+    expect(r.cascaded).toContain('c');
+    expect(harness.registry.has('c')).toBe(false);
+    expect(harness.registry.has('p')).toBe(true);
+  });
+
+  it('热重载：新插件 onStart 失败时回滚旧版本', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const oldVersion: Plugin = {
+      manifest: { id: 'rollback', version: '1.0.0', provides: ['rb'] },
+      api: { v: () => 'v1' },
+      async register() {},
+    };
+    await harness.registry.register(oldVersion);
+    const broken: Plugin = {
+      manifest: { id: 'rollback', version: '2.0.0', provides: ['rb'] },
+      api: { v: () => 'v2' },
+      async register() {},
+      async onStart() {
+        throw new Error('start exploded');
+      },
+    };
+    await expect(harness.registry.reload('rollback', broken)).rejects.toThrow('回滚');
+    // 旧版本被重新注册，服务仍可用
+    expect(harness.registry.has('rollback')).toBe(true);
+    expect(harness.services.get<{ v: () => string }>('rb')?.v()).toBe('v1');
+  });
 });

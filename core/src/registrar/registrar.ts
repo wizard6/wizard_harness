@@ -9,6 +9,7 @@ import type {
   RegisterOptions,
   RegisteredPlugin,
   Registrar,
+  ReloadResult,
   ServiceAccess,
   ServiceBinding,
   ServiceLifetime,
@@ -479,7 +480,14 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       );
     }
     const ctx = makeContext(plugin);
-    await plugin.register(ctx);
+    try {
+      await plugin.register(ctx);
+    } catch (err) {
+      // register 抛错：撤销已注册的副作用，避免 effects 残留
+      runDisposers(effects.get(plugin.manifest.id) ?? [], plugin.manifest.id);
+      effects.delete(plugin.manifest.id);
+      throw err;
+    }
     registry.set(plugin.manifest.id, plugin);
     contexts.set(plugin.manifest.id, ctx);
     requiredInject.set(
@@ -551,6 +559,17 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
 
     // Cordis：必选服务消失 → 依赖方一并卸载
     if (opts.cascading === false) return;
+    const victims = cascadeVictims(id, provided);
+    for (const vid of victims) {
+      if (registry.has(vid)) {
+        emit('inject-cascade', vid, { because: id, services: provided });
+        await unregister(vid);
+      }
+    }
+  }
+
+  /** 计算：卸载提供方 id 后，哪些插件因必选服务消失而应被级联卸载 */
+  function cascadeVictims(removedId: string, provided: string[]): string[] {
     const victims: string[] = [];
     for (const [pid, names] of requiredInject) {
       const broken = names.filter((n) => {
@@ -560,12 +579,56 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       });
       if (broken.length > 0) victims.push(pid);
     }
+    return victims;
+  }
+
+  /**
+   * 热重载：卸载旧插件（含级联依赖方）→ 注册新插件。
+   * next 必须与旧插件 id 一致。旧服务订阅器/绑定随卸载摘除，事件化调用自动走新实现。
+   */
+  async function reload(id: string, next: Plugin): Promise<ReloadResult> {
+    const old = registry.get(id);
+    if (!old) throw new PluginNotFoundError(id);
+    if (next.manifest.id !== id) {
+      throw new InvalidPluginError(`reload 插件 id 不一致：${next.manifest.id} !== ${id}`);
+    }
+    // 预检新插件（validate + 必选 inject），尽量在卸载前失败，减少回滚场景
+    validateManifest(next);
+    const missingNext = missingRequiredInject(next);
+    if (missingNext.length > 0) {
+      throw new InvalidPluginError(`reload 新插件 inject 未就绪（${id}）：缺少 ${missingNext.join(', ')}`);
+    }
+    const provided = normalizeProvides(old).map((e) => e.name);
+    const fromVersion = old.manifest.version;
+
+    // 卸载旧插件（级联手动处理，保持 reload 返回的级联列表可观测）
+    await unregister(id, { cascading: false });
+    // 级联计算需在卸载后（提供方绑定已摘除，服务缺失才成立）
+    const victims = cascadeVictims(id, provided);
     for (const vid of victims) {
       if (registry.has(vid)) {
         emit('inject-cascade', vid, { because: id, services: provided });
         await unregister(vid);
       }
     }
+
+    // 注册新插件；失败则回滚旧插件，避免服务图永久残缺
+    let registered: RegisteredPlugin;
+    try {
+      registered = await register(next);
+    } catch (err) {
+      emit('reload-failed', id, { from: fromVersion, error: String(err), cascaded: victims });
+      try {
+        await register(old);
+        throw new Error(`热重载失败（${id}）并已回滚旧版本 ${fromVersion}：${String(err)}`);
+      } catch (rollbackErr) {
+        throw new Error(
+          `热重载失败（${id}）且回滚也失败：${String(err)} / ${String(rollbackErr)}`,
+        );
+      }
+    }
+    emit('reload', id, { from: fromVersion, to: next.manifest.version, cascaded: victims });
+    return { plugin: registered, cascaded: victims, replaced: { id, version: fromVersion } };
   }
 
   function get(id: string): Plugin | undefined {
@@ -593,6 +656,7 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     contextOf,
     call: (service, method, args, opts) => callService('shell', true, service, method, args, opts),
     updateConfig,
+    reload,
     services,
   };
 }

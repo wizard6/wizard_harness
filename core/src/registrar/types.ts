@@ -234,6 +234,15 @@ export interface RegisterOptions {
   deferStart?: boolean;
 }
 
+/** 热重载结果 */
+export interface ReloadResult {
+  plugin: RegisteredPlugin;
+  /** 因级联而被卸载的依赖方插件 id */
+  cascaded: string[];
+  /** 被替换的旧插件信息 */
+  replaced: { id: string; version: string };
+}
+
 /** 注册器接口：登记 / 查找 / 枚举 / 注销 + 服务目录 */
 export interface Registrar {
   register(plugin: Plugin, opts?: RegisterOptions): Promise<RegisteredPlugin>;
@@ -252,6 +261,8 @@ export interface Registrar {
   ): Promise<T>;
   /** 配置热更新：按插件 id 合并补丁，触发该插件 ctx.onConfig 通知（发 config-update 事件） */
   updateConfig(pluginId: string, patch: Record<string, unknown>): void;
+  /** 热重载：卸载旧插件（含级联依赖方）→ 注册新插件（id 必须一致），发 reload 事件 */
+  reload(id: string, next: Plugin): Promise<ReloadResult>;
   /** 服务目录（壳视角：全表） */
   services: ServiceRegistry;
 }
