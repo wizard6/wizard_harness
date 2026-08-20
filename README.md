@@ -54,6 +54,7 @@ obs/plugins/          各插件观测台占位
 plugins/              业务插件包（hello / logger / events / console）
 docs/confirmed/       人类确认意图
 docs/项目体检.md      源码核对清单（2026-08-19）
+docs/cordis-服务与事件.md   cordis 通信模型问答整理（服务=直接调用 / 事件=广播 + 本仓库差异要点）
 docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直接打开）
 ```
 
