@@ -66,14 +66,17 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
     <span className={`qp-badge qp-b-${status}`}>{STATUS_TEXT[status]}</span>
   );
 
-  const issues = (r: QualityRow): React.ReactElement =>
-    r.lastIssues.length > 0 ? (
+  const issues = (r: QualityRow): React.ReactElement => {
+    // 新增/无记录：没有"上次检查"，显示占位而不是误导性的"通过"
+    if (r.status === 'added' || !r.lastHash) return <span className="qp-dim">—</span>;
+    return r.lastIssues.length > 0 ? (
       <span className="qp-badge qp-b-modified" title={r.lastIssues.join('\n')}>
         ⚠ {r.lastIssues.length} 项
       </span>
     ) : (
       <span className="qp-badge qp-b-unchanged">✓ 通过</span>
     );
+  };
 
   return (
     <div className="qp">

@@ -170,9 +170,11 @@ function renderHtml(rows: Row[], state: LastState, now: string): string {
   const data = JSON.parse(document.getElementById('hash-data').textContent);
   const statusText = { unchanged: '未修改', modified: '已修改', added: '新增', removed: '删除' };
   const short = (h) => (h ? h.slice(0, 8) + '…' : '—');
-  const okIssues = (r) => r.lastIssues && r.lastIssues.length
-    ? '<span class="badge b-modified" title="' + r.lastIssues.join('\n') + '">⚠ ' + r.lastIssues.length + ' 项</span>'
-    : '<span class="badge b-unchanged">✓ 通过</span>';
+  const okIssues = (r) => r.status === 'added' || !r.lastHash
+    ? '<span class="dim">—</span>'
+    : (r.lastIssues && r.lastIssues.length
+        ? '<span class="badge b-modified" title="' + r.lastIssues.join('\n') + '">⚠ ' + r.lastIssues.length + ' 项</span>'
+        : '<span class="badge b-unchanged">✓ 通过</span>');
 
   document.getElementById('genAt').textContent = data.generatedAt;
   document.getElementById('baseAt').textContent = data.baseAt || '（无记录，全部视为新增）';
