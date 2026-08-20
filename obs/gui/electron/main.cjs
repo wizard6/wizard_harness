@@ -1,6 +1,7 @@
 // wizard-harness GUI 桌面壳 · Electron 主进程
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell } = require('electron');
 const crypto = require('node:crypto');
+const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { mkdirSync, readFileSync, readdirSync, existsSync } = require('node:fs');
 
@@ -77,9 +78,15 @@ function computeQualityData() {
     }
   }
   const count = (s) => rows.filter((r) => r.status === s).length;
+  let aiAt = null;
+  for (const prev of Object.values(state.files ?? {})) {
+    const t = prev?.aiCheckedAt;
+    if (typeof t === 'string' && t && (!aiAt || t > aiAt)) aiAt = t;
+  }
   return {
     generatedAt: new Date().toISOString(),
     baseAt: state.global?.typecheck?.at ?? null,
+    aiAt,
     counts: {
       total: rows.length,
       unchanged: count('unchanged'),
@@ -97,15 +104,30 @@ function setupMenu() {
   Menu.setApplicationMenu(null);
 }
 
+/** Electron 自带图标（exe 提取），托盘与窗口共用 */
+let appIcon = null;
+let trayIcon = null;
+async function loadElectronIcons() {
+  try {
+    appIcon = await app.getFileIcon(process.execPath, { size: 'large' });
+    trayIcon = await app.getFileIcon(process.execPath, { size: 'small' });
+  } catch {
+    appIcon = nativeImage.createFromPath(process.execPath);
+    trayIcon = appIcon;
+  }
+}
+
 function glassOptions(extra) {
   return {
     show: false,
     frame: false,
+    maximizable: false,
     // 深色主题底：不用系统亚克力透桌面，避免背景被洗浅
     backgroundColor: '#16161e',
     roundedCorners: true,
     thickFrame: true,
     hasShadow: true,
+    ...(appIcon && !appIcon.isEmpty() ? { icon: appIcon } : {}),
     ...extra,
   };
 }
@@ -119,7 +141,7 @@ const PLUGIN_CHROME_CSS = `
   body { padding-top: 38px !important; }
   #wh-titlebar {
     position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 99999;
-    display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    display: flex; align-items: center; gap: 10px; padding: 0 0 0 12px;
     background: rgba(22,22,30,.88);
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
@@ -129,15 +151,20 @@ const PLUGIN_CHROME_CSS = `
     border-top-right-radius: 12px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     color: #e6e6ef;
+    overflow: hidden;
   }
-  #wh-titlebar .traffic { display: flex; gap: 8px; margin-left: auto; -webkit-app-region: no-drag; }
-  #wh-titlebar .tl-btn {
-    width: 12px; height: 12px; border-radius: 50%; border: none; padding: 0; cursor: default;
-    box-shadow: 0 0 0 0.5px rgba(0,0,0,.28);
+  #wh-titlebar .win-caption { display: flex; align-items: stretch; margin-left: auto; height: 38px; -webkit-app-region: no-drag; }
+  #wh-titlebar .win-caption button {
+    width: 46px; height: 38px; border: none; padding: 0; cursor: default;
+    background: transparent; color: #d7d7e0;
+    display: flex; align-items: center; justify-content: center;
   }
-  #wh-titlebar .tl-close { background: #ff5f57; }
-  #wh-titlebar .tl-min { background: #febc2e; }
-  #wh-titlebar .tl-max { background: #28c840; }
+  #wh-titlebar .win-caption button:hover { color: #fff; }
+  #wh-titlebar .wc-min:hover { background: rgba(255,255,255,.08); }
+  #wh-titlebar .wc-close:hover { background: #e81123; }
+  #wh-titlebar .wc-min:active { background: rgba(255,255,255,.14); }
+  #wh-titlebar .wc-close:active { background: #c50f1f; }
+  #wh-titlebar .win-caption svg { width: 10px; height: 10px; display: block; }
   #wh-titlebar .title {
     flex: 1; text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
     pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -163,10 +190,13 @@ function injectPluginChrome(win, title) {
       if (document.getElementById('wh-titlebar')) return;
       const bar = document.createElement('div');
       bar.id = 'wh-titlebar';
-      bar.innerHTML = '<div class="title"></div><div class="traffic">'
-        + '<button type="button" class="tl-btn tl-close" data-act="close" title="关闭"></button>'
-        + '<button type="button" class="tl-btn tl-min" data-act="min" title="最小化"></button>'
-        + '<button type="button" class="tl-btn tl-max" data-act="max" title="最大化"></button>'
+      bar.innerHTML = '<div class="title"></div><div class="win-caption">'
+        + '<button type="button" class="wc-min" data-act="min" title="最小化">'
+        + '<svg viewBox="0 0 10 10" aria-hidden="true"><rect y="4.5" width="10" height="1" fill="currentColor"/></svg>'
+        + '</button>'
+        + '<button type="button" class="wc-close" data-act="close" title="关闭">'
+        + '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8" stroke="currentColor" stroke-width="1.15"/></svg>'
+        + '</button>'
         + '</div>';
       bar.querySelector('.title').textContent = ${safeTitle};
       bar.querySelectorAll('[data-act]').forEach((btn) => {
@@ -187,6 +217,7 @@ let registrar;
 let bus;
 const events = [];
 let plugins = [];
+let composition;
 
 async function init() {
   core = await import('@wizard-harness/core');
@@ -206,9 +237,21 @@ async function init() {
 
   // 壳配置：不想启动的插件 id 写进 disabledPlugins
   const config = { disabledPlugins: [] };
-  // 运行时壳装配：createHarness → discover → 过滤 → boot（含 dep-missing 警告）
   const pluginsDir = path.resolve(__dirname, '..', '..', '..', 'plugins');
-  const rt = await core.assembleRuntime({ bus, config, name: 'wizard-harness', pluginsDir });
+  const profileDir = core.resolveProfileDir(process.env.WH_PROFILE, REPO_ROOT);
+  const rt = await core.assembleRuntime({
+    bus,
+    config,
+    name: 'wizard-harness',
+    pluginsDir,
+    ...(profileDir
+      ? {
+          profileDir,
+          bundlesDir: path.join(REPO_ROOT, 'bundles'),
+          homeDir: core.resolveHomeDir(),
+        }
+      : {}),
+  });
   for (const w of rt.warnings) console.warn('[discovery]', w);
   for (const s of rt.skipped) console.warn('[boot] skipped', s.id, `(${s.reason})`);
   for (const p of rt.pending) {
@@ -217,6 +260,7 @@ async function init() {
   harness = rt.harness;
   registrar = harness.registry;
   plugins = rt.plugins;
+  composition = rt.composition;
 
   // 冒烟：通过服务目录调用 logger 服务
   const logger = harness.services.get('logger');
@@ -324,9 +368,9 @@ function createWindow(view = 'registry') {
   const isQuality = view === 'quality';
   const win = new BrowserWindow(
     glassOptions({
-      width: isQuality ? 940 : 960,
-      height: 680,
-      minWidth: 720,
+      width: isQuality ? 1180 : 960,
+      height: 720,
+      minWidth: isQuality ? 900 : 720,
       minHeight: 480,
       title: isQuality ? 'wizard-harness · 质量检测' : 'wizard-harness · 观测台',
       webPreferences: {
@@ -369,6 +413,7 @@ ipcMain.handle('wh:get-state', () => ({
   events: events.slice(-100),
   // 系统级全局配置（createHarness 传入）
   config: harness ? harness.config : {},
+  composition: composition ?? null,
   plugins: plugins.map((p) => {
     const ctx = harness ? harness.pluginContext(p.manifest.id) : undefined;
     return {
@@ -425,6 +470,76 @@ ipcMain.handle('wh:events-history', () => events.slice(-500));
 // 质量检测通道：实时计算文件较上次质检的修改状态（主进程实时算，无缓存）
 ipcMain.handle('wh:quality-data', () => computeQualityData());
 
+/** 仓库内相对路径 → 绝对路径；拒绝越界 */
+function resolveRepoFile(rel) {
+  if (typeof rel !== 'string' || !rel || rel.includes('\0') || rel.includes('..')) return null;
+  const abs = path.resolve(REPO_ROOT, rel.replace(/[/\\]+/g, path.sep));
+  const relative = path.relative(path.resolve(REPO_ROOT), abs);
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return null;
+  return abs;
+}
+
+function spawnEditor(cmd, abs) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, [abs], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+      shell: process.platform === 'win32',
+    });
+    child.once('error', reject);
+    child.once('spawn', () => {
+      child.unref();
+      resolve();
+    });
+  });
+}
+
+ipcMain.handle('wh:open-file', async (_evt, rel) => {
+  const abs = resolveRepoFile(rel);
+  if (!abs) return { ok: false, error: '非法路径' };
+  if (!existsSync(abs)) return { ok: false, error: '文件不存在' };
+  for (const cmd of ['cursor', 'code']) {
+    try {
+      await spawnEditor(cmd, abs);
+      return { ok: true };
+    } catch {
+      // 尝试下一个编辑器
+    }
+  }
+  const msg = await shell.openPath(abs);
+  return msg ? { ok: false, error: msg } : { ok: true };
+});
+
+/** 执行启发式重查：子进程跑 quality-check --check-only（复用同一套检查规则），写状态并返回最新数据 */
+function runHeuristicCheck() {
+  return new Promise((resolve) => {
+    const child = spawn('node', ['--import', 'tsx', 'scripts/quality-check.ts', '--check-only'], {
+      cwd: REPO_ROOT,
+      windowsHide: true,
+    });
+    let out = '';
+    child.stdout.on('data', (d) => (out += String(d)));
+    child.stderr.on('data', (d) => process.stderr.write(`[quality-check] ${d}`));
+    child.on('error', (err) => resolve({ error: String(err) }));
+    child.on('close', (code) => {
+      if (code !== 0) {
+        resolve({ error: `基线扫描退出码 ${code}` });
+        return;
+      }
+      try {
+        JSON.parse(out);
+      } catch {
+        resolve({ error: '基线扫描输出解析失败' });
+        return;
+      }
+      // 扫描只改启发式基线；展示统一走 computeQualityData，避免 AI 维度被误算
+      resolve(computeQualityData());
+    });
+  });
+}
+ipcMain.handle('wh:rerun-check', () => runHeuristicCheck());
+
 ipcMain.on('wh:window-control', (event, action) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win || win.isDestroyed()) return;
@@ -435,6 +550,7 @@ ipcMain.on('wh:window-control', (event, action) => {
 
 app.whenReady().then(async () => {
   setupMenu();
+  await loadElectronIcons();
   await init();
   // 启动只开注册表窗口；质量检测按需打开（winbar 按钮 / 托盘 / IPC）
   openRegistryWindow();
@@ -470,14 +586,11 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
-/** 托盘图标：16×16 主题绿圆点（base64 内嵌，免资源文件） */
-const TRAY_ICON_B64 =
-  'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAM0lEQVR4nGOoe97OQAmmSDM+A/7jwAQNwKURp0FUNYBYzSiGjBpAZQMGPh1QJSnTPzcCAMUoZ6NHHjMDAAAAAElFTkSuQmCC';
-
 /** 系统托盘：常驻后台 + 快捷菜单（观测台 / 质量检测 / 退出） */
 let tray = null;
 function setupTray() {
-  tray = new Tray(nativeImage.createFromDataURL('data:image/png;base64,' + TRAY_ICON_B64));
+  const icon = trayIcon && !trayIcon.isEmpty() ? trayIcon : nativeImage.createFromPath(process.execPath);
+  tray = new Tray(icon);
   tray.setToolTip('wizard-harness · 观测台');
   tray.setContextMenu(
     Menu.buildFromTemplate([

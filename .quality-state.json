@@ -79,9 +79,9 @@
       "aiIssues": []
     },
     "core/src/index.ts": {
-      "hash": "c7b45c7756fc87083b4bf51d40f2f5f9a1783dc5cf93636ef5fd063abfdaa152",
+      "hash": "518bd652d3634498b640d4f60a0607078320841ba711ee725ac6ac758b234e78",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "c7b45c7756fc87083b4bf51d40f2f5f9a1783dc5cf93636ef5fd063abfdaa152",
       "aiIssues": []
     },
@@ -122,16 +122,16 @@
       "aiIssues": []
     },
     "core/src/shell.ts": {
-      "hash": "34cad5d82d4a181ab1f6e61c2069a257fafb09f4f8f49b8820ae96f5958c5219",
+      "hash": "1492ccb302c9c23ed4d45a586d1f9c2565caa3ad399c9ca9a573732d1f23fe5e",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "34cad5d82d4a181ab1f6e61c2069a257fafb09f4f8f49b8820ae96f5958c5219",
       "aiIssues": []
     },
     "obs/api/src/main.ts": {
-      "hash": "154e04f313cbbaf4c5dbd15c0397085efab86fd1bded412f131c68347dc3552f",
+      "hash": "3f78e27ddfade9790bb77977d7b6912f94d66cf238f9ce7acd499191a735011b",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "154e04f313cbbaf4c5dbd15c0397085efab86fd1bded412f131c68347dc3552f",
       "aiIssues": []
     },
@@ -143,9 +143,9 @@
       "aiIssues": []
     },
     "obs/core/src/gui.tsx": {
-      "hash": "a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e",
+      "hash": "06f6625ee614fea8c943cbbfb2a5c2c1dcb481bfb089c92973a5b3211c43263a",
       "issues": [],
-      "checkedAt": "2026-08-20T02:52:41.879Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e",
       "aiIssues": []
     },
@@ -164,16 +164,16 @@
       "aiIssues": []
     },
     "obs/gui/src/TrafficLights.tsx": {
-      "hash": "3b4b47ac22790303dab9fc8f52b1322da9ba66a1a48cb31068ded28d5ab82ad1",
+      "hash": "acfe0e41cb75df6a9c38e86b304e6bc70385baed584b9dbf46d9ffe4ab3beb5b",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z",
+      "checkedAt": "2026-08-20T05:37:08.223Z",
       "aiHash": "3b4b47ac22790303dab9fc8f52b1322da9ba66a1a48cb31068ded28d5ab82ad1",
       "aiIssues": []
     },
     "obs/gui/src/renderer.tsx": {
-      "hash": "16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775",
+      "hash": "ae7a590cbbbb732e679b6a5b98bef44f2eb218e5424bd6940ed08098c36c5e1b",
       "issues": [],
-      "checkedAt": "2026-08-20T02:52:41.879Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775",
       "aiIssues": []
     },
@@ -248,9 +248,9 @@
       "aiIssues": []
     },
     "obs/api/src/handlers.ts": {
-      "hash": "08d97153daf3b76371b9eeb64431e57f840a28fdba1bf879dac40e2e6a6a1f0a",
+      "hash": "b647f04e187915fa64eb0b33085c8abbce8b8a723980563147dddaf78968070b",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z",
+      "checkedAt": "2026-08-20T08:03:20.038Z",
       "aiHash": "08d97153daf3b76371b9eeb64431e57f840a28fdba1bf879dac40e2e6a6a1f0a",
       "aiIssues": []
     },
@@ -269,23 +269,58 @@
       "aiIssues": []
     },
     "obs/core/src/quality.tsx": {
-      "hash": "f808c30fb7eb9947dbff0f65495f4cbf9057c2a7a1608e71c1ca743c51f9fe47",
+      "hash": "d7ef591142f35cae57668b53ebca15f0ba353afa5bcbab37daeddb6f174f1ea8",
+      "issues": [
+        "文件过大 748 行 > 600（除非特殊）",
+        "顶层声明过多 13 个 > 10，职责过多，考虑拆分",
+        "顶层函数 QualityPanel 过大（563 行 > 300），低内聚/职责过多，考虑拆分"
+      ],
+      "checkedAt": "2026-08-20T06:12:44.268Z",
+      "aiHash": "a2a773cadd1d520546bea049fdccfbcb5094df14fd6102f150a72bb8fca58598",
+      "aiIssues": [
+        "智能对照时间误用 generatedAt（每次刷新的当前时刻），QualityData 未下发 aiCheckedAt，无法表示智能评审基准",
+        "hashChanged 把无基准文件（新增/未评审）判为未变化，指纹筛选「未变化」会混入从未对照过的文件",
+        "review() 与 reviewKind() 双份实现，评审列徽章与表头筛选口径会漂移",
+        "表头状态下拉计数来自全量 rows，目录树计数来自已筛选集，数量口径不一致"
+      ],
+      "aiCheckedAt": "2026-08-20T06:04:38.779Z"
+    },
+    "core/src/test.ts": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "issues": [],
-      "checkedAt": "2026-08-20T02:52:41.879Z",
-      "aiHash": "f808c30fb7eb9947dbff0f65495f4cbf9057c2a7a1608e71c1ca743c51f9fe47",
-      "aiIssues": []
+      "checkedAt": "2026-08-20T03:28:09.178Z"
+    },
+    "core/src/profile/index.ts": {
+      "hash": "9003500237a95ec8755fcdad95551f4e5ffb1c30814e59bbcae454ce58e384e2",
+      "issues": [],
+      "checkedAt": "2026-08-20T08:03:20.038Z"
+    },
+    "core/src/profile/load.ts": {
+      "hash": "d28bd19c4aac70e005c64dcbb961c827229b82c0387b7da43ab29d8756e2e420",
+      "issues": [],
+      "checkedAt": "2026-08-20T08:03:20.038Z"
+    },
+    "core/src/profile/patch.ts": {
+      "hash": "458bf34e2bb3cd26845c535013a83a2e718a4111824957fe152c3690bcfbc971",
+      "issues": [],
+      "checkedAt": "2026-08-20T08:03:20.038Z"
+    },
+    "core/src/profile/types.ts": {
+      "hash": "bb2886a9b06353a11c241701552c362bd649b661bd1187628f5e8822b3026317",
+      "issues": [],
+      "checkedAt": "2026-08-20T08:03:20.038Z"
     }
   },
   "global": {
     "typecheck": {
       "status": "pass",
       "failed": [],
-      "at": "2026-08-20T02:52:41.879Z"
+      "at": "2026-08-20T08:03:20.038Z"
     },
     "test": {
       "status": "pass",
-      "summary": "Test Files 14 passed | Tests 98 passed",
-      "at": "2026-08-20T02:52:41.879Z"
+      "summary": "Test Files 15 passed | Tests 106 passed",
+      "at": "2026-08-20T08:03:20.038Z"
     }
   },
   "rulesVersion": 7

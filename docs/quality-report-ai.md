@@ -1,8 +1,8 @@
 # 质量检测报告（AI 版）
 
-- 时间：2026-08-20T02:52:41.879Z
+- 时间：2026-08-20T02:57:38.907Z
 - 范围：39 个源码文件（core/contracts/plugins/obs）
-- 增量：修改 4，重查 4，复用 35；全局门禁：已重跑
+- 增量：修改 0，重查 0，复用 39；全局门禁：复用上次结果（无修改）
 
 ## 全局门禁
 - typecheck：✅ 通过
@@ -34,12 +34,12 @@
 - obs/api/src/handlers.ts（187 行）sha256=08d97153daf3b76371b9eeb64431e57f840a28fdba1bf879dac40e2e6a6a1f0a [未修改]
 - obs/api/src/main.ts（113 行）sha256=154e04f313cbbaf4c5dbd15c0397085efab86fd1bded412f131c68347dc3552f [未修改]
 - obs/cli/src/main.ts（86 行）sha256=e372020ec441b3a98429ef177eaf29c91cb625792b68d1f64afaf0f2de284fda [未修改]
-- obs/core/src/gui.tsx（561 行）sha256=a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e [已修改]
-- obs/core/src/index.ts（6 行）sha256=cf587183416b291728148890b79da0f4e98148da7e8b716ffeb639f668618031 [已修改]
-- obs/core/src/quality.tsx（257 行）sha256=f808c30fb7eb9947dbff0f65495f4cbf9057c2a7a1608e71c1ca743c51f9fe47 [已修改]
+- obs/core/src/gui.tsx（561 行）sha256=a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e [未修改]
+- obs/core/src/index.ts（6 行）sha256=cf587183416b291728148890b79da0f4e98148da7e8b716ffeb639f668618031 [未修改]
+- obs/core/src/quality.tsx（257 行）sha256=f808c30fb7eb9947dbff0f65495f4cbf9057c2a7a1608e71c1ca743c51f9fe47 [未修改]
 - obs/core/src/spec.ts（22 行）sha256=5859abb0c5a45971e0b8aa155446654dfe53c3f5a76ca2d2690ab142de9d9d2e [未修改]
 - obs/gui/src/TrafficLights.tsx（43 行）sha256=3b4b47ac22790303dab9fc8f52b1322da9ba66a1a48cb31068ded28d5ab82ad1 [未修改]
-- obs/gui/src/renderer.tsx（155 行）sha256=16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775 [已修改]
+- obs/gui/src/renderer.tsx（155 行）sha256=16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775 [未修改]
 - obs/gui/views/registry.tsx（12 行）sha256=412d6206bf27f8a434a9208b2a7aab4070b9b20aa7fda1c2ce656d80e29fda0d [未修改]
 - obs/spec/src/index.ts（2 行）sha256=6cc8f512383a353f83046638e82f3478d573b4138edbdb5a352d1e1df6b64f75 [未修改]
 - obs/spec/src/spec.ts（19 行）sha256=0b21da94424bee9964b0e129eb42c30902aaafa4d0a8816447cf08b8175d94ee [未修改]

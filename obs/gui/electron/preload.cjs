@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('wh', {
   unregisterPlugin: (id) => ipcRenderer.invoke('wh:unregister-plugin', id),
   openQuality: () => ipcRenderer.invoke('wh:open-quality'),
   qualityData: () => ipcRenderer.invoke('wh:quality-data'),
+  rerunCheck: () => ipcRenderer.invoke('wh:rerun-check'),
+  openFile: (rel) => ipcRenderer.invoke('wh:open-file', rel),
   windowControl: (action) => ipcRenderer.send('wh:window-control', action),
 });

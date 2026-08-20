@@ -200,6 +200,10 @@ interface FileResult {
   lines: number;
   hash: string;
   issues: string[];
+  /** 启发式修改状态（相对上次记录 hash） */
+  status: 'unchanged' | 'modified' | 'added';
+  /** 上次记录 hash（写状态前） */
+  prevHash: string;
   /** AI 评审基准 hash */
   aiHash: string;
   /** AI 评审结论 */
@@ -214,6 +218,8 @@ function main(): void {
   const files = collectFiles();
   const state = loadState();
   const now = new Date().toISOString();
+  // --check-only：只做启发式结构检查并更新状态，输出 JSON（GUI"重新检查"按钮经主进程调用）
+  const checkOnly = process.argv.includes('--check-only');
 
   // --stale 模式：只对比 hash，输出"自上次质检以来修改/新增/删除的文件"，不跑检查、不更新状态
   if (process.argv.includes('--stale')) {
@@ -257,6 +263,8 @@ function main(): void {
         lines: content.split('\n').length,
         hash,
         issues: prev.issues ?? [],
+        status: 'unchanged',
+        prevHash: prev.hash,
         aiHash: prev.aiHash ?? hash,
         aiIssues: prev.aiIssues ?? [],
         aiChanged,
@@ -271,6 +279,8 @@ function main(): void {
         lines: content.split('\n').length,
         hash,
         issues,
+        status: modified ? 'modified' : !prev ? 'added' : 'unchanged',
+        prevHash: prev?.hash ?? '',
         aiHash: prev?.aiHash ?? hash,
         aiIssues: prev?.aiIssues ?? [],
         aiChanged,
@@ -279,15 +289,14 @@ function main(): void {
       });
       recheckedCount++;
       if (modified) modifiedCount++;
-      // 写回：保留 AI 维度字段（AI 基准只在 quality:ai 评审时更新）
-      state.files[rel] = {
-        hash,
-        issues,
-        checkedAt: now,
-        aiHash: prev?.aiHash ?? hash,
-        aiIssues: prev?.aiIssues ?? [],
-        aiCheckedAt: prev?.aiCheckedAt,
-      };
+      // 基线扫描只更新启发式字段；AI 维度仅 quality:ai 可写，此处原样保留
+      const next: FileState = { hash, issues, checkedAt: now };
+      if (prev?.aiHash) {
+        next.aiHash = prev.aiHash;
+        next.aiIssues = prev.aiIssues ?? [];
+        if (prev.aiCheckedAt) next.aiCheckedAt = prev.aiCheckedAt;
+      }
+      state.files[rel] = next;
     }
   }
 
@@ -310,15 +319,23 @@ function main(): void {
     test = state.global.test;
   }
 
-  // AI 基准初始化：历史状态无 aiHash 时补上（基准 = 该文件当前记录的启发式 hash）
-  for (const fs of Object.values(state.files)) {
-    if (!fs.aiHash) {
-      fs.aiHash = fs.hash;
-      fs.aiIssues = fs.aiIssues ?? [];
+  // AI 基准初始化：仅完整 quality 流程；基线扫描（--check-only）不触碰 AI 维度
+  if (!checkOnly) {
+    for (const fs of Object.values(state.files)) {
+      if (!fs.aiHash) {
+        fs.aiHash = fs.hash;
+        fs.aiIssues = fs.aiIssues ?? [];
+      }
     }
   }
   state.rulesVersion = RULES_VERSION;
   writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+
+  // --check-only：写状态后由 GUI 侧 computeQualityData 统一展示；此处仅输出最小确认
+  if (checkOnly) {
+    process.stdout.write(JSON.stringify({ ok: true, generatedAt: now, baseAt: state.global?.typecheck?.at ?? null }));
+    return;
+  }
 
   /* ---------- 报告 ---------- */
 
