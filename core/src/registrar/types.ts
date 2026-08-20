@@ -127,6 +127,12 @@ export interface PluginContext {
   /** 插件观测点：向事件总线发一条插件事件 */
   emit(event: Omit<PluginEvent, 'id' | 'ts' | 'actor'>): void;
   /**
+   * 按事件名（action key）订阅事件：只收到 action 精确匹配的事件（key-based 通信侧）。
+   * 与 events.subscribe（全量观测流）并存：通信用 on，观测用 events.subscribe。
+   * 返回取消订阅函数（幂等）；插件卸载/回滚时自动取消，无需手动清理。
+   */
+  on(action: string, handler: (event: PluginEvent) => void): () => void;
+  /**
    * 可逆副作用（Cordis）：注册一个随插件生命周期自动撤销的副作用。
    * callback 立即同步执行，返回值（若有）为撤销函数；插件卸载时按
    * 注册逆序（LIFO）自动执行全部撤销函数，即使 onStop 抛错也会执行。

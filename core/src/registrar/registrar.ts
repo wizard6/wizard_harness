@@ -74,9 +74,21 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     Set<(next: Readonly<Record<string, unknown>>, prev: Readonly<Record<string, unknown>>, patch: Record<string, unknown>) => void>
   >();
   const history: PluginEvent[] = [];
+  /** 按 action key 路由的插件事件订阅（通信侧）；events.subscribe 是全量观测流 */
+  const actionListeners = new Map<string, Set<(e: PluginEvent) => void>>();
   bus.subscribe((e) => {
     history.push(e);
     if (history.length > historyLimit) history.splice(0, history.length - historyLimit);
+    const set = actionListeners.get(e.action);
+    if (!set || set.size === 0) return;
+    for (const h of [...set]) {
+      try {
+        h(e);
+      } catch (err) {
+        // 单个监听器异常隔离：不打断同 action 的其它监听器
+        console.error(`[registrar] on('${e.action}') 监听器抛错:`, err);
+      }
+    }
   });
 
   function emit(action: string, target?: string, payload?: unknown): void {
@@ -382,6 +394,21 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
           target: event.target,
           payload: event.payload,
         });
+      },
+      on(action, handler) {
+        let set = actionListeners.get(action);
+        if (!set) {
+          set = new Set();
+          actionListeners.set(action, set);
+        }
+        set.add(handler);
+        // 卸载/回滚自动取消：复用 effect 可逆链（LIFO），与手动取消幂等
+        self!.effect(() => () => {
+          set.delete(handler);
+        });
+        return () => {
+          set.delete(handler);
+        };
       },
       effect(callback) {
         let list = effects.get(viewerId);
