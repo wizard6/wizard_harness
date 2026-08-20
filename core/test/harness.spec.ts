@@ -177,6 +177,26 @@ describe('createHarness', () => {
     expect(harness.registry.has('orphan')).toBe(false);
   });
 
+  it('boot：inject 依赖成环时抛错，不静默装配', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const a: Plugin = {
+      manifest: { id: 'a', version: '1.0.0', provides: ['a-svc'] },
+      inject: ['b-svc'],
+      api: { a: () => 'a' },
+      async register() {},
+    };
+    const b: Plugin = {
+      manifest: { id: 'b', version: '1.0.0', provides: ['b-svc'] },
+      inject: ['a-svc'],
+      api: { b: () => 'b' },
+      async register() {},
+    };
+    // 两个插件互相依赖对方提供的服务 → 拓扑排序检测成环
+    await expect(harness.boot([a, b])).rejects.toThrow(/依赖成环/);
+    expect(harness.registry.has('a')).toBe(false);
+    expect(harness.registry.has('b')).toBe(false);
+  });
+
   it('Cordis：卸载提供方时级联卸载 inject 依赖方', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await harness.boot([
