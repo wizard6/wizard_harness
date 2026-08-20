@@ -76,12 +76,6 @@ export function RegistryPanel({
   const active = Math.max(0, reg - unreg);
 
   const css = `
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 8px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
-    ::-webkit-scrollbar-corner { background: transparent; }
-
     .tab, .sub, .search, .panel-btn, .svc-chip, .stat-chip, button {
       -webkit-app-region: no-drag;
     }

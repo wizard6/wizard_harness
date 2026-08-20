@@ -128,6 +128,17 @@ const PLUGIN_CHROME_CSS = `
     flex: 1; text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
     pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* 全局滚动条（与观测窗口一致） */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.14);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  ::-webkit-scrollbar-corner { background: transparent; }
 `;
 
 function injectPluginChrome(win, title) {
