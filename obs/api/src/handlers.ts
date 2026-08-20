@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { queryEvents, readEvents, tailEvents } from '@wizard-harness/core';
-import type { PluginEvent, SystemContext } from '@wizard-harness/core';
+import type { CompositionSnapshot, PluginEvent, SystemContext } from '@wizard-harness/core';
 import { registrySpec } from '@wizard-harness/obs-core';
 
 /** WH_EXPOSE 白名单：{ 服务名: true | string[] } */
@@ -13,6 +13,8 @@ export interface HandlerDeps {
   expose: ExposeMap;
   /** 运行时 harness（加载后才有；未加载时返回 undefined） */
   getHarness(): SystemContext | undefined;
+  /** 当前 profile 组合快照（未使用 profile 时为 undefined） */
+  getComposition?(): CompositionSnapshot | undefined;
 }
 
 export interface ApiHandlers {
@@ -27,7 +29,7 @@ export interface ApiHandlers {
 
 /** 组装各 HTTP 端点处理（依赖经 deps 注入，main.ts 只做路由分发） */
 export function createHandlers(deps: HandlerDeps): ApiHandlers {
-  const { file, expose, getHarness } = deps;
+  const { file, expose, getHarness, getComposition } = deps;
 
   function sendJson(res: ServerResponse, code: number, body: unknown): void {
     res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -136,6 +138,7 @@ export function createHandlers(deps: HandlerDeps): ApiHandlers {
           ? {
               loaded: harness.registry.list().map((p) => p.manifest.id),
               services: harness.services.list(),
+              composition: getComposition?.(),
             }
           : { loaded: [], services: [] },
       });

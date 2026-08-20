@@ -1,0 +1,7 @@
+{
+  "name": "@wizard-harness/bundle-base",
+  "private": true,
+  "wizardHarness": {
+    "bundle": { "patch": "./wizard.patch.json" }
+  }
+}

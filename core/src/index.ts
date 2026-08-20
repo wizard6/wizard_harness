@@ -25,6 +25,26 @@ export type {
   AssembleRuntimeResult,
   RuntimeSkipped,
 } from './shell.js';
+export {
+  PATCH_FILENAME,
+  applyEntryPatches,
+  composeLayers,
+  loadBundle,
+  loadPatchFile,
+  loadProfile,
+  parsePatchList,
+  resolveBundleDir,
+  resolveHomeDir,
+  resolveProfileDir,
+} from './profile/index.js';
+export type {
+  ApplyPatchesResult,
+  CompositionSnapshot,
+  LoadProfileOptions,
+  LoadedBundle,
+  PatchOptions,
+  PluginEntry,
+} from './profile/index.js';
 export { bootPlugins, missingInjectInBatch, sortByInject } from './registrar/boot.js';
 export type {
   InjectEntry,

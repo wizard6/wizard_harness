@@ -1,0 +1,10 @@
+[
+  {
+    "insert": [
+      { "id": "logger", "name": "logger" },
+      { "id": "events", "name": "events" },
+      { "id": "console", "name": "console" },
+      { "id": "hello", "name": "hello" }
+    ]
+  }
+]

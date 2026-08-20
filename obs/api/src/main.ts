@@ -6,8 +6,10 @@ import {
   assembleRuntime,
   createEventBus,
   createFileSink,
+  resolveHomeDir,
+  resolveProfileDir,
 } from '@wizard-harness/core';
-import type { SystemContext } from '@wizard-harness/core';
+import type { CompositionSnapshot, SystemContext } from '@wizard-harness/core';
 import { createHandlers } from './handlers.js';
 import type { ExposeMap } from './handlers.js';
 
@@ -22,6 +24,8 @@ import type { ExposeMap } from './handlers.js';
  *   WH_PLUGINS_DIR 插件包目录（默认 <cwd>/plugins）
  *   WH_DISABLED 逗号分隔的禁用插件 id
  *   WH_ENABLE_EXPERIMENTAL 逗号分隔的显式启用 experimental 插件 id
+ *   WH_PROFILE  profile 名或路径（默认 profiles/default；off 关闭组合、退回目录发现）
+ *   WH_HOME     机级 home（默认 ~/.wizard-harness），可读 wizard.patch.json
  *   WH_EXPOSE   服务白名单 JSON：{ "服务名": true | ["method", ...] }，默认 {}
  *   PORT        监听端口（默认 8787）
  */
@@ -30,7 +34,7 @@ const FILE = process.env.WH_EVENTS || resolve(process.cwd(), 'docs/logs/events.j
 const PLUGINS_DIR = process.env.WH_PLUGINS_DIR || resolve(process.cwd(), 'plugins');
 const PORT = Number(process.env.PORT || 8787);
 
-let harness: SystemContext | undefined;
+const runtime: { harness?: SystemContext; composition?: CompositionSnapshot } = {};
 
 function readConfig(): Record<string, unknown> {
   const config: Record<string, unknown> = {};
@@ -68,13 +72,21 @@ async function init(): Promise<void> {
   mkdirSync(resolve(FILE, '..'), { recursive: true });
   const bus = createEventBus();
   bus.subscribe(createFileSink(FILE));
+  const profileDir = resolveProfileDir(process.env.WH_PROFILE, process.cwd());
   const rt = await assembleRuntime({
     bus,
     config: readConfig(),
     name: 'wizard-harness-api',
     pluginsDir: PLUGINS_DIR,
+    ...(profileDir
+      ? { profileDir, bundlesDir: resolve(process.cwd(), 'bundles'), homeDir: resolveHomeDir() }
+      : {}),
   });
-  harness = rt.harness;
+  runtime.harness = rt.harness;
+  runtime.composition = rt.composition;
+  if (runtime.composition) {
+    console.log(`[boot] profile ${runtime.composition.profile} ← ${runtime.composition.bundles.join(' → ') || '(no bundles)'}`);
+  }
   for (const w of rt.warnings) console.warn('[discovery]', w);
   for (const s of rt.skipped) console.warn('[boot] skipped', s.id, `(${s.reason})`);
   for (const p of rt.pending) {
@@ -88,7 +100,8 @@ async function init(): Promise<void> {
 const handlers = createHandlers({
   file: FILE,
   expose: apiExpose,
-  getHarness: () => harness,
+  getHarness: () => runtime.harness,
+  getComposition: () => runtime.composition,
 });
 
 const server = createServer((req: IncomingMessage, res: ServerResponse) => {
