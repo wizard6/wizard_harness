@@ -72,6 +72,15 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 
 已知遗留：`Dispatcher` 待接入插件上下文（等首个协作型用例）；GUI 弹窗 IPC 为硬编码（通用 UI 桥待单独设计）。完整条目见 [docs/项目体检.md](docs/项目体检.md)。
 
+## 计划
+
+骨架插件（hello / logger / events / console）已够演示基座。下一阶段按能力插件顺序补齐，先做薄、不顺带做 agent 循环或通用 UI 桥：
+
+1. **session** — 会话日志（领域源：追加 turn / message / tool-result，只读回放；观测 `session/start`、`session/append`）。scope 管「这次运行看得见什么」，session 管「发生过什么」。
+2. **llm** — 一个模型适配器，读写都落到 session。
+3. **tools** — 工具注册表（登记 / 调用）；调用写入 session。
+4. **agent** — 用 `createScope` 串起 session + llm + tools 的最小循环（每个 live agent 一个 scope）。
+
 ## 许可
 
 私有仓库，未声明开源许可证。
