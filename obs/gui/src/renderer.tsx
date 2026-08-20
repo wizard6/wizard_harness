@@ -1,11 +1,15 @@
-// Electron 渲染进程入口：观测台（注册表 / 质量检测 两个 tab）
-// 职责：拉取数据 + 视图切换；组件与数据源解耦（面板均为纯 props 展示组件）
+// Electron 渲染进程入口：按窗口视图渲染对应面板
+// - index.html?view=registry（默认）→ 注册表面板
+// - index.html?view=quality → 质量检测面板
+// 职责：拉取数据 + 渲染；面板均为纯 props 展示组件（数据源经 IPC 注入）
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Plugin, PluginEvent } from '@wizard-harness/core';
 import { QualityPanel } from '@wizard-harness/obs-core';
 import type { QualityData } from '@wizard-harness/obs-core';
 import { RegistryView } from '../views/registry.js';
+
+const view = new URLSearchParams(window.location.search).get('view') === 'quality' ? 'quality' : 'registry';
 
 interface PluginState {
   manifest: { id: string; version: string; name?: string };
@@ -33,15 +37,8 @@ declare global {
   }
 }
 
-type Tab = 'registry' | 'quality';
-
-function App(): React.ReactElement {
-  const [tab, setTab] = useState<Tab>('registry');
+function RegistryApp(): React.ReactElement | null {
   const [state, setState] = useState<RendererState | null>(null);
-  const [quality, setQuality] = useState<QualityData | null>(null);
-  const [qualityError, setQualityError] = useState<string | null>(null);
-
-  // 注册表数据：1.5s 轮询
   useEffect(() => {
     let alive = true;
     const refresh = async () => {
@@ -59,62 +56,37 @@ function App(): React.ReactElement {
       clearInterval(timer);
     };
   }, []);
+  if (!state) return null;
+  return (
+    <RegistryView
+      plugins={state.plugins as unknown as (Plugin & { services?: string[]; config?: Record<string, unknown> })[]}
+      events={state.events}
+      globalConfig={state.config}
+      onOpenPlugin={(id) => void window.wh.openPlugin(id)}
+      onReload={(id) => void window.wh.reloadPlugin(id)}
+      onUnregister={(id) => void window.wh.unregisterPlugin(id)}
+    />
+  );
+}
 
-  // 质检数据：3s 轮询 + 手动刷新
-  const loadQuality = async () => {
+function QualityApp(): React.ReactElement {
+  const [quality, setQuality] = useState<QualityData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const load = async () => {
     try {
-      const d = await window.wh.qualityData();
-      setQuality(d);
-      setQualityError(null);
+      setQuality(await window.wh.qualityData());
+      setError(null);
     } catch (err) {
-      setQualityError(String(err));
+      setError(String(err));
     }
   };
   useEffect(() => {
-    void loadQuality();
-    const timer = setInterval(() => void loadQuality(), 3000);
+    void load();
+    const timer = setInterval(() => void load(), 3000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  return (
-    <div className="shell">
-      <style>{`
-        .shell { display:flex; flex-direction:column; height:100vh; }
-        .tabs { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid #262634;
-                background:#16161e; -webkit-app-region: drag; }
-        .tabs button { -webkit-app-region: no-drag; background:#16161e; color:#a8a8bd;
-                       border:1px solid #262634; border-radius:8px; padding:6px 16px;
-                       font-size:13px; cursor:pointer; }
-        .tabs button.active { color:#7ee787; border-color:#7ee787; background:rgba(126,231,135,.08); }
-        .body { flex:1; overflow:auto; background:#0d1117; }
-      `}</style>
-      <div className="tabs">
-        <button className={tab === 'registry' ? 'active' : ''} onClick={() => setTab('registry')}>
-          注册表
-        </button>
-        <button className={tab === 'quality' ? 'active' : ''} onClick={() => setTab('quality')}>
-          质量检测
-        </button>
-      </div>
-      <div className="body">
-        {tab === 'registry' ? (
-          state ? (
-            <RegistryView
-              plugins={state.plugins as unknown as (Plugin & { services?: string[]; config?: Record<string, unknown> })[]}
-              events={state.events}
-              globalConfig={state.config}
-              onOpenPlugin={(id) => void window.wh.openPlugin(id)}
-              onReload={(id) => void window.wh.reloadPlugin(id)}
-              onUnregister={(id) => void window.wh.unregisterPlugin(id)}
-            />
-          ) : null
-        ) : (
-          <QualityPanel data={quality ?? emptyQuality()} error={qualityError} onRefresh={() => void loadQuality()} />
-        )}
-      </div>
-    </div>
-  );
+  return <QualityPanel data={quality ?? emptyQuality()} error={error} onRefresh={() => void load()} />;
 }
 
 /** 数据未就绪时的占位（避免面板崩溃） */
@@ -129,4 +101,4 @@ function emptyQuality(): QualityData {
 
 const root = document.getElementById('root');
 if (!root) throw new Error('missing #root mount point');
-createRoot(root).render(<App />);
+createRoot(root).render(view === 'quality' ? <QualityApp /> : <RegistryApp />);

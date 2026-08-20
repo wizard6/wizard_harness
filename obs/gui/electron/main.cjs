@@ -294,14 +294,16 @@ function startGateway() {
   });
 }
 
-function createWindow() {
+/** 创建观测窗口（registry=注册表 / quality=质量检测，各自独立窗口） */
+function createWindow(view = 'registry') {
+  const isQuality = view === 'quality';
   const win = new BrowserWindow(
     glassOptions({
-      width: 960,
+      width: isQuality ? 940 : 960,
       height: 680,
       minWidth: 720,
       minHeight: 480,
-      title: 'wizard-harness · 观测台',
+      title: isQuality ? 'wizard-harness · 质量检测' : 'wizard-harness · 观测台',
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
@@ -310,7 +312,8 @@ function createWindow() {
     }),
   );
   attachGlass(win);
-  win.loadFile(path.join(__dirname, 'index.html'));
+  win.loadFile(path.join(__dirname, 'index.html'), { query: { view } });
+  return win;
 }
 
 function openPluginWindow(id) {
@@ -408,7 +411,9 @@ ipcMain.on('wh:window-control', (event, action) => {
 app.whenReady().then(async () => {
   setupMenu();
   await init();
-  createWindow();
+  // 两个独立观测窗口：注册表 + 质量检测
+  createWindow('registry');
+  createWindow('quality');
 });
 
 app.on('window-all-closed', () => app.quit());
