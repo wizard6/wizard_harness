@@ -99,6 +99,42 @@ function emptyQuality(): QualityData {
   };
 }
 
+/** 窗口控制条（无边框窗口的拖动区 + 最小化/关闭按钮） */
+function WinBar(): React.ReactElement {
+  return (
+    <div className="winbar">
+      <span className="winbar-title">{view === 'quality' ? '质量检测' : '观测台'}</span>
+      <div className="winbar-actions">
+        <button title="最小化" onClick={() => window.wh.windowControl('min')}>—</button>
+        <button className="winbar-close" title="关闭" onClick={() => window.wh.windowControl('close')}>✕</button>
+      </div>
+    </div>
+  );
+}
+
+function App(): React.ReactElement {
+  return (
+    <div className="win">
+      <style>{`
+        .win { display:flex; flex-direction:column; height:100vh; }
+        .winbar { display:flex; align-items:center; height:38px; flex:none; padding:0 8px 0 14px;
+                  background:#16161e; border-bottom:1px solid #262634; -webkit-app-region: drag;
+                  user-select:none; }
+        .winbar-title { font-size:12px; color:#8b949e; }
+        .winbar-actions { margin-left:auto; display:flex; gap:6px; }
+        .winbar-actions button { -webkit-app-region:no-drag; width:34px; height:26px; border:none;
+                                 background:transparent; color:#a8a8bd; font-size:13px; cursor:pointer;
+                                 border-radius:6px; }
+        .winbar-actions button:hover { background:#21262d; color:#e6edf3; }
+        .winbar-actions .winbar-close:hover { background:#f85149; color:#fff; }
+        .win-body { flex:1; overflow:auto; background:#0d1117; }
+      `}</style>
+      <WinBar />
+      <div className="win-body">{view === 'quality' ? <QualityApp /> : <RegistryApp />}</div>
+    </div>
+  );
+}
+
 const root = document.getElementById('root');
 if (!root) throw new Error('missing #root mount point');
-createRoot(root).render(view === 'quality' ? <QualityApp /> : <RegistryApp />);
+createRoot(root).render(<App />);
