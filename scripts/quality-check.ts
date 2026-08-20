@@ -14,18 +14,11 @@
  *  - docs/quality-report.html    给人的清晰版报告
  *  - .quality-state.json         检查状态（hash 记录，提交到仓库）
  */
-import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-  mkdirSync,
-} from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
+import { ROOT, collectFiles, normalize, sha256, toRel } from './hash-util.js';
 
-const ROOT = join(import.meta.dirname, '..');
 const STATE_FILE = join(ROOT, '.quality-state.json');
 const AI_REPORT = join(ROOT, 'docs', 'quality-report-ai.md');
 const HTML_REPORT = join(ROOT, 'docs', 'quality-report.html');
@@ -41,9 +34,6 @@ const MAX_IMPORTS = 12;
 /** 已知失败白名单：当前无已知失败。
  *  提示：typecheck 依赖 workspace 包 dist（如 obs/gui 依赖 obs/core 的类型），请先 `pnpm build`。 */
 const KNOWN_FAILURES: string[] = [];
-
-/** 被检查源码目录（含 .ts/.tsx，排除 node_modules/dist/.ignored_core/测试文件） */
-const SOURCE_DIRS = ['core/src', 'contracts/src', 'plugins', 'obs'];
 
 interface FileState {
   hash: string;
@@ -67,42 +57,9 @@ const RULES_VERSION = 7;
 
 /* ---------- 工具 ---------- */
 
-function sha256(content: string): string {
-  return createHash('sha256').update(content).digest('hex');
-}
-
-/** 行尾规范化（CRLF → LF）：避免 git autocrlf 导致的换行符差异误判"已修改" */
-function normalize(content: string): string {
-  return content.replace(/\r\n/g, '\n');
-}
-
 /** 当前被检查文件的相对路径集合（--stale 判断删除用） */
 function knownRels(files: string[]): Set<string> {
-  return new Set(files.map((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/')));
-}
-
-function collectFiles(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string): void => {
-    for (const ent of readdirSync(dir, { withFileTypes: true })) {
-      const p = join(dir, ent.name);
-      if (ent.isDirectory()) {
-        if (['node_modules', 'dist', '.ignored_core'].includes(ent.name)) continue;
-        walk(p);
-      } else if (
-        (ent.name.endsWith('.ts') || ent.name.endsWith('.tsx')) &&
-        !ent.name.endsWith('.spec.ts') &&
-        !ent.name.endsWith('.d.ts')
-      ) {
-        out.push(p);
-      }
-    }
-  };
-  for (const d of SOURCE_DIRS) {
-    const full = join(ROOT, d);
-    if (existsSync(full)) walk(full);
-  }
-  return out.sort();
+  return new Set(files.map(toRel));
 }
 
 /** 文件级结构检查（内容分析，可增量）。rel 为相对路径（用于按目录裁剪规则） */

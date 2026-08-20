@@ -13,6 +13,7 @@
     "typecheck": "pnpm -r typecheck",
     "gen:events": "node --import tsx scripts/gen-events.ts",
     "quality": "node --import tsx scripts/quality-check.ts",
+    "hash:check": "node --import tsx scripts/hash-check.ts",
     "obs:cli": "node --import tsx obs/cli/src/main.ts",
     "obs:tui": "node --import tsx obs/tui/src/main.tsx",
     "obs:api": "node --import tsx obs/api/src/main.ts",
