@@ -39,18 +39,18 @@
 <body>
 <div class="wrap">
   <h1>wizard-harness 质量检测报告</h1>
-  <div class="sub">生成时间：2026-08-20T01:29:23.835Z · 检查范围：33 个源码文件（core / contracts / plugins / obs）</div>
+  <div class="sub">生成时间：2026-08-20T01:31:39.734Z · 检查范围：33 个源码文件（core / contracts / plugins / obs）</div>
 
   <div class="cards">
     <div class="card"><div class="k">源码文件</div><div class="v">33</div></div>
     <div class="card"><div class="k">本次检查 / 复用</div><div class="v">0 / 33</div></div>
-    <div class="card"><div class="k">结构问题文件</div><div class="v" style="color:var(--warn)">3</div></div>
+    <div class="card"><div class="k">结构问题文件</div><div class="v" style="color:var(--warn)">2</div></div>
     <div class="card"><div class="k">结构问题项</div><div class="v" style="color:var(--warn)">3</div></div>
   </div>
 
   <h2>全局门禁 <span class="dim" style="font-size:12px;font-weight:400">（复用上次结果（无修改））</span></h2>
   <div class="gate"><span class="name">typecheck</span><span class="fail">❌ 失败（obs/gui）</span><span class="detail">仅已知失败（obs/gui，改动前已存在）</span></div>
-  <div class="gate"><span class="name">test</span><span class="ok">✅ 通过</span><span class="detail">Test Files 13 passed | Tests 95 passed（2026-08-20 01:29）</span></div>
+  <div class="gate"><span class="name">test</span><span class="ok">✅ 通过</span><span class="detail">Test Files 13 passed | Tests 95 passed（2026-08-20 01:31）</span></div>
 
   <h2>文件级结构检查</h2>
   <table>
@@ -69,13 +69,13 @@
 <tr><td class="mono">core/src/index.ts</td><td class="num">56</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">core/src/registrar/boot.ts</td><td class="num">128</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">core/src/registrar/errors.ts</td><td class="num">31</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
-<tr><td class="mono">core/src/registrar/registrar.ts</td><td class="num">692</td><td><span class="tag reuse">未修改</span></td><td><span class="warn">⚠ 1 项</span></td><td><ul><li>行数 692 > 300（项目规范：单文件默认 ≤300 行）</li></ul></td></tr>
-<tr><td class="mono">core/src/registrar/types.ts</td><td class="num">330</td><td><span class="tag reuse">未修改</span></td><td><span class="warn">⚠ 1 项</span></td><td><ul><li>行数 330 > 300（项目规范：单文件默认 ≤300 行）</li></ul></td></tr>
+<tr><td class="mono">core/src/registrar/registrar.ts</td><td class="num">692</td><td><span class="tag reuse">未修改</span></td><td><span class="warn">⚠ 2 项</span></td><td><ul><li>文件过大 692 行 > 600（除非特殊）</li><li>顶层函数 createRegistrar 过大（632 行 > 200），低内聚/职责过多，考虑拆分</li></ul></td></tr>
+<tr><td class="mono">core/src/registrar/types.ts</td><td class="num">330</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">core/src/registrar/validate.ts</td><td class="num">65</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">core/src/shell.ts</td><td class="num">101</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
-<tr><td class="mono">obs/api/src/main.ts</td><td class="num">265</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
+<tr><td class="mono">obs/api/src/main.ts</td><td class="num">265</td><td><span class="tag reuse">未修改</span></td><td><span class="warn">⚠ 1 项</span></td><td><ul><li>顶层声明过多 13 个 > 10，职责过多，考虑拆分</li></ul></td></tr>
 <tr><td class="mono">obs/cli/src/main.ts</td><td class="num">86</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
-<tr><td class="mono">obs/core/src/gui.tsx</td><td class="num">567</td><td><span class="tag reuse">未修改</span></td><td><span class="warn">⚠ 1 项</span></td><td><ul><li>行数 567 > 300（项目规范：单文件默认 ≤300 行）</li></ul></td></tr>
+<tr><td class="mono">obs/core/src/gui.tsx</td><td class="num">567</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">obs/core/src/index.ts</td><td class="num">4</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">obs/core/src/spec.ts</td><td class="num">22</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>
 <tr><td class="mono">obs/gui/src/TrafficLights.tsx</td><td class="num">43</td><td><span class="tag reuse">未修改</span></td><td><span class="ok">✓ 通过</span></td><td><span class="dim">—</span></td></tr>

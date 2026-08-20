@@ -29,7 +29,14 @@ const ROOT = join(import.meta.dirname, '..');
 const STATE_FILE = join(ROOT, '.quality-state.json');
 const AI_REPORT = join(ROOT, 'docs', 'quality-report-ai.md');
 const HTML_REPORT = join(ROOT, 'docs', 'quality-report.html');
-const MAX_LINES = 300;
+/** 文件行数上限：尽量不超过 600 行（除非特殊） */
+const MAX_LINES = 600;
+/** 顶层函数体行数上限（低内聚信号） */
+const MAX_TOP_FUNC = 200;
+/** 顶层可执行声明（function/class/const）数量上限（职责过多信号） */
+const MAX_TOP_DECL = 10;
+/** import 语句数量上限（耦合度信号） */
+const MAX_IMPORTS = 12;
 /** 已知失败（既有问题，不算回归）：obs/gui typecheck 在改动前已失败（pnpm 输出目录名） */
 const KNOWN_FAILURES = ['obs/gui'];
 
@@ -54,7 +61,7 @@ interface State {
 }
 
 /** 结构检查规则版本（structureCheck 的规则变化时 +1） */
-const RULES_VERSION = 2;
+const RULES_VERSION = 3;
 
 /* ---------- 工具 ---------- */
 
@@ -91,8 +98,50 @@ function structureCheck(content: string, rel: string): string[] {
   const issues: string[] = [];
   const lines = content.split('\n');
   if (lines.length > MAX_LINES) {
-    issues.push(`行数 ${lines.length} > ${MAX_LINES}（项目规范：单文件默认 ≤${MAX_LINES} 行）`);
+    issues.push(`文件过大 ${lines.length} 行 > ${MAX_LINES}（除非特殊）`);
   }
+
+  // 顶层可执行声明数量（function/class/const，不含 interface/type——类型契约天然多声明）
+  const topDecls = lines.filter((l) => {
+    const t = l.trim();
+    if (t.length === 0 || l.startsWith(' ') || l.startsWith('\t')) return false;
+    if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*')) return false;
+    return /^(export\s+)?(async\s+)?(function|class|const|let|var)\b/.test(t);
+  });
+  if (topDecls.length > MAX_TOP_DECL) {
+    issues.push(`顶层声明过多 ${topDecls.length} 个 > ${MAX_TOP_DECL}，职责过多，考虑拆分`);
+  }
+
+  // 顶层函数体过大（低内聚信号）：从函数定义行到下一个顶层声明行
+  const nextTop = (from: number): number => {
+    for (let j = from + 1; j < lines.length; j++) {
+      const t = lines[j].trim();
+      if (t.length === 0) continue;
+      if (lines[j].startsWith(' ') || lines[j].startsWith('\t')) continue;
+      if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*')) continue;
+      return j;
+    }
+    return lines.length;
+  };
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (lines[i].startsWith(' ') || lines[i].startsWith('\t')) continue;
+    const m = /^(export\s+)?(async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(t);
+    if (!m) continue;
+    const end = nextTop(i);
+    const body = end - i - 1;
+    if (body > MAX_TOP_FUNC) {
+      issues.push(`顶层函数 ${m[3]} 过大（${body} 行 > ${MAX_TOP_FUNC}），低内聚/职责过多，考虑拆分`);
+    }
+    i = end - 1;
+  }
+
+  // import 数量（耦合度信号）
+  const imports = lines.filter((l) => /^import\s/.test(l)).length;
+  if (imports > MAX_IMPORTS) {
+    issues.push(`import 过多 ${imports} 个 > ${MAX_IMPORTS}，耦合偏高`);
+  }
+
   const markers = lines
     .map((l, i) => ({ l, i }))
     .filter(({ l }) => /TODO|FIXME|HACK|XXX/.test(l))

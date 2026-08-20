@@ -4,173 +4,172 @@
     "contracts/src/console.ts": {
       "hash": "2f78a7698ede7a1e8cb92f2734bb1d632ab28f286851ad2487b2de10b1ccbfd7",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "contracts/src/events.ts": {
       "hash": "122d780212336eac207b7015f06973b3640802e5eba405ca50530b0137edfe1d",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "contracts/src/index.ts": {
       "hash": "67ee9a66334fb1fa81825d4266aa63d9a06c80865464c997011ddac6bc7f777b",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "contracts/src/logger.ts": {
       "hash": "0e5e38a9bf7196fd4b5b74e589518d1dccec5654d6b41511efee0a37a7bbd04f",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/discovery.ts": {
       "hash": "1628dc363e3bca1d26e9b1aa3f0efe222b7cf634bcf8158662aea93f14f04093",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/events/bus.ts": {
       "hash": "cc67bd7a49fb07ee80de3c77184adef4f624ecc73f7d3dccf802084bd015fd7c",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/events/dispatcher.ts": {
       "hash": "7f904855381156bb7ca5445277b3779cb150ce29daeb7662daabe1cbce79a92f",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/events/persistence.ts": {
       "hash": "39007c2d6f25f044a8328fb05051a091b985bb89ec65b69643ac0f5d944c1dba",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/events/reader.ts": {
       "hash": "694a6ac95992859d3c2228e0a45cf8d8b13d115a0959c500ba5d8d5733224380",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/events/types.ts": {
       "hash": "11b48ee38c44362d753a22af1d4ae2c672902ab2c0cab52a67703c295b50b4fe",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/harness.ts": {
       "hash": "675fd28a7718ce9c69c1e7cf6434aed4e1eb3cd69742da2ad652517836fd39d5",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/index.ts": {
       "hash": "c7b45c7756fc87083b4bf51d40f2f5f9a1783dc5cf93636ef5fd063abfdaa152",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/registrar/boot.ts": {
       "hash": "f0aa779d110d8fd8a4ae9544c9425929da7fac3e913cf847652d89cbbfd5937a",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/registrar/errors.ts": {
       "hash": "571e6af1e1d78efaddca72a70220d82501de56292f8f063e4850ecd7cc25f1ed",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/registrar/registrar.ts": {
       "hash": "a33014dae5188a3ca8f60b5e61e043faec8ac1b7142c721d581d5becfe998846",
       "issues": [
-        "行数 692 > 300（项目规范：单文件默认 ≤300 行）"
+        "文件过大 692 行 > 600（除非特殊）",
+        "顶层函数 createRegistrar 过大（632 行 > 200），低内聚/职责过多，考虑拆分"
       ],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/registrar/types.ts": {
       "hash": "1dbdd54d9e4a82359a4d5e433e3fb4309781c6e0cbc6f676b67028c5983adb74",
-      "issues": [
-        "行数 330 > 300（项目规范：单文件默认 ≤300 行）"
-      ],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "issues": [],
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/registrar/validate.ts": {
       "hash": "48f27038544bc8eeba68bc308a136d08c51a056b7db26df8f621d9c3ad0ef57f",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "core/src/shell.ts": {
       "hash": "34cad5d82d4a181ab1f6e61c2069a257fafb09f4f8f49b8820ae96f5958c5219",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/api/src/main.ts": {
       "hash": "5ba0a693dfd65d093267af53f93d4214f54b6aa5a48aa62743b1b07d37a29c44",
-      "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "issues": [
+        "顶层声明过多 13 个 > 10，职责过多，考虑拆分"
+      ],
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/cli/src/main.ts": {
       "hash": "e372020ec441b3a98429ef177eaf29c91cb625792b68d1f64afaf0f2de284fda",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/core/src/gui.tsx": {
       "hash": "aaf52e4ead64e4cf6ba25e82f4e453f014380f5d1127858492f866c32eb74c63",
-      "issues": [
-        "行数 567 > 300（项目规范：单文件默认 ≤300 行）"
-      ],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "issues": [],
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/core/src/index.ts": {
       "hash": "0bd8e131321ad79b59da0f05ac4e3bbeeadb43cee8aca8d452308c83e5ddf042",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/core/src/spec.ts": {
       "hash": "5859abb0c5a45971e0b8aa155446654dfe53c3f5a76ca2d2690ab142de9d9d2e",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/gui/src/TrafficLights.tsx": {
       "hash": "3b4b47ac22790303dab9fc8f52b1322da9ba66a1a48cb31068ded28d5ab82ad1",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/gui/src/renderer.tsx": {
       "hash": "671db16b1d81c499c4759165288bb46ef54633590d2430769957425184ec7971",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/gui/views/registry.tsx": {
       "hash": "412d6206bf27f8a434a9208b2a7aab4070b9b20aa7fda1c2ce656d80e29fda0d",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/spec/src/index.ts": {
       "hash": "6cc8f512383a353f83046638e82f3478d573b4138edbdb5a352d1e1df6b64f75",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/spec/src/spec.ts": {
       "hash": "0b21da94424bee9964b0e129eb42c30902aaafa4d0a8816447cf08b8175d94ee",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "obs/tui/src/main.tsx": {
       "hash": "b629ef6e697f7880fd9e6e154cec94f7408c630067b048ead1833148c7256e42",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "plugins/console/src/index.ts": {
       "hash": "b831aedd96ef1cf8f28ab33bc09e9faa9709b644a3637857baaa0bf271a7c928",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "plugins/events/src/index.ts": {
       "hash": "c133cf992dd38b134978bc1f8dcacde58f30a765a740f1f3347b8b6ef6a3ab92",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "plugins/hello/src/index.ts": {
       "hash": "5ac9f407bff28c9264fa52a7c5596aa3474fdeab3c8cdbf44cbb812ca55af3e7",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     },
     "plugins/logger/src/index.ts": {
       "hash": "6943f29fb9f5f855e69cea362a2425c7f454e38fe257a1d3cbd1e55e0e14ade0",
       "issues": [],
-      "checkedAt": "2026-08-20T01:29:09.123Z"
+      "checkedAt": "2026-08-20T01:31:25.017Z"
     }
   },
   "global": {
@@ -180,13 +179,13 @@
         "obs/gui"
       ],
       "note": "仅已知失败（obs/gui，改动前已存在）",
-      "at": "2026-08-20T01:29:09.123Z"
+      "at": "2026-08-20T01:31:25.017Z"
     },
     "test": {
       "status": "pass",
       "summary": "Test Files 13 passed | Tests 95 passed",
-      "at": "2026-08-20T01:29:09.123Z"
+      "at": "2026-08-20T01:31:25.017Z"
     }
   },
-  "rulesVersion": 2
+  "rulesVersion": 3
 }
