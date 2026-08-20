@@ -222,6 +222,7 @@ function checkTest(): { status: 'pass' | 'fail'; summary: string } {
 interface FileResult {
   rel: string;
   lines: number;
+  hash: string;
   issues: string[];
   changed: boolean;
   reused: boolean;
@@ -244,11 +245,11 @@ function main(): void {
     const prev = state.files[rel];
     if (prev && prev.hash === hash && !forceFull) {
       // 未修改：复用上次结构检查结果（无论当时通过与否，问题清单不变）
-      results.push({ rel, lines: content.split('\n').length, issues: prev.issues ?? [], changed: false, reused: true });
+      results.push({ rel, lines: content.split('\n').length, hash, issues: prev.issues ?? [], changed: false, reused: true });
       skippedCount++;
     } else {
       const issues = structureCheck(content, rel);
-      results.push({ rel, lines: content.split('\n').length, issues, changed: true, reused: false });
+      results.push({ rel, lines: content.split('\n').length, hash, issues, changed: true, reused: false });
       changedCount++;
       state.files[rel] = { hash, issues, checkedAt: now };
     }
@@ -294,6 +295,12 @@ function main(): void {
     `- typecheck：${typecheck.status === 'pass' ? '✅ 通过' : '❌ 失败'}${typecheck.failed.length ? `（${typecheck.failed.join(', ')}）` : ''}${typecheck.note ? ` — ${typecheck.note}` : ''}`,
     `- test：${test.status === 'pass' ? '✅ 通过' : '❌ 失败'}（${test.summary}）`,
     ``,
+    `## 文件清单（${results.length} 个，含 sha256）`,
+    ...results.map(
+      (r) =>
+        `- ${r.rel}（${r.lines} 行）sha256=${r.hash}${r.changed ? ' [已修改]' : ' [未修改]'}${r.issues.length ? `\n  - ${r.issues.join('\n  - ')}` : ''}`,
+    ),
+    ``,
     `## 结构问题（${issueFiles.length} 个文件，${typeIssues} 项）`,
     ...(issueFiles.length === 0
       ? ['- 无']
@@ -315,7 +322,7 @@ function main(): void {
       const issues = r.issues.length
         ? `<ul>${r.issues.map((i) => `<li>${i}</li>`).join('')}</ul>`
         : '<span class="dim">—</span>';
-      return `<tr><td class="mono">${r.rel}</td><td class="num">${r.lines}</td><td>${r.changed ? '<span class="tag new">已修改</span>' : '<span class="tag reuse">未修改</span>'}</td><td>${badge}</td><td>${issues}</td></tr>`;
+      return `<tr><td class="mono">${r.rel}</td><td class="num">${r.lines}</td><td class="mono" title="sha256 ${r.hash}">${r.hash.slice(0, 8)}…</td><td>${r.changed ? '<span class="tag new">已修改</span>' : '<span class="tag reuse">未修改</span>'}</td><td>${badge}</td><td>${issues}</td></tr>`;
     })
     .join('\n');
 
@@ -382,7 +389,7 @@ function main(): void {
 
   <h2>文件级结构检查</h2>
   <table>
-    <thead><tr><th>文件</th><th>行数</th><th>修改</th><th>状态</th><th>问题</th></tr></thead>
+    <thead><tr><th>文件</th><th>行数</th><th>sha256</th><th>修改</th><th>状态</th><th>问题</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
 
