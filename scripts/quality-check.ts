@@ -63,12 +63,22 @@ interface State {
 }
 
 /** 结构检查规则版本（structureCheck 的规则变化时 +1） */
-const RULES_VERSION = 6;
+const RULES_VERSION = 7;
 
 /* ---------- 工具 ---------- */
 
 function sha256(content: string): string {
   return createHash('sha256').update(content).digest('hex');
+}
+
+/** 行尾规范化（CRLF → LF）：避免 git autocrlf 导致的换行符差异误判"已修改" */
+function normalize(content: string): string {
+  return content.replace(/\r\n/g, '\n');
+}
+
+/** 当前被检查文件的相对路径集合（--stale 判断删除用） */
+function knownRels(files: string[]): Set<string> {
+  return new Set(files.map((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/')));
 }
 
 function collectFiles(): string[] {
@@ -234,6 +244,27 @@ function main(): void {
   const files = collectFiles();
   const state = loadState();
   const now = new Date().toISOString();
+
+  // --stale 模式：只对比 hash，输出"自上次质检以来修改/新增/删除的文件"，不跑检查、不更新状态
+  if (process.argv.includes('--stale')) {
+    const changed: string[] = [];
+    const added: string[] = [];
+    for (const f of files) {
+      const rel = f.slice(ROOT.length + 1).replace(/\\/g, '/');
+      const hash = sha256(normalize(readFileSync(f, 'utf8')));
+      const prev = state.files[rel];
+      if (!prev) added.push(rel);
+      else if (prev.hash !== hash) changed.push(rel);
+    }
+    const removed = Object.keys(state.files).filter((rel) => !knownRels(files).has(rel));
+    console.log('[stale] 自上次质检（' + (state.global ? state.global.typecheck.at : '从未') + '）以来：');
+    console.log(`  修改 ${changed.length}：${changed.join(', ') || '(无)'}`);
+    console.log(`  新增 ${added.length}：${added.join(', ') || '(无)'}`);
+    console.log(`  删除 ${removed.length}：${removed.join(', ') || '(无)'}`);
+    console.log('  提示：运行 `pnpm quality` 刷新状态并重检。');
+    return;
+  }
+
   // 规则版本变化 → 全量重查（不信任旧缓存）；但"已修改"只指 hash 与上次记录不同
   const forceFull = state.rulesVersion !== RULES_VERSION;
   const results: FileResult[] = [];
@@ -243,7 +274,7 @@ function main(): void {
 
   for (const f of files) {
     const rel = f.slice(ROOT.length + 1).replace(/\\/g, '/');
-    const content = readFileSync(f, 'utf8');
+    const content = normalize(readFileSync(f, 'utf8'));
     const hash = sha256(content);
     const prev = state.files[rel];
     const modified = !prev || prev.hash !== hash;
