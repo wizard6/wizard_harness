@@ -1,7 +1,82 @@
 // wizard-harness GUI 桌面壳 · Electron 主进程
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const crypto = require('node:crypto');
 const path = require('node:path');
-const { mkdirSync } = require('node:fs');
+const { mkdirSync, readFileSync, readdirSync, existsSync } = require('node:fs');
+
+/** 仓库根：obs/gui/electron → 上三级 */
+const REPO_ROOT = path.join(__dirname, '..', '..', '..');
+const QUALITY_STATE_FILE = path.join(REPO_ROOT, '.quality-state.json');
+const QUALITY_SRC_DIRS = ['core/src', 'contracts/src', 'plugins', 'obs'];
+
+/** 重新计算全部源码文件当前 hash，与上次质检（.quality-state.json）对比（实时，无缓存） */
+function computeQualityData() {
+  let state = { files: {}, global: null };
+  try {
+    state = JSON.parse(readFileSync(QUALITY_STATE_FILE, 'utf8'));
+  } catch {
+    // 无状态文件：全部视为新增
+  }
+  const normalize = (s) => s.replace(/\r\n/g, '\n');
+  const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+  const walk = (dir, out) => {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        if (['node_modules', 'dist', '.ignored_core'].includes(ent.name)) continue;
+        walk(p, out);
+      } else if (
+        (ent.name.endsWith('.ts') || ent.name.endsWith('.tsx')) &&
+        !ent.name.endsWith('.spec.ts') &&
+        !ent.name.endsWith('.d.ts')
+      ) {
+        out.push(p);
+      }
+    }
+  };
+  const files = [];
+  for (const d of QUALITY_SRC_DIRS) {
+    const full = path.join(REPO_ROOT, d);
+    if (existsSync(full)) walk(full, files);
+  }
+  files.sort();
+
+  const rows = [];
+  for (const abs of files) {
+    const rel = abs.slice(REPO_ROOT.length + 1).replace(/\\/g, '/');
+    const content = normalize(readFileSync(abs, 'utf8'));
+    const curHash = sha256(content);
+    const prev = state.files?.[rel];
+    rows.push({
+      rel,
+      lines: content.split('\n').length,
+      status: !prev ? 'added' : prev.hash !== curHash ? 'modified' : 'unchanged',
+      lastHash: prev?.hash ?? '',
+      curHash,
+      lastIssues: prev?.issues ?? [],
+    });
+  }
+  const known = new Set(rows.map((r) => r.rel));
+  for (const [rel, prev] of Object.entries(state.files ?? {})) {
+    if (!known.has(rel)) {
+      rows.push({ rel, lines: 0, status: 'removed', lastHash: prev.hash, curHash: '', lastIssues: prev.issues ?? [] });
+    }
+  }
+  const count = (s) => rows.filter((r) => r.status === s).length;
+  return {
+    generatedAt: new Date().toISOString(),
+    baseAt: state.global?.typecheck?.at ?? null,
+    counts: {
+      total: rows.length,
+      unchanged: count('unchanged'),
+      modified: count('modified'),
+      added: count('added'),
+      removed: count('removed'),
+    },
+    rows,
+  };
+}
+
 
 /** 应用菜单：普通用户用不到文件/编辑/视图等菜单项，直接隐藏菜单栏 */
 function setupMenu() {
@@ -318,6 +393,9 @@ ipcMain.handle('wh:exec-command', async (_evt, command) => {
 
 // 事件历史通道（事件总线插件弹窗调用）
 ipcMain.handle('wh:events-history', () => events.slice(-500));
+
+// 质量检测通道：实时计算文件较上次质检的修改状态（主进程实时算，无缓存）
+ipcMain.handle('wh:quality-data', () => computeQualityData());
 
 ipcMain.on('wh:window-control', (event, action) => {
   const win = BrowserWindow.fromWebContents(event.sender);

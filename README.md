@@ -17,7 +17,7 @@ pnpm test
 
 | 命令 | 作用 |
 | --- | --- |
-| `pnpm gui:start` | Electron 运行时台（桌面窗口：装配插件 + 弹窗交互） |
+| `pnpm gui:start` | Electron 运行时台（桌面窗口：观测台含注册表/质量检测两个面板 + 插件弹窗交互） |
 | `pnpm obs:cli` | 纯 Node 事件回放 / 查询 / tail |
 | `pnpm obs:tui` | ink 实时事件面板 |
 | `pnpm obs:api` | HTTP API（运行时壳：加载插件 + 观测端点 + 白名单 RPC），默认 `http://localhost:8787` |
