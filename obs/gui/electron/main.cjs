@@ -54,12 +54,26 @@ function computeQualityData() {
       lastHash: prev?.hash ?? '',
       curHash,
       lastIssues: prev?.issues ?? [],
+      // AI 评审维度：基准 aiHash、结论 aiIssues、相对 AI 基准的修改状态
+      aiHash: prev?.aiHash ?? '',
+      aiIssues: prev?.aiIssues ?? [],
+      aiStatus: !prev?.aiHash ? 'added' : prev.aiHash !== curHash ? 'modified' : 'unchanged',
     });
   }
   const known = new Set(rows.map((r) => r.rel));
   for (const [rel, prev] of Object.entries(state.files ?? {})) {
     if (!known.has(rel)) {
-      rows.push({ rel, lines: 0, status: 'removed', lastHash: prev.hash, curHash: '', lastIssues: prev.issues ?? [] });
+      rows.push({
+        rel,
+        lines: 0,
+        status: 'removed',
+        lastHash: prev.hash,
+        curHash: '',
+        lastIssues: prev.issues ?? [],
+        aiHash: prev.aiHash ?? '',
+        aiIssues: prev.aiIssues ?? [],
+        aiStatus: 'removed',
+      });
     }
   }
   const count = (s) => rows.filter((r) => r.status === s).length;

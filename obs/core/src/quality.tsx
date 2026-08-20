@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 
-/** 质检数据行：单个文件较上次质检的修改状态 */
+/** 质检数据行：单个文件较上次质检的修改状态（启发式 + AI 两个评审维度） */
 export interface QualityRow {
   rel: string;
   lines: number;
+  /** 启发式维度修改状态（相对结构检查基准 hash） */
   status: 'unchanged' | 'modified' | 'added' | 'removed';
+  /** 启发式基准 hash */
   lastHash: string;
   curHash: string;
+  /** 启发式评审问题 */
   lastIssues: string[];
+  /** AI 评审基准 hash */
+  aiHash: string;
+  /** AI 评审结论（空 = 通过） */
+  aiIssues: string[];
+  /** AI 维度修改状态（相对 AI 评审基准 hash） */
+  aiStatus: 'unchanged' | 'modified' | 'added' | 'removed';
 }
 
 /** 质检面板数据（由 obs/gui 主进程实时计算后经 IPC 提供） */
@@ -98,6 +107,23 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
     );
   };
 
+  /** AI 维度修改状态徽章 */
+  const aiBadge = (status: QualityRow['aiStatus']): React.ReactElement => (
+    <span className={`qp-badge qp-b-${status}`} title="AI 评审维度">AI {STATUS_TEXT[status]}</span>
+  );
+
+  /** AI 评审结论徽章 */
+  const aiReview = (r: QualityRow): React.ReactElement => {
+    if (r.status === 'added' || !r.aiHash) return <span className="qp-dim">—</span>;
+    return r.aiIssues.length > 0 ? (
+      <span className="qp-badge qp-b-ai" title={r.aiIssues.join('\n')}>
+        AI ⚠ {r.aiIssues.length} 项
+      </span>
+    ) : (
+      <span className="qp-badge qp-b-ai-ok">AI ✓</span>
+    );
+  };
+
   return (
     <div className="qp">
       <style>{`
@@ -164,6 +190,9 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         .qp-b-modified { color:#d29922; background:rgba(210,153,34,.14); }
         .qp-b-added { color:#79c0ff; background:rgba(121,192,255,.14); }
         .qp-b-removed { color:#ff7b72; background:rgba(255,123,114,.12); text-decoration:line-through; }
+        .qp-stack { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+        .qp-b-ai { color:#a371f7; background:rgba(163,113,247,.14); }
+        .qp-b-ai-ok { color:#a371f7; background:rgba(163,113,247,.1); }
       `}</style>
 
       <div className="qp-head">
@@ -213,18 +242,34 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
 
       <table>
         <thead>
-          <tr><th>状态</th><th>文件</th><th>行数</th><th>上次 hash</th><th>当前 hash</th><th>上次检查</th></tr>
+          <tr>
+            <th>状态（启发式 / AI）</th>
+            <th>文件</th>
+            <th>行数</th>
+            <th>上次 hash（启发式 / AI）</th>
+            <th>当前 hash</th>
+            <th>评审（启发式 / AI）</th>
+          </tr>
         </thead>
         <tbody>
           {viewMode === 'flat'
             ? shown.map((r) => (
                 <tr key={r.rel}>
-                  <td>{badge(r.status)}</td>
+                  <td>
+                    <div className="qp-stack">{badge(r.status)}{aiBadge(r.aiStatus)}</div>
+                  </td>
                   <td className="mono">{r.rel}</td>
                   <td className="dim">{r.lines || '—'}</td>
-                  <td className="mono dim" title={r.lastHash || ''}>{short(r.lastHash)}</td>
+                  <td className="mono dim">
+                    <div className="qp-stack">
+                      <span title={r.lastHash || ''}>{short(r.lastHash)}</span>
+                      <span title={r.aiHash || ''}>AI {short(r.aiHash)}</span>
+                    </div>
+                  </td>
                   <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
-                  <td>{issues(r)}</td>
+                  <td>
+                    <div className="qp-stack">{issues(r)}{aiReview(r)}</div>
+                  </td>
                 </tr>
               ))
             : folders.map((g) => (
@@ -237,12 +282,21 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
                   </tr>
                   {g.items.map((r) => (
                     <tr key={r.rel}>
-                      <td>{badge(r.status)}</td>
+                      <td>
+                        <div className="qp-stack">{badge(r.status)}{aiBadge(r.aiStatus)}</div>
+                      </td>
                       <td className="mono">{r.rel.slice(g.dir.length + 1)}</td>
                       <td className="dim">{r.lines || '—'}</td>
-                      <td className="mono dim" title={r.lastHash || ''}>{short(r.lastHash)}</td>
+                      <td className="mono dim">
+                        <div className="qp-stack">
+                          <span title={r.lastHash || ''}>{short(r.lastHash)}</span>
+                          <span title={r.aiHash || ''}>AI {short(r.aiHash)}</span>
+                        </div>
+                      </td>
                       <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
-                      <td>{issues(r)}</td>
+                      <td>
+                        <div className="qp-stack">{issues(r)}{aiReview(r)}</div>
+                      </td>
                     </tr>
                   ))}
                 </React.Fragment>

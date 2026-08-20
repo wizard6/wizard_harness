@@ -36,9 +36,16 @@ const MAX_IMPORTS = 12;
 const KNOWN_FAILURES: string[] = [];
 
 interface FileState {
+  /** 启发式评审基准 hash */
   hash: string;
+  /** 启发式评审问题 */
   issues: string[];
   checkedAt: string;
+  /** AI 评审基准 hash（相对它判断 AI 维度的修改状态） */
+  aiHash?: string;
+  /** AI 评审结论（空 = 通过） */
+  aiIssues?: string[];
+  aiCheckedAt?: string;
 }
 interface GlobalState {
   typecheck: { status: 'pass' | 'fail'; failed: string[]; note?: string; at: string };
@@ -193,6 +200,12 @@ interface FileResult {
   lines: number;
   hash: string;
   issues: string[];
+  /** AI 评审基准 hash */
+  aiHash: string;
+  /** AI 评审结论 */
+  aiIssues: string[];
+  /** 相对 AI 基准是否修改 */
+  aiChanged: boolean;
   changed: boolean;
   reused: boolean;
 }
@@ -235,16 +248,46 @@ function main(): void {
     const hash = sha256(content);
     const prev = state.files[rel];
     const modified = !prev || prev.hash !== hash;
+    // AI 维度修改状态：相对 AI 评审基准 hash（首次初始化 = 当前 hash）
+    const aiChanged = !prev?.aiHash || prev.aiHash !== hash;
     if (prev && prev.hash === hash && !forceFull) {
       // 未修改：复用上次结构检查结果（无论当时通过与否，问题清单不变）
-      results.push({ rel, lines: content.split('\n').length, hash, issues: prev.issues ?? [], changed: false, reused: true });
+      results.push({
+        rel,
+        lines: content.split('\n').length,
+        hash,
+        issues: prev.issues ?? [],
+        aiHash: prev.aiHash ?? hash,
+        aiIssues: prev.aiIssues ?? [],
+        aiChanged,
+        changed: false,
+        reused: true,
+      });
       skippedCount++;
     } else {
       const issues = structureCheck(content, rel);
-      results.push({ rel, lines: content.split('\n').length, hash, issues, changed: modified, reused: false });
+      results.push({
+        rel,
+        lines: content.split('\n').length,
+        hash,
+        issues,
+        aiHash: prev?.aiHash ?? hash,
+        aiIssues: prev?.aiIssues ?? [],
+        aiChanged,
+        changed: modified,
+        reused: false,
+      });
       recheckedCount++;
       if (modified) modifiedCount++;
-      state.files[rel] = { hash, issues, checkedAt: now };
+      // 写回：保留 AI 维度字段（AI 基准只在 quality:ai 评审时更新）
+      state.files[rel] = {
+        hash,
+        issues,
+        checkedAt: now,
+        aiHash: prev?.aiHash ?? hash,
+        aiIssues: prev?.aiIssues ?? [],
+        aiCheckedAt: prev?.aiCheckedAt,
+      };
     }
   }
 
@@ -267,6 +310,13 @@ function main(): void {
     test = state.global.test;
   }
 
+  // AI 基准初始化：历史状态无 aiHash 时补上（基准 = 该文件当前记录的启发式 hash）
+  for (const fs of Object.values(state.files)) {
+    if (!fs.aiHash) {
+      fs.aiHash = fs.hash;
+      fs.aiIssues = fs.aiIssues ?? [];
+    }
+  }
   state.rulesVersion = RULES_VERSION;
   writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
 
