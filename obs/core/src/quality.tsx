@@ -107,9 +107,9 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
     );
   };
 
-  /** AI 维度修改状态徽章 */
+  /** AI 维度修改状态徽章（AI 统一用紫色，与启发式四色区分；显示形式同启发式） */
   const aiBadge = (status: QualityRow['aiStatus']): React.ReactElement => (
-    <span className={`qp-badge qp-b-${status}`} title="AI 评审维度">AI {STATUS_TEXT[status]}</span>
+    <span className="qp-badge qp-b-ai-status" title="AI 评审维度">AI {STATUS_TEXT[status]}</span>
   );
 
   /** AI 评审结论徽章 */
@@ -179,20 +179,23 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         .qp-group-n { margin-left:8px; color:#a8a8bd; font-weight:400; font-size:11px; }
         .qp table { width:100%; border-collapse:collapse; background:rgba(255,255,255,.045);
                     border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
-        .qp th,.qp td { text-align:left; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; }
+        .qp th,.qp td { text-align:center; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
+        .qp td.mono { text-align:center; }
         .qp th { color:#a8a8bd; font-weight:600; font-size:11px; background:rgba(255,255,255,.03); }
         .qp tr:last-child td { border-bottom:none; }
         .qp tbody tr:hover td { background:rgba(255,255,255,.03); }
         .qp .mono { font-family:ui-monospace,Consolas,monospace; font-size:12px; }
         .qp .dim { color:#8b949e; }
-        .qp-badge { display:inline-block; font-size:11px; padding:2px 10px; border-radius:999px; font-weight:600; white-space:nowrap; }
+        .qp-badge { display:inline-flex; align-items:center; justify-content:center; min-width:88px;
+                    font-size:11px; padding:2px 10px; border-radius:999px; font-weight:600; white-space:nowrap; }
         .qp-b-unchanged { color:#7ee787; background:rgba(126,231,135,.12); }
         .qp-b-modified { color:#d29922; background:rgba(210,153,34,.14); }
         .qp-b-added { color:#79c0ff; background:rgba(121,192,255,.14); }
         .qp-b-removed { color:#ff7b72; background:rgba(255,123,114,.12); text-decoration:line-through; }
-        .qp-stack { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+        .qp-stack { display:flex; flex-direction:column; align-items:center; gap:4px; }
         .qp-b-ai { color:#a371f7; background:rgba(163,113,247,.14); }
         .qp-b-ai-ok { color:#a371f7; background:rgba(163,113,247,.1); }
+        .qp-b-ai-status { color:#a371f7; background:rgba(163,113,247,.12); }
       `}</style>
 
       <div className="qp-head">
