@@ -46,6 +46,20 @@ export type {
   PluginEntry,
 } from './profile/index.js';
 export { bootPlugins, missingInjectInBatch, sortByInject } from './registrar/boot.js';
+export {
+  bindScopeParent,
+  createScope,
+  isScopeCarrier,
+  scopeAdmits,
+  scopeChainOf,
+  scopeOf,
+  scopeParentOf,
+  scopeTarget,
+  AnonymousEntries,
+  NamedEntries,
+  ScopedLayers,
+} from './scope/index.js';
+export type { CreateScopeOptions, Scope, ScopeKey, ScopeLayer, ScopeParentBinding, Scoped } from './scope/index.js';
 export type {
   InjectEntry,
   InjectSpec,
@@ -64,12 +78,6 @@ export type {
   ServiceLifetime,
   ServiceRegisterOptions,
   ServiceRegistry,
-  ServiceScope,
 } from './registrar/types.js';
-export {
-  isBindingVisible,
-  normalizeInject,
-  normalizeProvides,
-  providedServices,
-} from './registrar/types.js';
+export { normalizeInject, normalizeProvides, providedServices } from './registrar/types.js';
 

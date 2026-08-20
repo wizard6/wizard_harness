@@ -38,7 +38,7 @@ CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:e
 | `GET /events/stream` | SSE 事件流 |
 | `GET /state` | 事件统计 + 运行时装配状态（loaded/services/composition） |
 | `GET /plugins` | 已加载插件（manifest/services/config） |
-| `GET /services` | 服务绑定列表（provider/scope/access） |
+| `GET /services` | 服务绑定列表（provider/access/lifetime/scoped） |
 | `POST /rpc` | 白名单服务调用：`{ service, method, args }`，未白名单一律 403 |
 
 环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON，如 `{"greeter":["greet"]}`，默认不暴露任何调用）、`WH_EVENTS`、`PORT`。

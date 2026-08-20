@@ -51,12 +51,10 @@ export function validateManifest(plugin: Plugin): void {
       throw new InvalidPluginError(`manifest.provides 必须为数组（${m.id}）`);
     }
     for (const p of m.provides) {
-      const ok =
-        typeof p === 'string' ||
-        (p !== null && typeof p === 'object' && typeof (p as { name?: unknown }).name === 'string');
+      const ok = typeof p === 'string';
       if (!ok) {
         throw new InvalidPluginError(
-          `manifest.provides 元素必须为字符串或 { name, scope? } 对象（${m.id}）`,
+          `manifest.provides 元素必须为字符串（${m.id}）`,
         );
       }
     }

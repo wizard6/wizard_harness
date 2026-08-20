@@ -106,7 +106,6 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       services.services.register(entry.name, plugin.api, {
         access: accessFor(plugin, entry.name),
         providerId: plugin.manifest.id,
-        scope: entry.scope,
       });
     }
     const missingDeps = (plugin.manifest.dependencies ?? []).filter((d) => !registry.has(d));

@@ -1,5 +1,5 @@
 import type { PluginEvent } from '../events/types.js';
-import type { PluginContext } from './types.js';
+import type { PluginContext, ServiceRegisterOptions } from './types.js';
 
 /**
  * 插件上下文工厂：把 registrar 的状态（配置/事件/服务视图/副作用）组装成
@@ -22,8 +22,9 @@ export interface ContextDeps {
   pushEffect(dispose: () => void): void;
   /** 按 action key 注册事件监听（返回取消函数） */
   subscribeAction(action: string, handler: (event: PluginEvent) => void): () => void;
-  /** 取可见服务（Proxy 属性访问与 ctx.get 共用） */
+  /** 取当前视图内服务（Proxy 属性访问与 ctx.get 共用） */
   get<T = unknown>(name: string): T | undefined;
+  provide(name: string, service: unknown, opts?: ServiceRegisterOptions): void;
   /** 事件化服务调用 */
   call<T = unknown>(
     service: string,
@@ -31,7 +32,7 @@ export interface ContextDeps {
     args?: unknown,
     opts?: { timeoutMs?: number },
   ): Promise<T>;
-  /** 服务消费视图（已按本插件可见性收窄） */
+  /** 服务消费视图（按本 ctx 的 scope 合并） */
   services: PluginContext['services'];
   /** 全量事件流订阅（观测侧） */
   subscribe(listener: (event: PluginEvent) => void): () => void;
@@ -57,6 +58,7 @@ export function makePluginContext(pluginId: string, deps: ContextDeps): PluginCo
       return off;
     },
     get: deps.get,
+    provide: deps.provide,
     call: deps.call,
     services: deps.services,
     events: {

@@ -7,14 +7,16 @@ import { createServiceRegistry } from './service-registry.js';
 import type { ServiceRegistryBundle } from './service-registry.js';
 import { createLifecycle } from './lifecycle.js';
 import { makePluginContext } from './context.js';
-import type {
-  Plugin,
-  PluginContext,
-  RegisterOptions,
-  RegisteredPlugin,
-  Registrar,
-  ReloadResult,
-} from './types.js';
+import {
+  attachScopeFork,
+  eventSubjectOf,
+  scopeAdmits,
+  scopeOf,
+  setEventSubject,
+  tagContext,
+} from '../scope/index.js';
+import type { ScopeKey } from '../scope/index.js';
+import type { Plugin, PluginContext, Registrar } from './types.js';
 
 export interface CreateRegistrarOptions {
   bus: EventBus;
@@ -53,17 +55,18 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
   >();
   const history: PluginEvent[] = [];
   /** 按 action key 路由的插件事件订阅（通信侧）；events.subscribe 是全量观测流 */
-  const actionListeners = new Map<string, Set<(e: PluginEvent) => void>>();
+  const actionListeners = new Map<string, Set<{ handler: (e: PluginEvent) => void; tag?: ScopeKey }>>();
   bus.subscribe((e) => {
     history.push(e);
     if (history.length > historyLimit) history.splice(0, history.length - historyLimit);
     const set = actionListeners.get(e.action);
     if (!set || set.size === 0) return;
-    for (const h of [...set]) {
+    const subject = eventSubjectOf(e);
+    for (const sub of [...set]) {
+      if (!scopeAdmits(sub.tag, subject)) continue;
       try {
-        h(e);
+        sub.handler(e);
       } catch (err) {
-        // 单个监听器异常隔离：不打断同 action 的其它监听器
         console.error(`[registrar] on('${e.action}') 监听器抛错:`, err);
       }
     }
@@ -91,8 +94,8 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     onUnbind: (name, providerId) => rpc.detach(name, providerId),
   });
   rpc = createRpc(bus, {
-    resolve: (service, providerId) => sreg.services.get(service, providerId),
-    authorize: (service, providerId, actor) => sreg.authorizeCall(service, providerId, actor),
+    resolve: (service, providerId, scope) => sreg.resolveInstance(service, providerId, scope),
+    authorize: (service, providerId, actor, scope) => sreg.authorizeCall(service, providerId, actor, scope),
   });
 
   /** 事件化服务调用（请求-响应，全程走事件总线）。路由决策 + 权限门在发起侧完成。 */
@@ -103,12 +106,17 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     method: string,
     args?: unknown,
     opts?: { timeoutMs?: number },
+    scope?: ScopeKey,
   ): Promise<T> {
-    const target = sreg.pickTarget(service, viewerId, trusted);
+    const target = sreg.pickTarget(service, viewerId, trusted, scope);
     if (!target) {
       return Promise.reject(new Error(`服务不可用：${service}`));
     }
-    return rpc.call<T>(viewerId, service, method, args, { ...opts, providerId: target.providerId });
+    return rpc.call<T>(viewerId, service, method, args, {
+      ...opts,
+      providerId: target.providerId,
+      scope,
+    });
   }
 
   /** 配置合并：插件默认值 < 全局分片 < 运行时热更新覆盖 */
@@ -138,47 +146,54 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     emit('config-update', pluginId, { patch });
   }
 
-  /** 构造插件上下文：把 registrar 状态注入 context 工厂 */
-  function makeContext(plugin: Plugin): PluginContext {
+  /** 构造插件上下文；key 存在则为 createScope 派生的打标 ctx */
+  function bindContext(
+    plugin: Plugin,
+    pushEffect: (dispose: () => void) => void,
+    key?: ScopeKey,
+  ): PluginContext {
     const trusted = plugin.manifest.trusted === true;
     const viewerId = plugin.manifest.id;
+    let self!: PluginContext;
+    const currentScope = (): ScopeKey | undefined => scopeOf(self);
+
     const servicesView: PluginContext['services'] = {
       get<T = unknown>(name: string, providerId?: string): T | undefined {
+        const scope = currentScope();
         if (providerId) {
-          // 可见性校验复用执行侧规则（scope/access/high 门槛 + 提供方自见豁免）
-          if (!sreg.authorizeCall(name, providerId, `plugin:${viewerId}`)) return undefined;
-          return sreg.services.get<T>(name, providerId);
+          if (!sreg.authorizeCall(name, providerId, `plugin:${viewerId}`, scope)) return undefined;
+          return sreg.resolveInstance(name, providerId, scope) as T | undefined;
         }
-        return sreg.pickVisible(name, viewerId, trusted) as T | undefined;
+        return sreg.pickVisible(name, viewerId, trusted, scope) as T | undefined;
       },
       getAll<T = unknown>(name: string): T[] {
-        return sreg.visibleEntries(name, viewerId, trusted).map((e) =>
-          sreg.services.get<T>(name, e.providerId),
+        const scope = currentScope();
+        return sreg.visibleEntries(name, viewerId, trusted, scope).map((e) =>
+          sreg.resolveInstance(name, e.providerId, scope),
         ) as T[];
       },
       providers(name) {
-        return sreg.visibleEntries(name, viewerId, trusted).map((e) => e.providerId);
+        return sreg.visibleEntries(name, viewerId, trusted, currentScope()).map((e) => e.providerId);
       },
       list() {
-        const names: string[] = [];
-        for (const name of sreg.services.list()) {
-          if (sreg.visibleEntries(name, viewerId, trusted).length > 0) names.push(name);
-        }
-        return names;
+        return sreg
+          .listInScope(currentScope())
+          .filter((name) => sreg.visibleEntries(name, viewerId, trusted, currentScope()).length > 0);
       },
       async waitFor<T = unknown>(name: string, timeoutMs = 5000): Promise<T | undefined> {
         const deadline = Date.now() + timeoutMs;
         for (;;) {
-          // 只查绑定存在（不触发懒加载实例化）；出现后再取实例
-          if (sreg.visibleEntries(name, viewerId, trusted).length > 0) {
-            return sreg.pickVisible(name, viewerId, trusted) as T | undefined;
+          const scope = currentScope();
+          if (sreg.visibleEntries(name, viewerId, trusted, scope).length > 0) {
+            return sreg.pickVisible(name, viewerId, trusted, scope) as T | undefined;
           }
           if (Date.now() >= deadline) return undefined;
           await new Promise((r) => setTimeout(r, 100));
         }
       },
     };
-    return makePluginContext(viewerId, {
+
+    self = makePluginContext(viewerId, {
       config: () => mergedConfig(plugin),
       onConfig(listener) {
         let set = configListeners.get(viewerId);
@@ -190,39 +205,54 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
         return () => set.delete(listener);
       },
       emit(event) {
-        bus.emit({
+        const rec = {
           id: randomUUID(),
           ts: Date.now(),
           actor: `plugin:${viewerId}`,
           action: event.action,
           target: event.target,
           payload: event.payload,
-        });
+        };
+        setEventSubject(rec, currentScope());
+        bus.emit(rec);
       },
-      pushEffect(dispose) {
-        let list = effects.get(viewerId);
-        if (!list) {
-          list = [];
-          effects.set(viewerId, list);
-        }
-        list.push(dispose);
-      },
+      pushEffect,
       subscribeAction(action, handler) {
         let set = actionListeners.get(action);
         if (!set) {
           set = new Set();
           actionListeners.set(action, set);
         }
-        set.add(handler);
+        const sub = { handler, tag: currentScope() };
+        set.add(sub);
         return () => {
-          set.delete(handler);
+          set.delete(sub);
         };
       },
-      get: <T = unknown>(name: string) => sreg.pickVisible(name, viewerId, trusted) as T | undefined,
-      call: (service, method, args, opts) => wrapCall(viewerId, trusted, service, method, args, opts),
+      get: <T = unknown>(name: string) =>
+        sreg.pickVisible(name, viewerId, trusted, currentScope()) as T | undefined,
+      provide(name, service, opts) {
+        sreg.services.register(name, service, { providerId: viewerId, ...opts, ctx: self });
+      },
+      call: (service, method, args, opts) =>
+        wrapCall(viewerId, trusted, service, method, args, opts, currentScope()),
       services: servicesView,
       subscribe: (listener) => bus.subscribe(listener),
       history: () => [...history],
+    });
+    if (key) tagContext(self, key);
+    attachScopeFork(self, (nextKey, pe) => bindContext(plugin, pe, nextKey));
+    return self;
+  }
+
+  function makeContext(plugin: Plugin): PluginContext {
+    return bindContext(plugin, (dispose) => {
+      let list = effects.get(plugin.manifest.id);
+      if (!list) {
+        list = [];
+        effects.set(plugin.manifest.id, list);
+      }
+      list.push(dispose);
     });
   }
 

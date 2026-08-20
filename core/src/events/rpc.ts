@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { EventBus } from './bus.js';
 import type { PluginEvent } from './types.js';
+import { eventSubjectOf, setEventSubject } from '../scope/index.js';
+import type { ScopeKey } from '../scope/index.js';
 
 /**
  * 事件化 RPC 传输层（与插件生命周期解耦）。
@@ -11,15 +13,17 @@ import type { PluginEvent } from './types.js';
  */
 export interface RpcExecutor {
   /** 解析服务实例（含懒加载 factory 实例化）；返回 undefined 表示服务不存在 */
-  resolve(service: string, providerId: string): unknown | undefined;
-  /** 执行侧权限校验：请求者 actor（plugin:<id> / shell）对该绑定是否可见可用 */
-  authorize(service: string, providerId: string, actor: string): boolean;
+  resolve(service: string, providerId: string, scope?: ScopeKey): unknown | undefined;
+  /** 执行侧权限校验：请求者 actor（plugin:<id> / shell）对该绑定是否可用 */
+  authorize(service: string, providerId: string, actor: string, scope?: ScopeKey): boolean;
 }
 
 export interface RpcCallOptions {
   timeoutMs?: number;
   /** 精确路由目标提供方（默认路由到全部 attach 的提供方） */
   providerId?: string;
+  /** 调用方 scope（决定解析哪一层绑定） */
+  scope?: ScopeKey;
 }
 
 export interface Rpc {
@@ -67,12 +71,13 @@ export function createRpc(bus: EventBus, executor: RpcExecutor): Rpc {
       providerId?: string;
     };
     if (!service || !requestId || typeof method !== 'string') return;
+    const scope = eventSubjectOf(e);
     const targets = providerId !== undefined ? [providerId] : [...(routes.get(service) ?? [])];
     for (const pid of targets) {
       if (!routes.get(service)?.has(pid)) continue; // 已卸载（路由表摘除）
       // 执行侧权限校验：越权请求（如伪造 service-call 调 high 服务）直接拒绝
-      if (!executor.authorize(service, pid, e.actor)) continue;
-      const svc = executor.resolve(service, pid);
+      if (!executor.authorize(service, pid, e.actor, scope)) continue;
+      const svc = executor.resolve(service, pid, scope);
       if (!svc || typeof (svc as Record<string, unknown>)[method] !== 'function') {
         emitResult(pid, requestId, { ok: false, error: `服务 ${service}（${pid}）无方法 ${method}` });
         continue;
@@ -122,14 +127,16 @@ export function createRpc(bus: EventBus, executor: RpcExecutor): Rpc {
               : reject(new Error(`${p.error ?? '调用失败'}（requestId=${requestId}）`)),
           );
         });
-        bus.emit({
+        const event = {
           id: randomUUID(),
           ts: Date.now(),
           actor: `plugin:${viewerId}`,
           action: 'service-call',
           target: service,
           payload: { method, args, requestId, providerId: opts.providerId },
-        });
+        };
+        setEventSubject(event, opts.scope);
+        bus.emit(event);
       });
     },
     attach(service, providerId) {

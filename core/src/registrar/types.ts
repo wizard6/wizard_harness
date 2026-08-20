@@ -3,15 +3,8 @@ import type { PluginEvent } from '../events/types.js';
 /** 插件成熟度分级：决定默认加载策略 */
 export type PluginTier = 'core' | 'standard' | 'experimental';
 
-/**
- * 服务作用域：决定谁能看见这条绑定。
- * - harness：全系统可见（再受 access 约束）
- * - plugin：仅提供方插件上下文可见；生命周期仍绑提供方
- */
-export type ServiceScope = 'harness' | 'plugin';
-
-/** provides 条目：字符串默认 scope=harness */
-export type ProvideSpec = string | { name: string; scope?: ServiceScope };
+/** provides 条目：服务名 */
+export type ProvideSpec = string;
 
 /**
  * Cordis 风格依赖声明：
@@ -30,10 +23,7 @@ export interface PluginManifest {
   description?: string;
   /** 依赖的其它插件 id */
   dependencies?: string[];
-  /**
-   * 本插件贡献的服务（可多名）。与插件 id 独立。
-   * 字符串形式默认 scope=harness；对象可声明 plugin 私有作用域。
-   */
+  /** 本插件贡献的服务名（可多名）。与插件 id 独立。 */
   provides?: ProvideSpec[];
   /**
    * Cordis 风格：必选服务名。启动时未就绪则挂起（PENDING），不进入 register。
@@ -66,17 +56,19 @@ export type ServiceAccess = 'low' | 'high';
 export type ServiceLifetime = 'host' | 'plugin';
 
 /**
- * 一条服务绑定三元组：提供者 × 作用域 ×（实例寿命跟提供者走）。
- * access 是权限门，不是作用域。
+ * 一条服务绑定：提供者 × 实例寿命。
+ * 归档层由登记时的 ctx（scopeOf）决定，不写在绑定上。
+ * access 是权限门。
  */
 export interface ServiceBinding {
   name: string;
   /** 提供方：插件 id，或壳侧登记时的 provider 键 */
   providerId: string;
-  scope: ServiceScope;
   access: ServiceAccess;
   /** 生命周期分层（host=宿主级 / plugin=插件级，默认 plugin） */
   lifetime: ServiceLifetime;
+  /** 是否落在 exact-scope overlay（false = 全局层） */
+  scoped: boolean;
 }
 
 export interface ServiceRegisterOptions {
@@ -85,8 +77,8 @@ export interface ServiceRegisterOptions {
   providerId?: string;
   /** @deprecated 同 providerId */
   pluginId?: string;
-  /** 默认 harness */
-  scope?: ServiceScope;
+  /** 登记上下文：按 scopeOf(ctx) 归档；不传则进全局层 */
+  ctx?: PluginContext;
   /** 生命周期分层，默认 'plugin'；壳/核心注册长活服务请显式传 'host' */
   lifetime?: ServiceLifetime;
   /**
@@ -98,8 +90,8 @@ export interface ServiceRegisterOptions {
 }
 
 /**
- * 服务目录：服务名 × 提供方 多对多；每条带 scope。
- * 壳侧 get 看全表；插件 ctx 只看可见链（见 makeContext）。
+ * 服务目录：服务名 × 提供方 多对多。
+ * 壳侧 get/list 看全局层；插件/scoped ctx 按 scopeOf 合并祖先 overlay。
  */
 export interface ServiceRegistry {
   register(name: string, service: unknown, opts?: ServiceRegisterOptions): void;
@@ -109,7 +101,7 @@ export interface ServiceRegistry {
   providers(name: string): string[];
   /** 该提供方当前挂出的服务名 */
   providedBy(providerId: string): string[];
-  /** 绑定元数据（含 scope）；不传 name 则列出全部 */
+  /** 绑定元数据（含全局与 overlay）；不传 name 则列出全部 */
   bindings(name?: string): ServiceBinding[];
   list(): string[];
   /** 不传 providerId 则摘掉该服务名下全部绑定 */
@@ -118,8 +110,8 @@ export interface ServiceRegistry {
 
 /**
  * 注入给插件的上下文（生存期环境）。
- * 只读视角：config 只读、services 只读、events 只读、emit 是单向出口。
- * 注册/注销/服务管理由壳（harness）显式提供，不塞进 ctx。
+ * 只读视角：config 只读、events 只读、emit 是单向出口。
+ * 插件装卸由壳负责；经 ctx.provide 的登记按 scopeOf(ctx) 归档。
  */
 export interface PluginContext {
   /** 该插件的合并配置（默认值 + 全局注入覆盖） */
@@ -148,16 +140,18 @@ export interface PluginContext {
    * 宿主级服务（lifetime='host'，如 bus/config）长活稳定，可放心缓存。
    */
   get<T = unknown>(name: string): T | undefined;
-  /** 服务消费侧：只读，且只看见当前插件可见作用域内的绑定 */
+  /**
+   * 向当前 ctx 的 scope 层登记服务（全局 ctx → 全局层；createScope 的 ctx → overlay）。
+   * 撤销随 ctx.effect / Scope.dispose。
+   */
+  provide(name: string, service: unknown, opts?: ServiceRegisterOptions): void;
+  /** 服务消费侧：按 scopeOf(this) 合并全局 + 祖先 overlay（近的盖远的） */
   services: {
     get<T = unknown>(name: string, providerId?: string): T | undefined;
     getAll<T = unknown>(name: string): T[];
     providers(name: string): string[];
     list(): string[];
-    /**
-     * 等待可见服务出现。超时返回 undefined。
-     * 受 scope 与 high 门槛约束。
-     */
+    /** 等待当前视图内服务出现。超时返回 undefined。受 high 门槛约束。 */
     waitFor<T = unknown>(name: string, timeoutMs?: number): Promise<T | undefined>;
   };
   /**
@@ -275,23 +269,20 @@ export interface Registrar {
 
 export interface ProvidedEntry {
   name: string;
-  scope: ServiceScope;
 }
 
-/** 规范化 provides；无 api 则空；缺省 provides 且有 api 时用 id@harness */
+/** 规范化 provides；无 api 则空；缺省 provides 且有 api 时用插件 id */
 export function normalizeProvides(plugin: Plugin): ProvidedEntry[] {
   if (plugin.api === undefined) return [];
   const raw = plugin.manifest.provides;
-  if (raw === undefined) return [{ name: plugin.manifest.id, scope: 'harness' }];
+  if (raw === undefined) return [{ name: plugin.manifest.id }];
   const out: ProvidedEntry[] = [];
   const seen = new Set<string>();
   for (const item of raw) {
-    const name = typeof item === 'string' ? item : item.name;
-    const scope: ServiceScope =
-      typeof item === 'string' ? 'harness' : (item.scope ?? 'harness');
+    const name = typeof item === 'string' ? item : '';
     if (!name || seen.has(name)) continue;
     seen.add(name);
-    out.push({ name, scope });
+    out.push({ name });
   }
   return out;
 }
@@ -317,13 +308,4 @@ export function normalizeInject(plugin: Plugin): InjectEntry[] {
     }));
   }
   return Object.entries(raw).map(([name, required]) => ({ name, required: required === true }));
-}
-
-/** 某绑定对 viewer 插件是否可见（壳侧不走此函数） */
-export function isBindingVisible(
-  binding: Pick<ServiceBinding, 'scope' | 'providerId'>,
-  viewerPluginId: string,
-): boolean {
-  if (binding.scope === 'harness') return true;
-  return binding.providerId === viewerPluginId;
 }

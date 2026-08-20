@@ -4,71 +4,72 @@ import type {
   ServiceBinding,
   ServiceLifetime,
   ServiceRegistry,
-  ServiceScope,
 } from './types.js';
-import { isBindingVisible } from './types.js';
+import { scopeChainOf, scopeOf, ScopedLayers } from '../scope/index.js';
+import type { ScopeKey, ScopeLayer } from '../scope/index.js';
 
 /** 一条服务绑定（一名多提供方、一提供方多名） */
 export interface BindingEntry {
-  /** 预建对象（api 即服务形态）；提供 factory 时可为 undefined */
   service: unknown;
-  /** 懒加载工厂（可选）：首次 get 创建并缓存单例 */
   factory?: (ctx: PluginContext) => unknown;
-  /** factory 创建的实例缓存 */
   instance?: unknown;
   access: ServiceAccess;
-  scope: ServiceScope;
   lifetime: ServiceLifetime;
   providerId: string;
 }
 
+class ServiceLayer implements ScopeLayer {
+  readonly buckets = new Map<string, Map<string, BindingEntry>>();
+
+  isEmpty(): boolean {
+    return this.buckets.size === 0;
+  }
+}
+
 export interface ServiceRegistryDeps {
-  /** 事件出口（服务注册/注销观测事件） */
   emit(action: string, target?: string, payload?: unknown): void;
-  /** 提供方插件上下文（懒加载 factory 需要） */
   getContext(providerId: string): PluginContext | undefined;
-  /** 插件是否 trusted（执行侧权限校验需要） */
   isTrusted(pluginId: string): boolean;
-  /** 绑定变化时同步外部（如事件化 RPC 路由表） */
   onBind?(name: string, providerId: string): void;
   onUnbind?(name: string, providerId: string): void;
 }
 
 export interface ServiceRegistryBundle {
   services: ServiceRegistry;
-  /** 消费侧可见条目（scope/access 过滤） */
-  visibleEntries(name: string, viewerPluginId: string, trusted: boolean): BindingEntry[];
-  /** 消费侧取服务：首个可见绑定的实例（懒加载） */
-  pickVisible(name: string, viewerPluginId: string, trusted: boolean): unknown;
-  /** 首个可见绑定（供事件化调用路由决策） */
+  visibleEntries(name: string, viewerPluginId: string, trusted: boolean, scope?: ScopeKey): BindingEntry[];
+  pickVisible(name: string, viewerPluginId: string, trusted: boolean, scope?: ScopeKey): unknown;
   pickTarget(
     name: string,
     viewerPluginId: string,
     trusted: boolean,
+    scope?: ScopeKey,
   ): { providerId: string } | undefined;
-  /** 执行侧权限校验（事件化 RPC）：actor（plugin:<id> / shell）对该绑定是否可见可用 */
-  authorizeCall(service: string, providerId: string, actor: string): boolean;
-  /** 卸载插件：摘除其全部服务绑定（触发 onUnbind） */
+  authorizeCall(service: string, providerId: string, actor: string, scope?: ScopeKey): boolean;
   dropServices(providerId: string): void;
+  listInScope(scope?: ScopeKey): string[];
+  resolveInstance(name: string, providerId: string, scope?: ScopeKey): unknown;
 }
 
-/** 服务注册表标准实现：服务名 × 提供方 多对多，每条带 scope/access/lifetime。 */
+function accessOk(e: BindingEntry, viewerPluginId: string, trusted: boolean): boolean {
+  if (e.providerId === viewerPluginId) return true;
+  if (e.access === 'high' && !trusted) return false;
+  return true;
+}
+
 export function createServiceRegistry(deps: ServiceRegistryDeps): ServiceRegistryBundle {
   const { emit, getContext, isTrusted, onBind, onUnbind } = deps;
-  /** 服务名 → (providerId → 绑定) */
-  const bindings = new Map<string, Map<string, BindingEntry>>();
+  const layers = new ScopedLayers(() => new ServiceLayer(), () => {});
 
-  function toMeta(entry: BindingEntry, name: string): ServiceBinding {
+  function toMeta(entry: BindingEntry, name: string, scoped: boolean): ServiceBinding {
     return {
       name,
       providerId: entry.providerId,
-      scope: entry.scope,
       access: entry.access,
       lifetime: entry.lifetime,
+      scoped,
     };
   }
 
-  /** 取服务实例：factory 懒加载（首次创建并缓存），否则返回预建对象 */
   function ensureInstance(entry: BindingEntry): unknown {
     if (entry.factory) {
       if (entry.instance === undefined) {
@@ -79,33 +80,59 @@ export function createServiceRegistry(deps: ServiceRegistryDeps): ServiceRegistr
     return entry.service;
   }
 
+  /** 近的 overlay 盖同名全局；无 overlay 则全局 */
+  function bucketFor(name: string, scope: ScopeKey | undefined): Map<string, BindingEntry> | undefined {
+    for (const key of scopeChainOf(scope)) {
+      const b = layers.peek(key)?.buckets.get(name);
+      if (b && b.size > 0) return b;
+    }
+    return layers.global.buckets.get(name);
+  }
+
+  function insert(layer: ServiceLayer, name: string, entry: BindingEntry): () => void {
+    let bucket = layer.buckets.get(name);
+    if (!bucket) {
+      bucket = new Map();
+      layer.buckets.set(name, bucket);
+    }
+    if (bucket.has(entry.providerId)) {
+      throw new Error(`服务已存在：${name}（提供者 ${entry.providerId}）`);
+    }
+    bucket.set(entry.providerId, entry);
+    onBind?.(name, entry.providerId);
+    emit('service-register', name, {
+      access: entry.access,
+      lifetime: entry.lifetime,
+      providerId: entry.providerId,
+    });
+    return () => {
+      const b = layer.buckets.get(name);
+      if (!b?.delete(entry.providerId)) return;
+      onUnbind?.(name, entry.providerId);
+      emit('service-unregister', name, { providerId: entry.providerId });
+      if (b.size === 0) layer.buckets.delete(name);
+    };
+  }
+
   const services: ServiceRegistry = {
     register(name, service, opts = {}) {
       const providerId = opts.providerId ?? opts.pluginId ?? name;
-      const scope = opts.scope ?? 'harness';
-      const lifetime = opts.lifetime ?? 'plugin';
-      let bucket = bindings.get(name);
-      if (!bucket) {
-        bucket = new Map();
-        bindings.set(name, bucket);
-      }
-      if (bucket.has(providerId)) {
-        throw new Error(`服务已存在：${name}（提供者 ${providerId}）`);
-      }
-      const access = opts.access ?? 'low';
-      bucket.set(providerId, {
+      const entry: BindingEntry = {
         service,
-        access,
-        scope,
-        lifetime,
+        access: opts.access ?? 'low',
+        lifetime: opts.lifetime ?? 'plugin',
         providerId,
         ...(opts.factory ? { factory: opts.factory } : {}),
-      });
-      onBind?.(name, providerId);
-      emit('service-register', name, { access, lifetime, providerId, scope });
+      };
+      const ctx = opts.ctx;
+      if (ctx) {
+        layers.effect(ctx, (layer) => insert(layer, name, entry), { label: `service:${name}` });
+        return;
+      }
+      insert(layers.global, name, entry);
     },
     get<T = unknown>(name: string, providerId?: string): T | undefined {
-      const bucket = bindings.get(name);
+      const bucket = layers.global.buckets.get(name);
       if (!bucket || bucket.size === 0) return undefined;
       if (providerId) {
         const entry = bucket.get(providerId);
@@ -115,66 +142,72 @@ export function createServiceRegistry(deps: ServiceRegistryDeps): ServiceRegistr
       return first ? (ensureInstance(first) as T) : undefined;
     },
     getAll<T = unknown>(name: string): T[] {
-      const bucket = bindings.get(name);
+      const bucket = layers.global.buckets.get(name);
       if (!bucket) return [];
       return [...bucket.values()].map((e) => ensureInstance(e) as T);
     },
     providers(name) {
-      const bucket = bindings.get(name);
+      const bucket = layers.global.buckets.get(name);
       return bucket ? [...bucket.keys()] : [];
     },
     providedBy(providerId) {
       const names: string[] = [];
-      for (const [name, bucket] of bindings) {
-        if (bucket.has(providerId)) names.push(name);
-      }
+      layers.visit((_scope, layer) => {
+        for (const [name, bucket] of layer.buckets) {
+          if (bucket.has(providerId)) names.push(name);
+        }
+      });
       return names;
     },
     bindings(name) {
-      if (name !== undefined) {
-        const bucket = bindings.get(name);
-        if (!bucket) return [];
-        return [...bucket.values()].map((e) => toMeta(e, name));
-      }
       const all: ServiceBinding[] = [];
-      for (const [n, bucket] of bindings) {
-        for (const e of bucket.values()) all.push(toMeta(e, n));
-      }
+      layers.visit((scope, layer) => {
+        const scoped = scope !== undefined;
+        const names = name !== undefined ? [name] : [...layer.buckets.keys()];
+        for (const n of names) {
+          const bucket = layer.buckets.get(n);
+          if (!bucket) continue;
+          for (const e of bucket.values()) all.push(toMeta(e, n, scoped));
+        }
+      });
       return all;
     },
     list() {
-      return [...bindings.keys()].filter((n) => (bindings.get(n)?.size ?? 0) > 0);
+      return [...layers.global.buckets.keys()].filter((n) => (layers.global.buckets.get(n)?.size ?? 0) > 0);
     },
     unregister(name, providerId) {
-      const bucket = bindings.get(name);
-      if (!bucket) return;
-      if (providerId) {
-        if (!bucket.delete(providerId)) return;
-        onUnbind?.(name, providerId);
-        emit('service-unregister', name, { providerId });
-        if (bucket.size === 0) bindings.delete(name);
-        return;
-      }
-      for (const pid of [...bucket.keys()]) onUnbind?.(name, pid);
-      bindings.delete(name);
-      emit('service-unregister', name);
+      layers.visit((_scope, layer) => {
+        const bucket = layer.buckets.get(name);
+        if (!bucket) return;
+        const ids = providerId ? [providerId] : [...bucket.keys()];
+        for (const pid of ids) {
+          if (!bucket.delete(pid)) continue;
+          onUnbind?.(name, pid);
+          emit('service-unregister', name, { providerId: pid });
+        }
+        if (bucket.size === 0) layer.buckets.delete(name);
+      });
     },
   };
 
-  function visibleEntries(name: string, viewerPluginId: string, trusted: boolean): BindingEntry[] {
-    const bucket = bindings.get(name);
+  function visibleEntries(
+    name: string,
+    viewerPluginId: string,
+    trusted: boolean,
+    scope?: ScopeKey,
+  ): BindingEntry[] {
+    const bucket = bucketFor(name, scope);
     if (!bucket) return [];
-    return [...bucket.values()].filter((e) => {
-      if (!isBindingVisible(e, viewerPluginId)) return false;
-      // 提供方对自己的服务始终可见（high 门槛只约束他方，不拦自己）
-      if (e.providerId === viewerPluginId) return true;
-      if (e.access === 'high' && !trusted) return false;
-      return true;
-    });
+    return [...bucket.values()].filter((e) => accessOk(e, viewerPluginId, trusted));
   }
 
-  function pickVisible(name: string, viewerPluginId: string, trusted: boolean): unknown {
-    const first = visibleEntries(name, viewerPluginId, trusted)[0];
+  function pickVisible(
+    name: string,
+    viewerPluginId: string,
+    trusted: boolean,
+    scope?: ScopeKey,
+  ): unknown {
+    const first = visibleEntries(name, viewerPluginId, trusted, scope)[0];
     return first ? ensureInstance(first) : undefined;
   }
 
@@ -182,17 +215,16 @@ export function createServiceRegistry(deps: ServiceRegistryDeps): ServiceRegistr
     name: string,
     viewerPluginId: string,
     trusted: boolean,
+    scope?: ScopeKey,
   ): { providerId: string } | undefined {
-    const first = visibleEntries(name, viewerPluginId, trusted)[0];
+    const first = visibleEntries(name, viewerPluginId, trusted, scope)[0];
     return first ? { providerId: first.providerId } : undefined;
   }
 
-  function authorizeCall(service: string, providerId: string, actor: string): boolean {
-    const entry = bindings.get(service)?.get(providerId);
-    if (!entry) return false;
+  function authorizeCall(service: string, providerId: string, actor: string, scope?: ScopeKey): boolean {
     const viewerId = actor.startsWith('plugin:') ? actor.slice('plugin:'.length) : 'shell';
-    if (!isBindingVisible(entry, viewerId)) return false;
-    // 提供方自见豁免：high 门槛不拦提供方自己
+    const entry = bucketFor(service, scope)?.get(providerId);
+    if (!entry) return false;
     if (viewerId === providerId) return true;
     const trusted = viewerId === 'shell' || isTrusted(viewerId);
     if (entry.access === 'high' && !trusted) return false;
@@ -200,10 +232,32 @@ export function createServiceRegistry(deps: ServiceRegistryDeps): ServiceRegistr
   }
 
   function dropServices(providerId: string): void {
-    for (const name of [...bindings.keys()]) {
+    for (const name of [...new Set(services.providedBy(providerId))]) {
       services.unregister(name, providerId);
     }
   }
 
-  return { services, visibleEntries, pickVisible, pickTarget, authorizeCall, dropServices };
+  function listInScope(scope?: ScopeKey): string[] {
+    const names = new Set(layers.global.buckets.keys());
+    for (const layer of layers.chainLayers(scope)) {
+      for (const n of layer.buckets.keys()) names.add(n);
+    }
+    return [...names];
+  }
+
+  function resolveInstance(name: string, providerId: string, scope?: ScopeKey): unknown {
+    const entry = bucketFor(name, scope)?.get(providerId);
+    return entry ? ensureInstance(entry) : undefined;
+  }
+
+  return {
+    services,
+    visibleEntries,
+    pickVisible,
+    pickTarget,
+    authorizeCall,
+    dropServices,
+    listInScope,
+    resolveInstance,
+  };
 }

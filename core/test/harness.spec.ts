@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEventBus, createHarness } from '../src/index.js';
+import { createEventBus, createHarness, createScope } from '../src/index.js';
 import type { Plugin, PluginContext } from '../src/index.js';
 
 function makeApiPlugin(id: string, config?: Record<string, unknown>): Plugin {
@@ -274,49 +274,30 @@ describe('createHarness', () => {
     expect(harness.services.get('clock')).toEqual({ kind: 'beta' });
   });
 
-  it('服务作用域：plugin 私有对它人不可见；壳全表可见；注销撕绑定', async () => {
+  it('createScope：overlay 遮盖同名全局；兄弟 scope 互不可见；dispose 撕 overlay', async () => {
     const harness = createHarness({ bus: createEventBus() });
     const owner: Plugin = {
-      manifest: {
-        id: 'owner',
-        version: '1.0.0',
-        provides: [{ name: 'secret-store', scope: 'plugin' }, 'public-api'],
-      },
-      api: { kind: 'owner' },
+      manifest: { id: 'owner', version: '1.0.0', provides: ['clock'] },
+      api: { kind: 'global' },
       async register() {},
     };
-    let peerCtx: PluginContext | undefined;
-    const peer: Plugin = {
-      manifest: { id: 'peer', version: '1.0.0' },
-      async register(c) {
-        peerCtx = c;
-      },
-    };
     await harness.registry.register(owner);
-    await harness.registry.register(peer);
+    const ctx = harness.pluginContext('owner')!;
+    const keyA = {};
+    const keyB = {};
+    const a = createScope(ctx, keyA);
+    const b = createScope(ctx, keyB);
+    a.ctx.provide('clock', { kind: 'a' });
+    b.ctx.provide('clock', { kind: 'b' });
 
-    const metas = harness.services.bindings('secret-store');
-    expect(metas).toEqual([
-      { name: 'secret-store', providerId: 'owner', scope: 'plugin', access: 'low', lifetime: 'plugin' },
-    ]);
-    expect(harness.services.bindings('public-api')[0]?.scope).toBe('harness');
+    expect(ctx.get('clock')).toEqual({ kind: 'global' });
+    expect(a.ctx.get('clock')).toEqual({ kind: 'a' });
+    expect(b.ctx.get('clock')).toEqual({ kind: 'b' });
+    expect(harness.services.get('clock')).toEqual({ kind: 'global' });
 
-    // 壳全表：两种都能取到
-    expect(harness.services.get('secret-store')).toEqual({ kind: 'owner' });
-    expect(harness.services.get('public-api')).toEqual({ kind: 'owner' });
-
-    // 同插件可见私有；其它插件看不见私有，仍看得见 harness
-    const ownerCtx = harness.pluginContext('owner');
-    expect(ownerCtx?.services.get('secret-store')).toEqual({ kind: 'owner' });
-    expect(peerCtx?.services.get('secret-store')).toBeUndefined();
-    expect(peerCtx?.services.list()).toContain('public-api');
-    expect(peerCtx?.services.list()).not.toContain('secret-store');
-    expect(peerCtx?.services.providers('secret-store')).toEqual([]);
-
-    await harness.registry.unregister('owner');
-    expect(harness.services.get('secret-store')).toBeUndefined();
-    expect(harness.services.get('public-api')).toBeUndefined();
-    expect(harness.services.bindings()).toEqual([]);
+    await a.dispose();
+    expect(a.ctx.get('clock')).toEqual({ kind: 'global' });
+    expect(b.ctx.get('clock')).toEqual({ kind: 'b' });
   });
 
   it('服务支持懒加载 factory：首次 get 创建并缓存单例，未 get 不创建', async () => {
