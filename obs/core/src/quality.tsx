@@ -49,12 +49,14 @@ export function QualityPanel({ data, error, onRefresh }: QualityPanelProps): Rea
   const c = data.counts;
   const rows = data.rows.filter((r) => filter === 'all' || r.status === filter);
 
-  const card = (label: string, value: number, color = ''): React.ReactElement => (
-    <div className="qp-card" key={label}>
-      <div className="qp-k">{label}</div>
-      <div className="qp-v" style={color ? { color } : undefined}>{value}</div>
-    </div>
-  );
+  /** 带数字的胶囊 tab：数字即统计，点击过滤 */
+  const tabs: { key: Filter; label: string; count: number }[] = [
+    { key: 'all', label: '全部', count: c.total },
+    { key: 'unchanged', label: '未修改', count: c.unchanged },
+    { key: 'modified', label: '已修改', count: c.modified },
+    { key: 'added', label: '新增', count: c.added },
+    { key: 'removed', label: '删除', count: c.removed },
+  ];
 
   const badge = (status: QualityRow['status']): React.ReactElement => (
     <span className={`qp-badge qp-b-${status}`}>{STATUS_TEXT[status]}</span>
@@ -69,8 +71,6 @@ export function QualityPanel({ data, error, onRefresh }: QualityPanelProps): Rea
       <span className="qp-badge qp-b-unchanged">✓ 通过</span>
     );
 
-  const filters: Filter[] = ['all', 'modified', 'added', 'removed', 'unchanged'];
-
   return (
     <div className="qp">
       <style>{`
@@ -83,14 +83,15 @@ export function QualityPanel({ data, error, onRefresh }: QualityPanelProps): Rea
                       border-radius:8px; padding:5px 14px; cursor:pointer; font-size:12px; }
         .qp-refresh:hover { border-color:#58a6ff; color:#58a6ff; }
         .qp-err { color:#f85149; font-size:12px; margin-bottom:10px; }
-        .qp-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
-        .qp-card { background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; }
-        .qp-k { color:#8b949e; font-size:11px; }
-        .qp-v { font-size:20px; font-weight:700; margin-top:2px; color:#e6edf3; }
         .qp-filters { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-        .qp-filters button { background:#161b22; color:#e6edf3; border:1px solid #30363d;
-                             border-radius:8px; padding:5px 14px; cursor:pointer; font-size:12px; }
+        .qp-filters button { display:flex; align-items:center; gap:6px; background:#161b22; color:#e6edf3;
+                             border:1px solid #30363d; border-radius:999px; padding:5px 14px;
+                             cursor:pointer; font-size:12px; }
         .qp-filters button.active { border-color:#58a6ff; color:#58a6ff; }
+        .qp-count { min-width:18px; height:18px; padding:0 5px; border-radius:999px; display:inline-flex;
+                    align-items:center; justify-content:center; font-size:11px; font-weight:700;
+                    background:#21262d; color:#8b949e; }
+        .qp-filters button.active .qp-count { background:rgba(88,166,255,.16); color:#58a6ff; }
         .qp table { width:100%; border-collapse:collapse; background:#161b22; border:1px solid #30363d; border-radius:10px; overflow:hidden; }
         .qp th,.qp td { text-align:left; padding:7px 12px; border-bottom:1px solid #30363d; vertical-align:top; }
         .qp th { color:#8b949e; font-weight:600; font-size:11px; background:rgba(255,255,255,.03); }
@@ -115,18 +116,11 @@ export function QualityPanel({ data, error, onRefresh }: QualityPanelProps): Rea
 
       {error && <div className="qp-err">拉取失败：{error}</div>}
 
-      <div className="qp-cards">
-        {card('文件总数', c.total)}
-        {card('未修改', c.unchanged, c.unchanged ? '#3fb950' : '')}
-        {card('已修改', c.modified, c.modified ? '#d29922' : '')}
-        {card('新增', c.added, c.added ? '#58a6ff' : '')}
-        {card('删除', c.removed, c.removed ? '#f85149' : '')}
-      </div>
-
       <div className="qp-filters">
-        {filters.map((f) => (
-          <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-            {f === 'all' ? '全部' : STATUS_TEXT[f as QualityRow['status']]}
+        {tabs.map((t) => (
+          <button key={t.key} className={filter === t.key ? 'active' : ''} onClick={() => setFilter(t.key)}>
+            {t.label}
+            <span className="qp-count">{t.count}</span>
           </button>
         ))}
       </div>
