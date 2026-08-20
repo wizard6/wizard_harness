@@ -63,7 +63,7 @@ interface State {
 }
 
 /** 结构检查规则版本（structureCheck 的规则变化时 +1） */
-const RULES_VERSION = 5;
+const RULES_VERSION = 6;
 
 /* ---------- 工具 ---------- */
 
@@ -234,25 +234,28 @@ function main(): void {
   const files = collectFiles();
   const state = loadState();
   const now = new Date().toISOString();
-  // 规则版本变化 → 全量重查（不信任旧缓存）
+  // 规则版本变化 → 全量重查（不信任旧缓存）；但"已修改"只指 hash 与上次记录不同
   const forceFull = state.rulesVersion !== RULES_VERSION;
   const results: FileResult[] = [];
-  let changedCount = 0;
-  let skippedCount = 0;
+  let modifiedCount = 0; // hash 变化（真正修改）
+  let recheckedCount = 0; // 本次重查（含规则变更强制）
+  let skippedCount = 0; // 复用上次结果
 
   for (const f of files) {
     const rel = f.slice(ROOT.length + 1).replace(/\\/g, '/');
     const content = readFileSync(f, 'utf8');
     const hash = sha256(content);
     const prev = state.files[rel];
+    const modified = !prev || prev.hash !== hash;
     if (prev && prev.hash === hash && !forceFull) {
       // 未修改：复用上次结构检查结果（无论当时通过与否，问题清单不变）
       results.push({ rel, lines: content.split('\n').length, hash, issues: prev.issues ?? [], changed: false, reused: true });
       skippedCount++;
     } else {
       const issues = structureCheck(content, rel);
-      results.push({ rel, lines: content.split('\n').length, hash, issues, changed: true, reused: false });
-      changedCount++;
+      results.push({ rel, lines: content.split('\n').length, hash, issues, changed: modified, reused: false });
+      recheckedCount++;
+      if (modified) modifiedCount++;
       state.files[rel] = { hash, issues, checkedAt: now };
     }
   }
@@ -263,8 +266,8 @@ function main(): void {
     if (!known.has(rel)) delete state.files[rel];
   }
 
-  // 全局检查：任一文件修改 → 重跑；否则复用
-  const needGlobal = changedCount > 0 || !state.global;
+  // 全局检查：真修改或规则变更 → 重跑；否则复用上次结果
+  const needGlobal = modifiedCount > 0 || forceFull || !state.global;
   let typecheck: GlobalState['typecheck'];
   let test: GlobalState['test'];
   if (needGlobal) {
@@ -291,7 +294,7 @@ function main(): void {
     ``,
     `- 时间：${now}`,
     `- 范围：${files.length} 个源码文件（core/contracts/plugins/obs）`,
-    `- 增量：检查 ${changedCount}，跳过 ${skippedCount}；全局门禁：${globalMode}`,
+    `- 增量：修改 ${modifiedCount}，重查 ${recheckedCount}，复用 ${skippedCount}；全局门禁：${globalMode}`,
     ``,
     `## 全局门禁`,
     `- typecheck：${typecheck.status === 'pass' ? '✅ 通过' : '❌ 失败'}${typecheck.failed.length ? `（${typecheck.failed.join(', ')}）` : ''}${typecheck.note ? ` — ${typecheck.note}` : ''}`,
@@ -380,7 +383,8 @@ function main(): void {
 
   <div class="cards">
     <div class="card"><div class="k">源码文件</div><div class="v">${files.length}</div></div>
-    <div class="card"><div class="k">本次检查 / 复用</div><div class="v">${changedCount} / ${skippedCount}</div></div>
+    <div class="card"><div class="k">修改 / 复用</div><div class="v">${modifiedCount} / ${skippedCount}</div></div>
+    <div class="card"><div class="k">本次重查</div><div class="v">${recheckedCount}</div></div>
     <div class="card"><div class="k">结构问题文件</div><div class="v" style="color:${issueFiles.length ? 'var(--warn)' : 'var(--ok)'}">${issueFiles.length}</div></div>
     <div class="card"><div class="k">结构问题项</div><div class="v" style="color:${typeIssues ? 'var(--warn)' : 'var(--ok)'}">${typeIssues}</div></div>
   </div>
@@ -408,7 +412,7 @@ function main(): void {
   mkdirSync(join(ROOT, 'docs'), { recursive: true });
 
   // 终端摘要
-  console.log(`[quality] 检查 ${changedCount} 个文件，复用 ${skippedCount} 个；typecheck=${typecheck.status}；test=${test.status}（${test.summary}）`);
+  console.log(`[quality] 修改 ${modifiedCount}，重查 ${recheckedCount}，复用 ${skippedCount}；typecheck=${typecheck.status}；test=${test.status}（${test.summary}）`);
   console.log(`[quality] AI 版 → docs/quality-report-ai.md；HTML 版 → docs/quality-report.html`);
 }
 
