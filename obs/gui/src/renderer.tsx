@@ -24,6 +24,7 @@ declare global {
       openPlugin(id: string): Promise<void>;
       reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
       unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
+      windowControl(action: 'min' | 'max' | 'close'): void;
     };
   }
 }

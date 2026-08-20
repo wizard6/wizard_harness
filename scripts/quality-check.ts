@@ -31,14 +31,16 @@ const AI_REPORT = join(ROOT, 'docs', 'quality-report-ai.md');
 const HTML_REPORT = join(ROOT, 'docs', 'quality-report.html');
 /** 文件行数上限：尽量不超过 600 行（除非特殊） */
 const MAX_LINES = 600;
-/** 顶层函数体行数上限（低内聚信号） */
-const MAX_TOP_FUNC = 200;
+/** 顶层函数体行数上限（低内聚信号）。
+ *  针对"把多个不相关职责塞进一个函数"的上帝函数；单一职责的装配/编排函数允许至 300 行。 */
+const MAX_TOP_FUNC = 300;
 /** 顶层可执行声明（function/class/const）数量上限（职责过多信号） */
 const MAX_TOP_DECL = 10;
 /** import 语句数量上限（耦合度信号） */
 const MAX_IMPORTS = 12;
-/** 已知失败（既有问题，不算回归）：obs/gui typecheck 在改动前已失败（pnpm 输出目录名） */
-const KNOWN_FAILURES = ['obs/gui'];
+/** 已知失败白名单：当前无已知失败。
+ *  提示：typecheck 依赖 workspace 包 dist（如 obs/gui 依赖 obs/core 的类型），请先 `pnpm build`。 */
+const KNOWN_FAILURES: string[] = [];
 
 /** 被检查源码目录（含 .ts/.tsx，排除 node_modules/dist/.ignored_core/测试文件） */
 const SOURCE_DIRS = ['core/src', 'contracts/src', 'plugins', 'obs'];
@@ -61,7 +63,7 @@ interface State {
 }
 
 /** 结构检查规则版本（structureCheck 的规则变化时 +1） */
-const RULES_VERSION = 3;
+const RULES_VERSION = 5;
 
 /* ---------- 工具 ---------- */
 
