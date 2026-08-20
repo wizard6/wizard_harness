@@ -102,14 +102,14 @@
       "checkedAt": "2026-08-20T02:08:54.158Z"
     },
     "obs/core/src/gui.tsx": {
-      "hash": "aaf52e4ead64e4cf6ba25e82f4e453f014380f5d1127858492f866c32eb74c63",
+      "hash": "a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z"
+      "checkedAt": "2026-08-20T02:52:41.879Z"
     },
     "obs/core/src/index.ts": {
-      "hash": "0bd8e131321ad79b59da0f05ac4e3bbeeadb43cee8aca8d452308c83e5ddf042",
+      "hash": "cf587183416b291728148890b79da0f4e98148da7e8b716ffeb639f668618031",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z"
+      "checkedAt": "2026-08-20T02:52:41.879Z"
     },
     "obs/core/src/spec.ts": {
       "hash": "5859abb0c5a45971e0b8aa155446654dfe53c3f5a76ca2d2690ab142de9d9d2e",
@@ -122,9 +122,9 @@
       "checkedAt": "2026-08-20T02:08:54.158Z"
     },
     "obs/gui/src/renderer.tsx": {
-      "hash": "7fd474aa5533607f65dc4fcca09b7380d223816666bd0b47c1cb1279696ee0ad",
+      "hash": "16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775",
       "issues": [],
-      "checkedAt": "2026-08-20T02:08:54.158Z"
+      "checkedAt": "2026-08-20T02:52:41.879Z"
     },
     "obs/gui/views/registry.tsx": {
       "hash": "412d6206bf27f8a434a9208b2a7aab4070b9b20aa7fda1c2ce656d80e29fda0d",
@@ -190,18 +190,23 @@
       "hash": "fa9a518cb160ffba0549ffc41bc7fe3cd08bd813d9d653bdcc1c846cc0b1a887",
       "issues": [],
       "checkedAt": "2026-08-20T02:08:54.158Z"
+    },
+    "obs/core/src/quality.tsx": {
+      "hash": "f808c30fb7eb9947dbff0f65495f4cbf9057c2a7a1608e71c1ca743c51f9fe47",
+      "issues": [],
+      "checkedAt": "2026-08-20T02:52:41.879Z"
     }
   },
   "global": {
     "typecheck": {
       "status": "pass",
       "failed": [],
-      "at": "2026-08-20T02:08:54.158Z"
+      "at": "2026-08-20T02:52:41.879Z"
     },
     "test": {
       "status": "pass",
       "summary": "Test Files 14 passed | Tests 98 passed",
-      "at": "2026-08-20T02:08:54.158Z"
+      "at": "2026-08-20T02:52:41.879Z"
     }
   },
   "rulesVersion": 7
