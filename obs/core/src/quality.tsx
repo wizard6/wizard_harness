@@ -98,6 +98,9 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
   const issues = (r: QualityRow): React.ReactElement => {
     // 新增/无记录：没有"上次检查"，显示占位而不是误导性的"通过"
     if (r.status === 'added' || !r.lastHash) return <span className="qp-dim">—</span>;
+    if (r.status === 'modified') {
+      return <span className="qp-badge qp-b-pending" title="自上次质检后已修改，待 pnpm quality 重查">待重查</span>;
+    }
     return r.lastIssues.length > 0 ? (
       <span className="qp-badge qp-b-modified" title={r.lastIssues.join('\n')}>
         ⚠ {r.lastIssues.length} 项
@@ -201,6 +204,7 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         .qp-b-ai-status { color:#a371f7; background:rgba(163,113,247,.12); }
         .qp-ai-hash { color:#a371f7; }
         .qp-b-ai-pending { color:#a371f7; border:1px dashed #a371f7; background:transparent; }
+        .qp-b-pending { color:#d29922; border:1px dashed #d29922; background:transparent; }
       `}</style>
 
       <div className="qp-head">
