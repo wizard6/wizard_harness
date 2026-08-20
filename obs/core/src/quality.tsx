@@ -48,10 +48,30 @@ const short = (h: string): string => (h ? `${h.slice(0, 8)}…` : '—');
 /** 质量检测面板：文件较上次质检的修改状态（实时数据由壳注入） */
 export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelProps): React.ReactElement {
   const [filter, setFilter] = useState<Filter>('all');
+  const [viewMode, setViewMode] = useState<'flat' | 'folder'>('flat');
+  const [query, setQuery] = useState('');
   const c = data.counts;
   const rows = data.rows.filter((r) => filter === 'all' || r.status === filter);
+  /** 路径过滤器：匹配文件相对路径（含目录） */
+  const q = query.trim().toLowerCase();
+  const shown = rows.filter((r) => !q || r.rel.toLowerCase().includes(q));
   /** 首次加载（尚无任何数据）→ 面板主体显示加载动画 */
   const firstLoad = data.rows.length === 0 && loading === true;
+
+  /** 文件夹视图：按目录分组（目录 → 文件行），组内/组间按字典序 */
+  const folders = (() => {
+    const map = new Map<string, QualityRow[]>();
+    for (const r of shown) {
+      const i = r.rel.lastIndexOf('/');
+      const dir = i > 0 ? r.rel.slice(0, i) : '（根目录）';
+      const list = map.get(dir) ?? [];
+      list.push(r);
+      map.set(dir, list);
+    }
+    return [...map.entries()]
+      .map(([dir, items]) => ({ dir, items }))
+      .sort((a, b) => a.dir.localeCompare(b.dir));
+  })();
 
   /** 带数字的胶囊 tab：数字即统计，点击过滤；每个 tab 带语义色 */
   const tabs: { key: Filter; label: string; count: number; color: string }[] = [
@@ -113,6 +133,24 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
                     background:rgba(255,255,255,.08); color:#a8a8bd; transition:all .12s ease; }
         .qp-filters button .qp-count { color:var(--qp-c); background:color-mix(in srgb, var(--qp-c) 12%, transparent); }
         .qp-filters button.active .qp-count { background:color-mix(in srgb, var(--qp-c) 22%, transparent); color:var(--qp-c); }
+        .qp-tools { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .qp-view { display:flex; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+                   border-radius:8px; overflow:hidden; }
+        .qp-view button { background:transparent; border:none; color:#a8a8bd; padding:5px 14px;
+                          font-size:12px; font-family:inherit; cursor:pointer;
+                          transition:color .12s ease, background .12s ease; }
+        .qp-view button:hover { color:#e6e6ef; }
+        .qp-view button.active { background:rgba(121,192,255,.16); color:#79c0ff; font-weight:600; }
+        .qp-search { margin-left:auto; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.08);
+                     border-radius:14px; padding:5px 12px; font-size:12px; color:#e6e6ef;
+                     font-family:inherit; outline:none; min-width:180px;
+                     transition:border-color .12s ease, background .12s ease; }
+        .qp-search:focus { border-color:rgba(121,192,255,.45); background:rgba(0,0,0,.38); }
+        .qp-search::placeholder { color:#a8a8bd; }
+        .qp-group td { background:rgba(255,255,255,.04); color:#e6e6ef; font-weight:600;
+                       font-size:12px; padding:6px 12px; letter-spacing:.01em; }
+        .qp-group-icon { margin-right:6px; }
+        .qp-group-n { margin-left:8px; color:#a8a8bd; font-weight:400; font-size:11px; }
         .qp table { width:100%; border-collapse:collapse; background:rgba(255,255,255,.045);
                     border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
         .qp th,.qp td { text-align:left; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; }
@@ -160,21 +198,55 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         ))}
       </div>
 
+      <div className="qp-tools">
+        <div className="qp-view">
+          <button className={viewMode === 'flat' ? 'active' : ''} onClick={() => setViewMode('flat')}>平铺</button>
+          <button className={viewMode === 'folder' ? 'active' : ''} onClick={() => setViewMode('folder')}>文件夹</button>
+        </div>
+        <input
+          className="qp-search"
+          placeholder="过滤文件路径…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+
       <table>
         <thead>
           <tr><th>状态</th><th>文件</th><th>行数</th><th>上次 hash</th><th>当前 hash</th><th>上次检查</th></tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.rel}>
-              <td>{badge(r.status)}</td>
-              <td className="mono">{r.rel}</td>
-              <td className="dim">{r.lines || '—'}</td>
-              <td className="mono dim" title={r.lastHash || ''}>{short(r.lastHash)}</td>
-              <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
-              <td>{issues(r)}</td>
-            </tr>
-          ))}
+          {viewMode === 'flat'
+            ? shown.map((r) => (
+                <tr key={r.rel}>
+                  <td>{badge(r.status)}</td>
+                  <td className="mono">{r.rel}</td>
+                  <td className="dim">{r.lines || '—'}</td>
+                  <td className="mono dim" title={r.lastHash || ''}>{short(r.lastHash)}</td>
+                  <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
+                  <td>{issues(r)}</td>
+                </tr>
+              ))
+            : folders.map((g) => (
+                <React.Fragment key={g.dir}>
+                  <tr className="qp-group">
+                    <td colSpan={6}>
+                      <span className="qp-group-icon">📁</span> {g.dir}
+                      <span className="qp-group-n">{g.items.length}</span>
+                    </td>
+                  </tr>
+                  {g.items.map((r) => (
+                    <tr key={r.rel}>
+                      <td>{badge(r.status)}</td>
+                      <td className="mono">{r.rel.slice(g.dir.length + 1)}</td>
+                      <td className="dim">{r.lines || '—'}</td>
+                      <td className="mono dim" title={r.lastHash || ''}>{short(r.lastHash)}</td>
+                      <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
+                      <td>{issues(r)}</td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
         </tbody>
       </table>
       </>
