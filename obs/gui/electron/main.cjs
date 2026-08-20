@@ -1,5 +1,5 @@
 // wizard-harness GUI 桌面壳 · Electron 主进程
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
 const crypto = require('node:crypto');
 const path = require('node:path');
 const { mkdirSync, readFileSync, readdirSync, existsSync } = require('node:fs');
@@ -422,9 +422,23 @@ ipcMain.on('wh:window-control', (event, action) => {
 app.whenReady().then(async () => {
   setupMenu();
   await init();
-  // 启动只开注册表窗口；质量检测按需打开（winbar 按钮 / IPC）
-  createWindow('registry');
+  // 启动只开注册表窗口；质量检测按需打开（winbar 按钮 / 托盘 / IPC）
+  openRegistryWindow();
+  setupTray();
 });
+
+/** 注册表窗口：单例，已打开则聚焦，不重复创建 */
+let registryWindow = null;
+function openRegistryWindow() {
+  if (registryWindow && !registryWindow.isDestroyed()) {
+    registryWindow.focus();
+    return;
+  }
+  registryWindow = createWindow('registry');
+  registryWindow.on('closed', () => {
+    registryWindow = null;
+  });
+}
 
 // 质量检测窗口：单例，已打开则聚焦，不重复创建
 let qualityWindow = null;
@@ -442,4 +456,30 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
-app.on('window-all-closed', () => app.quit());
+/** 托盘图标：16×16 主题绿圆点（base64 内嵌，免资源文件） */
+const TRAY_ICON_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAM0lEQVR4nGOoe97OQAmmSDM+A/7jwAQNwKURp0FUNYBYzSiGjBpAZQMGPh1QJSnTPzcCAMUoZ6NHHjMDAAAAAElFTkSuQmCC';
+
+/** 系统托盘：常驻后台 + 快捷菜单（观测台 / 质量检测 / 退出） */
+let tray = null;
+function setupTray() {
+  tray = new Tray(nativeImage.createFromDataURL('data:image/png;base64,' + TRAY_ICON_B64));
+  tray.setToolTip('wizard-harness · 观测台');
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: '显示观测台', click: () => openRegistryWindow() },
+      { label: '打开质量检测', click: () => openQualityWindow() },
+      { type: 'separator' },
+      { label: '退出', click: () => app.quit() },
+    ]),
+  );
+  // 单击托盘图标（Windows）→ 显示观测台
+  tray.on('click', () => openRegistryWindow());
+}
+
+app.on('window-all-closed', () => {
+  // 有托盘：关闭全部窗口不退出，应用常驻后台；托盘"退出"才真正退出
+  if (process.platform !== 'darwin') {
+    // 不调用 app.quit()
+  }
+});
