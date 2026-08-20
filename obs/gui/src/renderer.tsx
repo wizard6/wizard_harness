@@ -72,12 +72,16 @@ function RegistryApp(): React.ReactElement | null {
 function QualityApp(): React.ReactElement {
   const [quality, setQuality] = useState<QualityData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const load = async () => {
+    setLoading(true);
     try {
       setQuality(await window.wh.qualityData());
       setError(null);
     } catch (err) {
       setError(String(err));
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -86,7 +90,7 @@ function QualityApp(): React.ReactElement {
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return <QualityPanel data={quality ?? emptyQuality()} error={error} onRefresh={() => void load()} />;
+  return <QualityPanel data={quality ?? emptyQuality()} error={error} loading={loading} onRefresh={() => void load()} />;
 }
 
 /** 数据未就绪时的占位（避免面板崩溃） */
