@@ -131,10 +131,7 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
           生成 <span className="mono">{data.generatedAt.slice(0, 19).replace('T', ' ')}</span>
           {' · '}基准 <span className="mono">{data.baseAt ? data.baseAt.slice(0, 19).replace('T', ' ') : '无记录'}</span>
         </span>
-        <button className="qp-refresh" onClick={onRefresh} disabled={loading}>
-          {loading && <span className="qp-spin" />}
-          {loading ? '刷新中' : '刷新'}
-        </button>
+        <button className="qp-refresh" onClick={onRefresh} disabled={loading}>刷新</button>
       </div>
 
       {error && <div className="qp-err">拉取失败：{error}</div>}
