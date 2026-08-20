@@ -1,6 +1,6 @@
 # cordis 通信模型：服务 = 直接调用，事件 = 广播
 
-> 主题问答整理 · 2026-08-19
+> 主题问答整理 · 2026-08-19；2026-08-20 对照表同步最新代码（`ctx.call` 事件化 RPC / 懒加载 factory / 热更新与热重载）
 > 问题：cordis 是通过事件通信的吗？插件之间是**直接调用服务**，还是"给谁发事件、由谁处理"？
 
 ## 结论
@@ -80,13 +80,15 @@ ctx.on('user/created', (user) => auditLog(user))
 
 | 维度 | cordis | wizard-harness 现状 |
 | --- | --- | --- |
-| 服务获取 | `ctx.get(name)` / `ctx[name]` | `ctx.get(name)` / Proxy 属性 `ctx.logger` —— 一致 |
-| 服务调用 | 直接调方法 | 直接调方法 —— 一致 |
-| 事件触发 | `ctx.emit / broadcast / waterfall ...`（多种分发） | `ctx.emit`（事件总线，广播一种）；`dispatcher` 库级实现 emit/waterfall/serial/parallel/bail 五种，**尚未接入 ctx** |
+| 服务获取 | `ctx.get(name)` / `ctx[name]` | `ctx.get(name)` / Proxy 属性 `ctx.logger`；另支持懒加载 `factory`（首次 get 才创建并缓存单例）—— 一致 |
+| 服务调用 | 直接调方法 | 直接调方法（主通道）；**另新增 `ctx.call(service, method, args, {timeoutMs})` 事件化 RPC**（见下） |
+| 事件触发 | `ctx.emit / broadcast / waterfall ...`（多种分发） | `ctx.emit`（事件总线，广播）；`service-call` / `service-result`（事件化 RPC 专用请求/响应事件，requestId 关联、可审计可拦截）；`dispatcher` 库级另有 emit/waterfall/serial/parallel/bail 五种，尚未接入 ctx |
 | 事件订阅 | `ctx.on(action, handler)`，返回 disposer | `ctx.events.subscribe(listener)`，返回取消函数 —— 一致 |
 | 事件结构 | 事件名做路由，订阅者自选处理 | 同（actor/action/target/payload 结构） |
 
-因此：本项目与 cordis 在"**服务直接调、事件广播**"这个根本模型上是一致的；差异只在事件分发的丰富度（5 种分发模式尚未接入 PluginContext，见 `docs/项目体检.md` 遗留项）。
+**关于本项目新增的 `ctx.call`（事件化 RPC）**：它不在 cordis 的标准模型里——cordis 的服务调用**就是直接调用**，事件只做广播通知。`ctx.call` 是项目自有的增强：把一次服务调用封装成 `service-call` 事件发到总线 → 路由到该服务的提供方执行（可带 `providerId` 精确路由，多提供方不广播）→ 以 `service-result` 事件返回，全程可观测、可审计、可跨进程（HTTP 网关）。它不改变"服务=能力、事件=通知"的划分，而是**让调用也借道事件通道**的混合形态：语义上仍是点对点 RPC（有请求、有响应、有超时），只是传输走事件总线。
+
+因此：本项目与 cordis 在"**服务直接调、事件广播**"这个根本模型上是一致的；差异在于：① 事件分发的丰富度（5 种分发模式尚未接入 PluginContext，见 `docs/项目体检.md` 遗留项）；② 项目额外提供事件化 RPC（`ctx.call`）与懒加载 factory 等自有增强。
 
 ## 附：本仓库服务实现与 cordis 的差异要点
 
