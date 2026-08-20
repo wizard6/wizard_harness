@@ -112,9 +112,12 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
     <span className="qp-badge qp-b-ai-status" title="AI 评审维度">{STATUS_TEXT[status]}</span>
   );
 
-  /** AI 评审结论徽章（文案同启发式，紫色区分维度） */
+  /** AI 评审结论徽章：已修改 → 旧结论失效，显示"待评审"；未修改 → 显示上次 AI 评审结论 */
   const aiReview = (r: QualityRow): React.ReactElement => {
     if (r.status === 'added' || !r.aiHash) return <span className="qp-dim">—</span>;
+    if (r.aiStatus === 'modified') {
+      return <span className="qp-badge qp-b-ai-pending" title="自上次 AI 评审后已修改，等待重新评审">待评审</span>;
+    }
     return r.aiIssues.length > 0 ? (
       <span className="qp-badge qp-b-ai" title={r.aiIssues.join('\n')}>
         ⚠ {r.aiIssues.length} 项
@@ -197,6 +200,7 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         .qp-b-ai-ok { color:#a371f7; background:rgba(163,113,247,.1); }
         .qp-b-ai-status { color:#a371f7; background:rgba(163,113,247,.12); }
         .qp-ai-hash { color:#a371f7; }
+        .qp-b-ai-pending { color:#a371f7; border:1px dashed #a371f7; background:transparent; }
       `}</style>
 
       <div className="qp-head">
