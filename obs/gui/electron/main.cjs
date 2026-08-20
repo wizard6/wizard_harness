@@ -422,9 +422,24 @@ ipcMain.on('wh:window-control', (event, action) => {
 app.whenReady().then(async () => {
   setupMenu();
   await init();
-  // 两个独立观测窗口：注册表 + 质量检测
+  // 启动只开注册表窗口；质量检测按需打开（winbar 按钮 / IPC）
   createWindow('registry');
-  createWindow('quality');
+});
+
+// 质量检测窗口：单例，已打开则聚焦，不重复创建
+let qualityWindow = null;
+function openQualityWindow() {
+  if (qualityWindow && !qualityWindow.isDestroyed()) {
+    qualityWindow.focus();
+    return;
+  }
+  qualityWindow = createWindow('quality');
+  qualityWindow.on('closed', () => {
+    qualityWindow = null;
+  });
+}
+ipcMain.handle('wh:open-quality', () => {
+  openQualityWindow();
 });
 
 app.on('window-all-closed', () => app.quit());

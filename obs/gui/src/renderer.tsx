@@ -32,6 +32,7 @@ declare global {
       reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
       unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
       windowControl(action: 'min' | 'max' | 'close'): void;
+      openQuality(): Promise<void>;
       qualityData(): Promise<QualityData>;
     };
   }
@@ -109,6 +110,11 @@ function WinBar(): React.ReactElement {
     <div className="winbar">
       <span className="winbar-title">{view === 'quality' ? '质量检测' : '观测台'}</span>
       <div className="winbar-actions">
+        {view === 'registry' && (
+          <button className="winbar-quality" title="打开质量检测窗口" onClick={() => void window.wh.openQuality()}>
+            质量检测
+          </button>
+        )}
         <button title="最小化" onClick={() => window.wh.windowControl('min')}>—</button>
         <button className="winbar-close" title="关闭" onClick={() => window.wh.windowControl('close')}>✕</button>
       </div>
@@ -131,6 +137,10 @@ function App(): React.ReactElement {
                                  border-radius:6px; }
         .winbar-actions button:hover { background:#21262d; color:#e6edf3; }
         .winbar-actions .winbar-close:hover { background:#f85149; color:#fff; }
+        .winbar-actions .winbar-quality { width:auto; padding:0 12px; font-size:12px;
+                                          border:1px solid rgba(255,255,255,.1); }
+        .winbar-actions .winbar-quality:hover { color:#7ee787; border-color:rgba(126,231,135,.4);
+                                                background:rgba(126,231,135,.1); }
         .win-body { flex:1; overflow:auto; background:#0d1117; }
       `}</style>
       <WinBar />
