@@ -76,33 +76,40 @@ export function QualityPanel({ data, error, onRefresh }: QualityPanelProps): Rea
       <style>{`
         .qp { font: 13px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; padding: 18px 20px; }
         .qp-head { display:flex; align-items:baseline; gap:12px; margin-bottom:14px; }
-        .qp-title { font-size:16px; font-weight:700; margin:0; }
-        .qp-sub { color:#8b949e; font-size:12px; }
+        .qp-title { font-size:16px; font-weight:700; margin:0; color:#e6e6ef; letter-spacing:.01em; }
+        .qp-sub { color:#a8a8bd; font-size:12px; }
         .qp-sub .mono { font-family:ui-monospace,Consolas,monospace; }
-        .qp-refresh { margin-left:auto; background:#21262d; color:#e6edf3; border:1px solid #30363d;
-                      border-radius:8px; padding:5px 14px; cursor:pointer; font-size:12px; }
-        .qp-refresh:hover { border-color:#58a6ff; color:#58a6ff; }
-        .qp-err { color:#f85149; font-size:12px; margin-bottom:10px; }
-        .qp-filters { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-        .qp-filters button { display:flex; align-items:center; gap:6px; background:#161b22; color:#e6edf3;
-                             border:1px solid #30363d; border-radius:999px; padding:5px 14px;
-                             cursor:pointer; font-size:12px; }
-        .qp-filters button.active { border-color:#58a6ff; color:#58a6ff; }
-        .qp-count { min-width:18px; height:18px; padding:0 5px; border-radius:999px; display:inline-flex;
+        .qp-refresh { margin-left:auto; background:rgba(255,255,255,.04); color:#a8a8bd;
+                      border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:5px 16px;
+                      cursor:pointer; font-size:12px; font-family:inherit;
+                      transition:color .12s ease, border-color .12s ease; }
+        .qp-refresh:hover { color:#e6e6ef; border-color:rgba(255,255,255,.16); }
+        .qp-err { color:#ff7b72; font-size:12px; margin-bottom:10px; }
+        .qp-filters { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+        .qp-filters button { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.04);
+                             color:#a8a8bd; border:1px solid rgba(255,255,255,.08); border-radius:16px;
+                             padding:5px 14px; cursor:pointer; font-size:12px; font-family:inherit;
+                             transition:color .12s ease, border-color .12s ease, background .12s ease; }
+        .qp-filters button:hover { color:#e6e6ef; border-color:rgba(255,255,255,.16); }
+        .qp-filters button.active { background:rgba(121,192,255,.16); border-color:rgba(121,192,255,.35);
+                                    color:#79c0ff; font-weight:600; }
+        .qp-count { min-width:20px; height:18px; padding:0 6px; border-radius:999px; display:inline-flex;
                     align-items:center; justify-content:center; font-size:11px; font-weight:700;
-                    background:#21262d; color:#8b949e; }
-        .qp-filters button.active .qp-count { background:rgba(88,166,255,.16); color:#58a6ff; }
-        .qp table { width:100%; border-collapse:collapse; background:#161b22; border:1px solid #30363d; border-radius:10px; overflow:hidden; }
-        .qp th,.qp td { text-align:left; padding:7px 12px; border-bottom:1px solid #30363d; vertical-align:top; }
-        .qp th { color:#8b949e; font-weight:600; font-size:11px; background:rgba(255,255,255,.03); }
+                    background:rgba(255,255,255,.08); color:#a8a8bd; }
+        .qp-filters button.active .qp-count { background:rgba(121,192,255,.2); color:#79c0ff; }
+        .qp table { width:100%; border-collapse:collapse; background:rgba(255,255,255,.045);
+                    border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
+        .qp th,.qp td { text-align:left; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; }
+        .qp th { color:#a8a8bd; font-weight:600; font-size:11px; background:rgba(255,255,255,.03); }
         .qp tr:last-child td { border-bottom:none; }
+        .qp tbody tr:hover td { background:rgba(255,255,255,.03); }
         .qp .mono { font-family:ui-monospace,Consolas,monospace; font-size:12px; }
         .qp .dim { color:#8b949e; }
-        .qp-badge { display:inline-block; font-size:11px; padding:1px 10px; border-radius:10px; font-weight:600; white-space:nowrap; }
-        .qp-b-unchanged { color:#3fb950; border:1px solid #3fb950; }
-        .qp-b-modified { color:#d29922; border:1px solid #d29922; }
-        .qp-b-added { color:#58a6ff; border:1px solid #58a6ff; }
-        .qp-b-removed { color:#f85149; border:1px solid #f85149; text-decoration:line-through; }
+        .qp-badge { display:inline-block; font-size:11px; padding:2px 10px; border-radius:999px; font-weight:600; white-space:nowrap; }
+        .qp-b-unchanged { color:#7ee787; background:rgba(126,231,135,.12); }
+        .qp-b-modified { color:#d29922; background:rgba(210,153,34,.14); }
+        .qp-b-added { color:#79c0ff; background:rgba(121,192,255,.14); }
+        .qp-b-removed { color:#ff7b72; background:rgba(255,123,114,.12); text-decoration:line-through; }
       `}</style>
 
       <div className="qp-head">
