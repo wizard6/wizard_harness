@@ -107,20 +107,20 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
     );
   };
 
-  /** AI 维度修改状态徽章（AI 统一用紫色，与启发式四色区分；显示形式同启发式） */
+  /** AI 维度修改状态徽章（文案同启发式，紫色区分维度） */
   const aiBadge = (status: QualityRow['aiStatus']): React.ReactElement => (
-    <span className="qp-badge qp-b-ai-status" title="AI 评审维度">AI {STATUS_TEXT[status]}</span>
+    <span className="qp-badge qp-b-ai-status" title="AI 评审维度">{STATUS_TEXT[status]}</span>
   );
 
-  /** AI 评审结论徽章 */
+  /** AI 评审结论徽章（文案同启发式，紫色区分维度） */
   const aiReview = (r: QualityRow): React.ReactElement => {
     if (r.status === 'added' || !r.aiHash) return <span className="qp-dim">—</span>;
     return r.aiIssues.length > 0 ? (
       <span className="qp-badge qp-b-ai" title={r.aiIssues.join('\n')}>
-        AI ⚠ {r.aiIssues.length} 项
+        ⚠ {r.aiIssues.length} 项
       </span>
     ) : (
-      <span className="qp-badge qp-b-ai-ok">AI ✓</span>
+      <span className="qp-badge qp-b-ai-ok">✓ 通过</span>
     );
   };
 
@@ -196,6 +196,7 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
         .qp-b-ai { color:#a371f7; background:rgba(163,113,247,.14); }
         .qp-b-ai-ok { color:#a371f7; background:rgba(163,113,247,.1); }
         .qp-b-ai-status { color:#a371f7; background:rgba(163,113,247,.12); }
+        .qp-ai-hash { color:#a371f7; }
       `}</style>
 
       <div className="qp-head">
@@ -263,10 +264,10 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
                   </td>
                   <td className="mono">{r.rel}</td>
                   <td className="dim">{r.lines || '—'}</td>
-                  <td className="mono dim">
+                  <td className="mono">
                     <div className="qp-stack">
-                      <span title={r.lastHash || ''}>{short(r.lastHash)}</span>
-                      <span title={r.aiHash || ''}>AI {short(r.aiHash)}</span>
+                      <span className="qp-dim" title={r.lastHash || ''}>{short(r.lastHash)}</span>
+                      <span className="qp-ai-hash" title={r.aiHash || ''}>{r.aiHash ? short(r.aiHash) : '—'}</span>
                     </div>
                   </td>
                   <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
@@ -290,10 +291,10 @@ export function QualityPanel({ data, error, loading, onRefresh }: QualityPanelPr
                       </td>
                       <td className="mono">{r.rel.slice(g.dir.length + 1)}</td>
                       <td className="dim">{r.lines || '—'}</td>
-                      <td className="mono dim">
+                      <td className="mono">
                         <div className="qp-stack">
-                          <span title={r.lastHash || ''}>{short(r.lastHash)}</span>
-                          <span title={r.aiHash || ''}>AI {short(r.aiHash)}</span>
+                          <span className="qp-dim" title={r.lastHash || ''}>{short(r.lastHash)}</span>
+                          <span className="qp-ai-hash" title={r.aiHash || ''}>{r.aiHash ? short(r.aiHash) : '—'}</span>
                         </div>
                       </td>
                       <td className="mono" title={r.curHash}>{r.curHash ? short(r.curHash) : '—'}</td>
