@@ -5,7 +5,8 @@
       { "id": "events", "name": "events" },
       { "id": "console", "name": "console" },
       { "id": "hello", "name": "hello" },
-      { "id": "session", "name": "session" }
+      { "id": "session", "name": "session" },
+      { "id": "llm", "name": "llm" }
     ]
   }
 ]

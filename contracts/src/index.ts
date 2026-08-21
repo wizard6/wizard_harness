@@ -3,6 +3,7 @@ import type { LoggerService } from './logger.js';
 import type { EventsService } from './events.js';
 import type { ConsoleService } from './console.js';
 import type { SessionService } from './session.js';
+import type { LlmService } from './llm.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -12,6 +13,8 @@ export { CONSOLE_SERVICE } from './console.js';
 export type { ConsoleService, ExecResult } from './console.js';
 export { SESSION_SERVICE } from './session.js';
 export type { Session, SessionEntry, SessionKind, SessionService } from './session.js';
+export { LLM_SERVICE } from './llm.js';
+export type { LlmCompleteInput, LlmCompleteResult, LlmMessage, LlmService } from './llm.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -28,5 +31,6 @@ declare module '@wizard-harness/core' {
     readonly logger?: LoggerService;
     readonly console?: ConsoleService;
     readonly session?: SessionService;
+    readonly llm?: LlmService;
   }
 }
