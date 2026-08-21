@@ -16,11 +16,19 @@ export interface RegistryPanelProps {
   /** 卸载该插件 */
   onUnregister?: (id: string) => Promise<unknown> | void;
   /** 再扫描插件目录，装入尚未注册的插件 */
-  onScan?: () => Promise<unknown> | void;
+  onScan?: () => Promise<ScanFeedback | void> | ScanFeedback | void;
   /** 标题栏右侧槽（桌面壳放入交通灯） */
   trailing?: React.ReactNode;
   /** 双击标题栏（桌面壳用于最大化） */
   onHeaderDoubleClick?: () => void;
+}
+
+export interface ScanFeedback {
+  ok?: boolean;
+  loaded?: string[];
+  already?: string[];
+  skipped?: { id: string; reason: string }[];
+  error?: string;
 }
 
 const MUTED = '#8b949e';
@@ -47,6 +55,15 @@ const PANEL_CSS = `
               font-size:11px; cursor:pointer; font-family:inherit; }
     .rp-sub:hover { color:#e6e6ef; border-color:rgba(255,255,255,.18); }
     .rp-sub.on { background:rgba(121,192,255,.14); border-color:rgba(121,192,255,.35); color:${BLUE}; font-weight:600; }
+    .rp-sub.primary { background:rgba(121,192,255,.16); border-color:rgba(121,192,255,.4); color:#9ecbff; font-weight:600; }
+    .rp-sub.primary:hover { background:rgba(121,192,255,.24); color:#e6e6ef; }
+    .rp-sub:disabled { opacity:.45; cursor:default; }
+    .rp-banner { flex:none; margin:-2px 0 10px; padding:8px 12px; border-radius:8px; font-size:12px; line-height:1.5;
+                 border:1px solid rgba(255,255,255,.1); color:#d7d7e4; }
+    .rp-banner.ok { border-color:rgba(126,231,135,.3); background:rgba(126,231,135,.08); color:${GREEN}; }
+    .rp-banner.warn { border-color:rgba(255,166,87,.3); background:rgba(255,166,87,.08); color:#ffa657; }
+    .rp-banner.err { border-color:rgba(255,123,114,.35); background:rgba(255,123,114,.08); color:${RED}; }
+    .rp-card.fresh { border-color:rgba(126,231,135,.5); box-shadow:0 0 0 1px rgba(126,231,135,.18); }
     .rp-search { margin-left:auto; box-sizing:border-box; background:rgba(255,255,255,.04);
                  border:1px solid rgba(255,255,255,.1); border-radius:6px; color:#d7d7e0;
                  font-size:11px; font-family:inherit; outline:none; padding:3px 8px; height:24px; width:200px; }
@@ -59,6 +76,8 @@ const PANEL_CSS = `
     .rp-card:hover { background:rgba(255,255,255,.06); }
     .rp-card-head { display:flex; align-items:center; gap:8px; min-width:0; }
     .rp-name { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rp-name.open { cursor:pointer; }
+    .rp-name.open:hover { color:${BLUE}; }
     .rp-meta { margin-left:auto; display:flex; gap:6px; align-items:center; flex:none; }
     .rp-desc { margin:4px 0 0; font-size:12px; color:${MUTED}; line-height:1.5; }
     .rp-tier { font-size:10px; padding:1px 7px; border-radius:999px; flex:none;
@@ -140,6 +159,9 @@ export function RegistryPanel({
   const [tab, setTab] = useState<TabId>('plugins');
   const [filter, setFilter] = useState<PluginFilter>('all');
   const [query, setQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ kind: 'ok' | 'warn' | 'err'; text: string } | null>(null);
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
   const serviceEntries = collectServices(plugins);
   const theme = registrySpec.theme;
   const eventColors = theme?.eventColors ?? {};
@@ -155,7 +177,52 @@ export function RegistryPanel({
     </button>
   );
 
-  const showToolbar = tab === 'plugins' || tab === 'services';
+  const showToolbar = tab === 'plugins' || tab === 'services' || tab === 'events';
+
+  const runScan = async () => {
+    if (!onScan || busy) return;
+    setBusy(true);
+    setNotice({ kind: 'ok', text: '正在扫描插件目录…' });
+    try {
+      const raw = await onScan();
+      const r = (raw ?? {}) as ScanFeedback;
+      if (r.ok === false) {
+        setNotice({ kind: 'err', text: r.error || '扫描失败' });
+        setFresh(new Set());
+        return;
+      }
+      const loaded = r.loaded ?? [];
+      const skipped = (r.skipped ?? []).filter((s) => s.reason !== 'disabled');
+      setFresh(new Set(loaded));
+      if (loaded.length > 0) {
+        setNotice({ kind: 'ok', text: `已装入 ${loaded.join('、')}` });
+      } else if (skipped.length > 0) {
+        setNotice({
+          kind: 'warn',
+          text: `没有新插件。跳过：${skipped.map((s) => `${s.id}（${s.reason}）`).join('、')}`,
+        });
+      } else {
+        setNotice({ kind: 'ok', text: '没有尚未注册的插件（当前已全部装入）' });
+      }
+    } catch (err) {
+      setNotice({ kind: 'err', text: String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runUnregister = (id: string, name: string) => {
+    if (!onUnregister || busy) return;
+    if (!window.confirm(`卸载「${name}」？依赖它的插件可能被级联卸掉。`)) return;
+    void Promise.resolve(onUnregister(id)).then(() => {
+      setNotice({ kind: 'warn', text: `已卸载 ${id}` });
+      setFresh((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    });
+  };
 
   return (
     <div className="rp">
@@ -186,18 +253,21 @@ export function RegistryPanel({
               {onScan && (
                 <button
                   type="button"
-                  className="rp-sub"
+                  className="rp-sub primary"
                   title="重新扫描 plugins/ 并加载尚未注册的插件"
-                  onClick={() => void onScan()}
+                  disabled={busy}
+                  onClick={() => void runScan()}
                 >
-                  扫描新插件
+                  {busy ? '扫描中…' : '扫描新插件'}
                 </button>
               )}
             </>
           )}
           <input
             className="rp-search"
-            placeholder={tab === 'plugins' ? '过滤插件…' : '过滤服务…'}
+            placeholder={
+              tab === 'plugins' ? '过滤插件…' : tab === 'events' ? '过滤事件…' : '过滤服务…'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -205,6 +275,12 @@ export function RegistryPanel({
             }}
             style={tab === 'services' ? { marginLeft: 0 } : undefined}
           />
+        </div>
+      )}
+
+      {notice && (
+        <div className={`rp-banner ${notice.kind}`} role="status">
+          {notice.text}
         </div>
       )}
 
@@ -218,14 +294,26 @@ export function RegistryPanel({
               (p.manifest.name ?? '').toLowerCase().includes(q) ||
               (p.manifest.description ?? '').toLowerCase().includes(q),
           );
-          if (filtered.length === 0) return <div className="rp-empty">暂无插件</div>;
+          if (filtered.length === 0) {
+            return (
+              <div className="rp-empty">
+                {q ? `没有匹配「${q}」的插件` : '暂无插件。点「扫描新插件」从 plugins/ 装入。'}
+              </div>
+            );
+          }
           return filtered.map((p) => {
             const tierClass =
               p.manifest.tier === 'core' ? 'core' : p.manifest.tier === 'experimental' ? 'exp' : '';
             return (
-              <div key={p.manifest.id} className="rp-card">
+              <div key={p.manifest.id} className={`rp-card${fresh.has(p.manifest.id) ? ' fresh' : ''}`}>
                 <div className="rp-card-head">
-                  <span className="rp-name">{p.manifest.name || p.manifest.id}</span>
+                  <span
+                    className={`rp-name${p.ui && onOpenPlugin ? ' open' : ''}`}
+                    title={p.ui ? '打开插件弹窗' : undefined}
+                    onClick={() => p.ui && onOpenPlugin?.(p.manifest.id)}
+                  >
+                    {p.manifest.name || p.manifest.id}
+                  </span>
                   <span className="rp-meta">
                     <span className={`rp-tier${tierClass ? ` ${tierClass}` : ''}`}>
                       {p.manifest.tier ?? 'standard'}
@@ -234,16 +322,28 @@ export function RegistryPanel({
                   </span>
                 </div>
                 {p.manifest.description && <p className="rp-desc">{p.manifest.description}</p>}
-                {p.config && Object.keys(p.config).length > 0 && (
+                {(() => {
+                  const rows = Object.entries(p.config ?? {}).filter(
+                    ([, v]) => v !== '' && v !== undefined && v !== null,
+                  );
+                  if (rows.length === 0) return null;
+                  return (
                   <div className="rp-cfg">
-                    {Object.entries(p.config).map(([k, v]) => (
+                    {rows.map(([k, v]) => (
                       <div key={k} className="rp-cfg-row">
                         <span className="rp-cfg-k">{k}</span>
-                        <span className="rp-cfg-v">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                        <span className="rp-cfg-v">
+                          {/key|token|secret|password/i.test(k)
+                            ? '••••'
+                            : typeof v === 'object'
+                              ? JSON.stringify(v)
+                              : String(v)}
+                        </span>
                       </div>
                     ))}
                   </div>
-                )}
+                  );
+                })()}
                 <div className="rp-foot">
                   <span className="rp-live">运行中</span>
                   {(p.services ?? []).map((s) => (
@@ -260,7 +360,7 @@ export function RegistryPanel({
                     <span className="rp-actions">
                       {p.ui && onOpenPlugin && (
                         <button type="button" className="rp-btn" onClick={() => onOpenPlugin(p.manifest.id)}>
-                          弹窗
+                          打开
                         </button>
                       )}
                       {onReload && (
@@ -278,7 +378,7 @@ export function RegistryPanel({
                           type="button"
                           className="rp-btn danger"
                           title="卸载该插件（onStop + effect 撤销 + 服务摘除）"
-                          onClick={() => void onUnregister(p.manifest.id)}
+                          onClick={() => runUnregister(p.manifest.id, p.manifest.name || p.manifest.id)}
                         >
                           卸载
                         </button>
@@ -371,17 +471,27 @@ export function RegistryPanel({
         )}
 
         {tab === 'events' &&
-          (events.length === 0 ? (
-            <div className="rp-empty">暂无事件</div>
-          ) : (
+          (() => {
+            const eq = q;
+            const shown = events.filter(
+              (e) =>
+                !eq ||
+                e.action.toLowerCase().includes(eq) ||
+                e.actor.toLowerCase().includes(eq) ||
+                (e.target ?? '').toLowerCase().includes(eq),
+            );
+            if (shown.length === 0) {
+              return <div className="rp-empty">{q ? `没有匹配「${q}」的事件` : '暂无事件'}</div>;
+            }
+            return (
             <ul className="rp-tl">
-              {events
-                .slice(-60)
+              {shown
+                .slice(-80)
                 .reverse()
                 .map((e, i) => {
                   const color = eventColors[e.action] ?? BLUE;
                   return (
-                    <li key={i} className="rp-tl-item">
+                    <li key={`${e.id ?? i}-${e.ts}`} className="rp-tl-item">
                       <span className="rp-tl-time">{fmtTime(e.ts)}</span>
                       <span className="rp-tl-actor">{e.actor}</span>
                       <span className="rp-tl-arrow">→</span>
@@ -393,7 +503,8 @@ export function RegistryPanel({
                   );
                 })}
             </ul>
-          ))}
+            );
+          })()}
       </div>
     </div>
   );

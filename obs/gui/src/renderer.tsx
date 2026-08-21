@@ -51,9 +51,13 @@ declare global {
 
 function RegistryApp(): React.ReactElement | null {
   const [state, setState] = useState<RendererState | null>(null);
+  const refresh = async () => {
+    const s = await window.wh.getState();
+    setState(s);
+  };
   useEffect(() => {
     let alive = true;
-    const refresh = async () => {
+    const tick = async () => {
       try {
         const s = await window.wh.getState();
         if (alive) setState(s);
@@ -61,8 +65,8 @@ function RegistryApp(): React.ReactElement | null {
         // 主进程未就绪时静默重试
       }
     };
-    void refresh();
-    const timer = setInterval(() => void refresh(), 1500);
+    void tick();
+    const timer = setInterval(() => void tick(), 1500);
     return () => {
       alive = false;
       clearInterval(timer);
@@ -80,9 +84,21 @@ function RegistryApp(): React.ReactElement | null {
       globalConfig={state.config}
       composition={state.composition}
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
-      onReload={(id) => void window.wh.reloadPlugin(id)}
-      onUnregister={(id) => void window.wh.unregisterPlugin(id)}
-      onScan={() => window.wh.scanPlugins()}
+      onReload={async (id) => {
+        const r = await window.wh.reloadPlugin(id);
+        await refresh();
+        return r;
+      }}
+      onUnregister={async (id) => {
+        const r = await window.wh.unregisterPlugin(id);
+        await refresh();
+        return r;
+      }}
+      onScan={async () => {
+        const r = await window.wh.scanPlugins();
+        await refresh();
+        return r;
+      }}
     />
   );
 }

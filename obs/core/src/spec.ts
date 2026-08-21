@@ -15,7 +15,19 @@ export const registrySpec: ObsSpec = {
   },
   theme: {
     // 亮色语义（深色底对比度友好）：绿=注册 / 红=注销 / 蓝=启动
-    eventColors: { register: '#7ee787', unregister: '#ff7b72', start: '#79c0ff' },
+    eventColors: {
+      register: '#7ee787',
+      unregister: '#ff7b72',
+      start: '#79c0ff',
+      scan: '#d2a8ff',
+      'session/start': '#7ee787',
+      'session/append': '#9ecbff',
+      'llm/request': '#d2a8ff',
+      'llm/result': '#d2a8ff',
+      'tools/register': '#ffa657',
+      'tools/call': '#ffa657',
+      'tools/result': '#ffa657',
+    },
     panel: { bg: '#16161e', fg: '#e6e6ef' },
   },
 };
