@@ -10,7 +10,7 @@ describe('llm 插件', () => {
   it('服务名契约绑定 + 必选 inject session', () => {
     expect(LLM_SERVICE).toBe('llm');
     expect(llmPlugin.manifest.provides).toEqual(['llm']);
-    expect(llmPlugin.inject).toEqual({ session: true, logger: false });
+    expect(llmPlugin.inject).toEqual({ session: true, logger: false, trajectory: false });
   });
 
   it('complete 把 user/assistant 写入 session，并发 llm/request 与 llm/result', async () => {

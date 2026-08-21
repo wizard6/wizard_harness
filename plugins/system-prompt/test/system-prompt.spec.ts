@@ -10,7 +10,7 @@ describe('system-prompt 插件', () => {
   it('服务名契约绑定 + 必选 inject session（不 inject agent/llm）', () => {
     expect(SYSTEM_PROMPT_SERVICE).toBe('systemPrompt');
     expect(systemPromptPlugin.manifest.provides).toEqual(['systemPrompt']);
-    expect(systemPromptPlugin.inject).toEqual({ session: true, logger: false });
+    expect(systemPromptPlugin.inject).toEqual({ session: true, logger: false, trajectory: false });
   });
 
   it('set 登记当前文本；apply 写入 session；相同内容再 apply 跳过', async () => {

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>events 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 18px 0 0; font-size: 13px; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · core plugin</div>
+      <h1>events — 事件总线服务</h1>
+      <p class="lede">把总线暴露为服务：发布 / 订阅 / 查历史 / 清空。观测台「事件」页与弹窗读的是壳账本（内存 + <code>docs/logs/events.jsonl</code>）。</p>
+      <div class="badges">
+        <span class="badge ok">id: events</span>
+        <span class="badge ok">provides: events</span>
+        <span class="badge">tier: core</span>
+      </div>
+      <nav>
+        <a href="#api">服务 API</a>
+        <a href="#clear">清空</a>
+        <a href="#ai">给后续 AI</a>
+      </nav>
+    </header>
+
+    <h2 id="api">1. 提供的服务</h2>
+    <p>服务名 <code>EVENTS_SERVICE = 'events'</code>。与 <code>ctx.events</code>（观测侧）同名，消费方用 <code>ctx.get('events')</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">publish(action, target?, payload?)</td><td>以 plugin:events 发一条</td></tr>
+        <tr><td class="mono">subscribe(listener)</td><td>订总线，返回取消函数</td></tr>
+        <tr><td class="mono">history(query?)</td><td>内存环形缓冲（默认 500）</td></tr>
+        <tr><td class="mono">count()</td><td>缓冲条数</td></tr>
+        <tr><td class="mono">clear()</td><td>清空内存缓冲，不发事件</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="clear">2. 清空</h2>
+    <div class="card">
+      <p style="margin:0">观测台事件页 / 事件弹窗的「清空」走壳 IPC：截断 jsonl、清空壳内存、再调 <code>events.clear()</code>。之后新事件照常追加。</p>
+    </div>
+
+    <h2 id="ai">3. 给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要把清空做成 HTTP 默认白名单（会毁掉共享账本）</li>
+        <li>弹窗列表来自 <code>wh.eventsHistory</code>，不是 <code>EventsService.history</code></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

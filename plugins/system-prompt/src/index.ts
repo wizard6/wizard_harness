@@ -29,7 +29,7 @@ const systemPromptPlugin: Plugin = {
     config: {},
     tier: 'standard',
   },
-  inject: { session: true, logger: false },
+  inject: { session: true, logger: false, trajectory: false },
   api,
   ui: {
     title: 'System Prompt',

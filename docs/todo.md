@@ -16,6 +16,7 @@
 | 7 | session-persist | session 持久化 | 已落地 | 关进程不丢 |
 | 8 | compaction | session compaction | 已落地 | 依赖可写回的 session |
 | 9 | ui-bridge | 弹窗白名单 RPC | 已落地 | 插件 `ui.rpc` 声明才放行，不是任意方法桥 |
+| 10 | app-ui-plugin | App demo 收成插件 + profile 复合 | 已落地 | 产品面也是插件，不要写死在观测台 |
 
 ## 实现结果
 
@@ -64,4 +65,11 @@
 ### 9. 弹窗白名单 RPC
 
 - `PluginUi.rpc: { 服务名: 方法[] }`。preload-safe 暴露 `wh.call`；主进程按弹窗所属插件校验。agent-loop 弹窗声明 `run`/`cancel` 并可点运行。
-- **不是**任意服务桥。App demo / 观测台试跑走壳白名单，不经过 `ui.rpc`。
+- **不是**任意服务桥。产品聊天走 `app-ui` 的 `ui.rpc` → `appChat`；观测台壳白名单仍给 HTTP `/rpc` 用。
+
+### 10. App demo 是插件
+
+- `app-chat`：包装 `agentLoop`（默认提示词 / 步数），无窗口。
+- `app-ui`：薄壳窗口，`inject: appChat`（轨迹可选），`ui.rpc` 放行 `appChat.send|cancel` 与 `trajectory.latest|list|snapshot`。右栏展示本轮时间线。
+- 组合：`bundles/app` insert `app-chat` 再 `app-ui`。观测台只 `openPlugin('app-ui')`。
+- 文档：`docs/plugins/app-chat.html`、`docs/plugins/app-ui.html`。

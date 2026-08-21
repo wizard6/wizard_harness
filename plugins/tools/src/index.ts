@@ -1,5 +1,5 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
-import type { SessionService, ToolCallResult, ToolInfo, ToolSpec, ToolsService } from '@wizard-harness/contracts';
+import type { SessionService, ToolCallResult, ToolInfo, ToolSpec, ToolsService, TrajectoryService } from '@wizard-harness/contracts';
 import { createToolRegistry } from './registry.js';
 
 /**
@@ -42,7 +42,7 @@ const toolsPlugin: Plugin = {
     config: {},
     tier: 'standard',
   },
-  inject: { session: true, logger: false },
+  inject: { session: true, logger: false, trajectory: false },
   api,
   ui: {
     title: '工具注册表',
@@ -71,9 +71,16 @@ const toolsPlugin: Plugin = {
   },
   register(c) {
     ctx = c;
-    impl = createToolRegistry(sessionOf, (action, target, payload) => {
-      ctx?.emit({ action, target, payload });
-    });
+    impl = createToolRegistry(
+      sessionOf,
+      (action, target, payload) => {
+        ctx?.emit({ action, target, payload });
+      },
+      (sessionId, data) => {
+        const traj = ctx?.trajectory ?? ctx?.get<TrajectoryService>('trajectory');
+        traj?.record(sessionId, 'tool', data);
+      },
+    );
     impl.register({
       name: 'echo',
       description: '原样返回 args.input（没有则返回整个 args）',

@@ -1,0 +1,9 @@
+[
+  {
+    "after": "agent-loop",
+    "insert": [
+      { "id": "app-chat", "name": "app-chat" },
+      { "id": "app-ui", "name": "app-ui" }
+    ]
+  }
+]

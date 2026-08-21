@@ -8,6 +8,9 @@ import type { ToolsService } from './tools.js';
 import type { AgentService } from './agent.js';
 import type { AgentLoopService } from './agent-loop.js';
 import type { SystemPromptService } from './system-prompt.js';
+import type { AppUiService } from './app-ui.js';
+import type { AppChatService } from './app-chat.js';
+import type { TrajectoryService } from './trajectory.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -34,6 +37,19 @@ export { AGENT_LOOP_SERVICE } from './agent-loop.js';
 export type { AgentLoopResult, AgentLoopRunOpts, AgentLoopService } from './agent-loop.js';
 export { SYSTEM_PROMPT_SERVICE } from './system-prompt.js';
 export type { SystemPromptService } from './system-prompt.js';
+export { APP_UI_SERVICE } from './app-ui.js';
+export type { AppUiService } from './app-ui.js';
+export { APP_CHAT_SERVICE } from './app-chat.js';
+export type { AppChatSendOpts, AppChatSendResult, AppChatService } from './app-chat.js';
+export { TRAJECTORY_SERVICE } from './trajectory.js';
+export type {
+  Trajectory,
+  TrajectoryKind,
+  TrajectoryService,
+  TrajectorySnapshot,
+  TrajectorySpan,
+  TrajectorySummary,
+} from './trajectory.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -55,5 +71,8 @@ declare module '@wizard-harness/core' {
     readonly agent?: AgentService;
     readonly agentLoop?: AgentLoopService;
     readonly systemPrompt?: SystemPromptService;
+    readonly appUi?: AppUiService;
+    readonly appChat?: AppChatService;
+    readonly trajectory?: TrajectoryService;
   }
 }

@@ -13,6 +13,7 @@ function asContent(value: unknown): string {
 export function createToolRegistry(
   sessionOf: () => SessionService,
   emit: (action: string, target: string, payload: unknown) => void,
+  record?: (sessionId: string, data: Record<string, unknown>) => void,
 ): ToolsService {
   const tools = new Map<string, ToolSpec>();
 
@@ -48,6 +49,7 @@ export function createToolRegistry(
       }
       sess.append('tool-result', { callId, name, content, ok });
       emit('tools/result', name, { callId, sessionId: sess.id, ok });
+      record?.(sess.id, { name, args, callId, ok, content });
       return { callId, name, content, ok, sessionId: sess.id };
     },
   };

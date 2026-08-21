@@ -10,7 +10,7 @@ describe('tools 插件', () => {
   it('服务名契约绑定 + 必选 inject session', () => {
     expect(TOOLS_SERVICE).toBe('tools');
     expect(toolsPlugin.manifest.provides).toEqual(['tools']);
-    expect(toolsPlugin.inject).toEqual({ session: true, logger: false });
+    expect(toolsPlugin.inject).toEqual({ session: true, logger: false, trajectory: false });
   });
 
   it('内置 echo：call 写入 tool-result，观测 tools/register · call · result', async () => {

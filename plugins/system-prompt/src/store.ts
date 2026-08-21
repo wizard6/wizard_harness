@@ -1,5 +1,5 @@
 import type { PluginContext } from '@wizard-harness/core';
-import type { SessionService, SystemPromptService } from '@wizard-harness/contracts';
+import type { SessionService, SystemPromptService, TrajectoryService } from '@wizard-harness/contracts';
 
 interface Row {
   content: string;
@@ -35,6 +35,7 @@ export function createSystemPromptStore(ctx: PluginContext): SystemPromptService
       sess.append('message', { role: 'system', content: row.content });
       row.applied = row.content;
       ctx.emit({ action: 'system-prompt/apply', target: sessionId, payload: { bytes: row.content.length } });
+      ctx.get<TrajectoryService>('trajectory')?.record(sessionId, 'prompt', { phase: 'apply', content: row.content });
     },
   };
 }

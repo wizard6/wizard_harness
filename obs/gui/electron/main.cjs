@@ -1,9 +1,9 @@
 // wizard-harness GUI 桌面壳 · Electron 主进程
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, dialog } = require('electron');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
-const { mkdirSync, readFileSync, readdirSync, existsSync } = require('node:fs');
+const { mkdirSync, readFileSync, readdirSync, existsSync, writeFileSync } = require('node:fs');
 
 /** 父终端关掉后 stdout 会 EPIPE；console.log 不应打崩主进程 */
 function ignoreBrokenPipe(stream) {
@@ -131,6 +131,7 @@ function glassOptions(extra) {
   return {
     show: false,
     frame: false,
+    minimizable: true,
     maximizable: false,
     // 深色主题底：不用系统亚克力透桌面，避免背景被洗浅
     backgroundColor: '#16161e',
@@ -147,10 +148,13 @@ function attachGlass(win) {
 }
 
 const PLUGIN_CHROME_CSS = `
-  html, body { background: #16161e !important; }
-  body { padding-top: 38px !important; }
+  html, body {
+    height: 100% !important; overflow: hidden !important;
+    box-sizing: border-box !important; background: #16161e !important;
+  }
+  body { padding-top: 38px !important; margin: 0 !important; position: relative !important; }
   #wh-titlebar {
-    position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 99999;
+    position: absolute; top: 0; left: 0; right: 0; height: 38px; z-index: 99999;
     display: flex; align-items: center; gap: 10px; padding: 0 0 0 12px;
     background: rgba(22,22,30,.88);
     backdrop-filter: blur(28px) saturate(180%);
@@ -164,12 +168,16 @@ const PLUGIN_CHROME_CSS = `
     overflow: hidden;
   }
   #wh-titlebar .win-caption,
-  #wh-titlebar .win-caption * { -webkit-app-region: no-drag; }
-  #wh-titlebar .win-caption { display: flex; align-items: stretch; margin-left: auto; height: 38px; }
+  #wh-titlebar .win-caption * { -webkit-app-region: no-drag; pointer-events: auto; }
+  #wh-titlebar .win-caption {
+    display: flex; align-items: stretch; margin-left: auto; height: 38px;
+    flex: none; position: relative; z-index: 2;
+  }
   #wh-titlebar .win-caption button {
     width: 46px; height: 38px; border: none; padding: 0; cursor: pointer;
     background: transparent; color: #d7d7e0;
     display: flex; align-items: center; justify-content: center;
+    font: inherit; line-height: 0;
   }
   #wh-titlebar .win-caption button:hover { color: #fff; }
   #wh-titlebar .wc-min:hover { background: rgba(255,255,255,.08); }
@@ -182,17 +190,6 @@ const PLUGIN_CHROME_CSS = `
     text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
     -webkit-app-region: drag; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  /* 全局滚动条（与观测窗口一致） */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.14);
-    border-radius: 5px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
-  ::-webkit-scrollbar-corner { background: transparent; }
 `;
 
 function injectPluginChrome(win, title) {
@@ -213,7 +210,7 @@ function injectPluginChrome(win, title) {
         + '</div>';
       bar.querySelector('.title').textContent = ${safeTitle};
       bar.querySelectorAll('[data-act]').forEach((btn) => {
-        btn.addEventListener('mousedown', (e) => {
+        btn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
           const act = btn.getAttribute('data-act');
@@ -232,6 +229,7 @@ let harness;
 let registrar;
 let bus;
 const events = [];
+let eventsFile = '';
 let composition;
 let runtimeDirs = { pluginsDir: '', profileDir: undefined, bundlesDir: undefined, homeDir: undefined };
 
@@ -241,15 +239,16 @@ async function init() {
   bus.subscribe((e) => events.push(e));
   // 与 CLI / TUI / API 共用同一份事件账本（仓库根 docs/logs/events.jsonl）
   // 用相对 main.cjs 的稳定路径，避免受启动 cwd（obs/gui）影响
-  const eventsFile = path.resolve(__dirname, '..', '..', '..', 'docs', 'logs', 'events.jsonl');
-  mkdirSync(path.dirname(eventsFile), { recursive: true });
+  const file = path.resolve(__dirname, '..', '..', '..', 'docs', 'logs', 'events.jsonl');
+  eventsFile = file;
+  mkdirSync(path.dirname(file), { recursive: true });
   // 预填历史：启动时把已落盘的 jsonl 载入内存（重启不丢历史）
   try {
-    events.push(...core.readEvents(eventsFile));
+    events.push(...core.readEvents(file));
   } catch {
     // 文件不存在/损坏时忽略，冷启动从空开始
   }
-  bus.subscribe(core.createFileSink(eventsFile));
+  bus.subscribe(core.createFileSink(file));
 
   // 壳配置：不想启动的插件 id 写进 disabledPlugins
   const config = { disabledPlugins: [] };
@@ -404,21 +403,16 @@ function startGateway() {
   });
 }
 
-/** 创建观测窗口（registry / quality / demo 各自独立窗口） */
+/** 创建观测窗口（registry / quality 各自独立窗口） */
 function createWindow(view = 'registry') {
   const isQuality = view === 'quality';
-  const isDemo = view === 'demo';
   const win = new BrowserWindow(
     glassOptions({
-      width: isQuality ? 1180 : isDemo ? 860 : 960,
-      height: isDemo ? 760 : 720,
-      minWidth: isQuality ? 900 : isDemo ? 640 : 720,
-      minHeight: isDemo ? 560 : 480,
-      title: isQuality
-        ? 'wizard-harness · 质量检测'
-        : isDemo
-          ? 'wizard-harness · App demo'
-          : 'wizard-harness · 观测台',
+      width: isQuality ? 1180 : 960,
+      height: 720,
+      minWidth: isQuality ? 900 : 720,
+      minHeight: 480,
+      title: isQuality ? 'wizard-harness · 质量检测' : 'wizard-harness · 观测台',
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
@@ -476,10 +470,23 @@ async function scanPlugins() {
 }
 
 const popupPluginId = new WeakMap();
+const pluginWindows = new Map();
 
 function openPluginWindow(id) {
+  const existing = pluginWindows.get(id);
+  if (existing && !existing.isDestroyed()) {
+    existing.focus();
+    return;
+  }
   const plugin = harness?.registry.get(id);
-  if (!plugin || !plugin.ui) return;
+  if (!plugin) {
+    dialog.showErrorBox('插件窗口', `${id} 未加载。default profile 需叠 bundles/app，或先扫描插件。`);
+    return;
+  }
+  if (!plugin.ui) {
+    dialog.showErrorBox('插件窗口', `${id} 没有 ui`);
+    return;
+  }
   const title = plugin.ui.title || plugin.manifest.id;
   // 安全：仅 trusted 插件的弹窗注入 execCommand（任意命令执行能力）；其余插件只给低风险的事件历史
   const preload = plugin.manifest.trusted ? 'preload-console.cjs' : 'preload-safe.cjs';
@@ -499,6 +506,8 @@ function openPluginWindow(id) {
   injectPluginChrome(popup, title);
   const html = plugin.ui.content || '<p>（无内容）</p>';
   popupPluginId.set(popup, id);
+  pluginWindows.set(id, popup);
+  popup.on('closed', () => pluginWindows.delete(id));
   popup.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
@@ -600,8 +609,23 @@ ipcMain.handle('wh:exec-command', async (_evt, command) => {
   return svc.exec(String(command));
 });
 
-// 事件历史通道（事件总线插件弹窗调用）
+// 事件历史通道（事件总线插件弹窗 / 观测台）
 ipcMain.handle('wh:events-history', () => events.slice(-500));
+
+function clearEventLog() {
+  events.length = 0;
+  if (eventsFile) {
+    try {
+      writeFileSync(eventsFile, '');
+    } catch (err) {
+      return { ok: false, error: String(err) };
+    }
+  }
+  const svc = harness?.services.get('events');
+  if (svc && typeof svc.clear === 'function') svc.clear();
+  return { ok: true };
+}
+ipcMain.handle('wh:events-clear', () => clearEventLog());
 
 // 质量检测通道：实时计算文件较上次质检的修改状态（主进程实时算，无缓存）
 ipcMain.handle('wh:quality-data', () => computeQualityData());
@@ -679,7 +703,12 @@ ipcMain.handle('wh:rerun-check', () => runHeuristicCheck());
 ipcMain.on('wh:window-control', (event, action) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win || win.isDestroyed()) return;
-  if (action === 'min') win.minimize();
+  if (action === 'min') {
+    // Windows 无边框：mousedown 同期 minimize 会被立刻还原；延后一拍
+    setTimeout(() => {
+      if (!win.isDestroyed()) win.minimize();
+    }, 0);
+  }
   else if (action === 'max') win.isMaximized() ? win.unmaximize() : win.maximize();
   else if (action === 'close') win.close();
 });
@@ -722,21 +751,6 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
-let demoWindow = null;
-function openDemoWindow() {
-  if (demoWindow && !demoWindow.isDestroyed()) {
-    demoWindow.focus();
-    return;
-  }
-  demoWindow = createWindow('demo');
-  demoWindow.on('closed', () => {
-    demoWindow = null;
-  });
-}
-ipcMain.handle('wh:open-demo', () => {
-  openDemoWindow();
-});
-
 /** 系统托盘：常驻后台 + 快捷菜单（观测台 / 质量检测 / 退出） */
 let tray = null;
 function setupTray() {
@@ -746,7 +760,7 @@ function setupTray() {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: '显示观测台', click: () => openRegistryWindow() },
-      { label: '打开 App demo', click: () => openDemoWindow() },
+      { label: '打开 App demo', click: () => openPluginWindow('app-ui') },
       { label: '打开质量检测', click: () => openQualityWindow() },
       { type: 'separator' },
       { label: '退出', click: () => app.quit() },

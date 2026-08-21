@@ -12,6 +12,7 @@ export interface RunModelOpts {
   tools?: readonly LlmToolSpec[];
   signal?: AbortSignal;
   onDelta?: (chunk: string) => void;
+  onHttp?: (trace: Record<string, unknown>) => void;
 }
 
 function mockReply(
@@ -157,28 +158,40 @@ export async function runModel(
   }
   const url = cfg.baseUrl.replace(/\/$/, '') + '/chat/completions';
   const stream = Boolean(opts.onDelta) && !opts.tools?.length;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(cfg.apiKey ? { authorization: `Bearer ${cfg.apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      messages: toWireMessages(messages),
-      temperature: 0,
-      ...(asOpenAiTools(opts.tools) ? { tools: asOpenAiTools(opts.tools) } : {}),
-      ...(stream ? { stream: true } : {}),
-      ...(cfg.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
-    }),
-    signal: opts.signal,
-  });
+  const wire = toWireMessages(messages);
+  const tools = asOpenAiTools(opts.tools);
+  const request = {
+    model: cfg.model,
+    messages: wire,
+    temperature: 0,
+    ...(tools ? { tools } : {}),
+    ...(stream ? { stream: true } : {}),
+    ...(cfg.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
+  };
+  const traceBase = { url, model: cfg.model, stream, provider: cfg.provider, request: { messages: wire, tools } };
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(cfg.apiKey ? { authorization: `Bearer ${cfg.apiKey}` } : {}),
+      },
+      body: JSON.stringify(request),
+      signal: opts.signal,
+    });
+  } catch (err) {
+    opts.onHttp?.({ ...traceBase, ok: false, status: 0, error: String(err) });
+    throw err;
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    opts.onHttp?.({ ...traceBase, ok: false, status: res.status, error: body.slice(0, 500) });
     throw new Error(`llm http ${res.status}${body ? `: ${body.slice(0, 200)}` : ''}`);
   }
   if (stream) {
     const text = await readSseText(res, opts.onDelta, opts.signal);
+    opts.onHttp?.({ ...traceBase, ok: true, status: res.status, response: { text } });
     return { text, provider: cfg.provider };
   }
   const json = (await res.json()) as {
@@ -187,5 +200,7 @@ export async function runModel(
   const msg = json.choices?.[0]?.message;
   const text = msg?.content ?? '';
   if (text) opts.onDelta?.(text);
-  return { text, provider: cfg.provider, toolCalls: parseToolCalls(msg?.tool_calls) };
+  const toolCalls = parseToolCalls(msg?.tool_calls);
+  opts.onHttp?.({ ...traceBase, ok: true, status: res.status, response: { text, toolCalls } });
+  return { text, provider: cfg.provider, toolCalls };
 }

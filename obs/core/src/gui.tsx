@@ -17,6 +17,8 @@ export interface RegistryPanelProps {
   onUnregister?: (id: string) => Promise<unknown> | void;
   /** 再扫描插件目录，装入尚未注册的插件 */
   onScan?: () => Promise<ScanFeedback | void> | ScanFeedback | void;
+  /** 清空事件账本（内存 + 落盘） */
+  onClearEvents?: () => Promise<{ ok?: boolean; error?: string } | void> | { ok?: boolean; error?: string } | void;
   /** 标题栏右侧槽（桌面壳放入交通灯） */
   trailing?: React.ReactNode;
   /** 双击标题栏（桌面壳用于最大化） */
@@ -28,6 +30,7 @@ export interface ScanFeedback {
   loaded?: string[];
   already?: string[];
   skipped?: { id: string; reason: string }[];
+  warnings?: string[];
   error?: string;
 }
 
@@ -153,6 +156,7 @@ export function RegistryPanel({
   onReload,
   onUnregister,
   onScan,
+  onClearEvents,
   trailing,
   onHeaderDoubleClick,
 }: RegistryPanelProps): React.ReactElement {
@@ -193,17 +197,37 @@ export function RegistryPanel({
       }
       const loaded = r.loaded ?? [];
       const skipped = (r.skipped ?? []).filter((s) => s.reason !== 'disabled');
+      const warnings = (r.warnings ?? []).filter((w) => !w.startsWith('组合树未解析到插件'));
       setFresh(new Set(loaded));
       if (loaded.length > 0) {
         setNotice({ kind: 'ok', text: `已装入 ${loaded.join('、')}` });
       } else if (skipped.length > 0) {
+        const why = warnings.length ? ` ${warnings.join('；')}` : '';
         setNotice({
           kind: 'warn',
-          text: `没有新插件。跳过：${skipped.map((s) => `${s.id}（${s.reason}）`).join('、')}`,
+          text: `没有新插件。跳过：${skipped.map((s) => `${s.id}（${s.reason}）`).join('、')}。${why}`.trim(),
         });
       } else {
         setNotice({ kind: 'ok', text: '没有尚未注册的插件（当前已全部装入）' });
       }
+    } catch (err) {
+      setNotice({ kind: 'err', text: String(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runClearEvents = async () => {
+    if (!onClearEvents || busy) return;
+    setBusy(true);
+    try {
+      const raw = await onClearEvents();
+      const r = (raw ?? {}) as { ok?: boolean; error?: string };
+      if (r.ok === false) {
+        setNotice({ kind: 'err', text: r.error || '清空失败' });
+        return;
+      }
+      setNotice({ kind: 'ok', text: '事件已清空' });
     } catch (err) {
       setNotice({ kind: 'err', text: String(err) });
     } finally {
@@ -262,6 +286,17 @@ export function RegistryPanel({
                 </button>
               )}
             </>
+          )}
+          {tab === 'events' && onClearEvents && (
+            <button
+              type="button"
+              className="rp-sub"
+              title="清空内存缓冲与落盘账本"
+              disabled={busy || events.length === 0}
+              onClick={() => void runClearEvents()}
+            >
+              清空
+            </button>
           )}
           <input
             className="rp-search"

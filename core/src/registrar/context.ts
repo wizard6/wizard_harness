@@ -38,6 +38,8 @@ export interface ContextDeps {
   subscribe(listener: (event: PluginEvent) => void): () => void;
   /** 事件历史快照 */
   history(): PluginEvent[];
+  /** 清空内存事件缓冲 */
+  clearHistory(): void;
 }
 
 /** 构造插件上下文。Cordis：ctx.logger 等同 ctx.get('logger')（Proxy 属性注入）。 */
@@ -64,6 +66,7 @@ export function makePluginContext(pluginId: string, deps: ContextDeps): PluginCo
     events: {
       subscribe: deps.subscribe,
       history: deps.history,
+      clear: deps.clearHistory,
     },
   };
   self = new Proxy(base, {

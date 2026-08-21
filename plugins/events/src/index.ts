@@ -35,6 +35,10 @@ const api: EventsService = {
   count(): number {
     return ctx?.events.history().length ?? 0;
   },
+  /** 清空内存历史（不发事件） */
+  clear(): void {
+    ctx?.events.clear();
+  },
 };
 
 const eventsPlugin: Plugin = {
@@ -42,7 +46,7 @@ const eventsPlugin: Plugin = {
     id: 'events',
     version: '0.1.0',
     name: '事件总线插件',
-    description: '把事件总线能力暴露为服务：发布 / 订阅 / 查询历史',
+    description: '把事件总线能力暴露为服务：发布 / 订阅 / 查询历史 / 清空',
     provides: ['events'],
     config: { buffer: 500 },
     tier: 'core',
@@ -59,11 +63,12 @@ const eventsPlugin: Plugin = {
       '.bar{padding:10px 14px;border-bottom:1px solid #262634;background:#16161e;display:flex;gap:8px;align-items:center}',
       '.bar h1{font-size:14px;margin:0;font-weight:600}',
       '.bar .cnt{font-size:11px;color:#79c0ff;margin-left:auto}',
+      '.bar button{font:11px system-ui;cursor:pointer;background:transparent;border:1px solid #333;color:#a8a8bd;border-radius:8px;padding:3px 10px}',
       '#list{padding:8px 14px;font-size:12px;line-height:1.7}',
       '.ev{white-space:pre-wrap;word-break:break-all;padding:2px 0;border-bottom:1px dashed #1c1c28}',
       '.t{color:#a8a8bd}.a{color:#cfcfe0}.x{color:#ff7b72}.m{color:#79c0ff}',
       '</style></head><body>',
-      '<div class="bar"><h1>事件总线</h1><span class="cnt" id="cnt">-</span></div>',
+      '<div class="bar"><h1>事件总线</h1><span class="cnt" id="cnt">-</span><button id="clr">清空</button></div>',
       '<div id="list">加载中…</div>',
       '<script>',
       'var list=document.getElementById("list");var cnt=document.getElementById("cnt");',
@@ -75,6 +80,10 @@ const eventsPlugin: Plugin = {
       '}).join("");',
       'list.innerHTML=rows||"暂无事件";}catch(err){list.innerHTML="<span class=x>加载失败: "+esc(err)+"</span>";}}',
       'refresh();setInterval(refresh,1500);',
+      'document.getElementById("clr").onclick=async function(){',
+      'if(!window.wh||!window.wh.eventsClear)return;',
+      'await window.wh.eventsClear();refresh();',
+      '};',
       '</script></body></html>',
     ].join(''),
   },

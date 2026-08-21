@@ -24,7 +24,7 @@ pnpm test
 | `pnpm gen:events` | 向 `docs/logs/events.jsonl` 写入演示事件 |
 | `pnpm typecheck` | 各包 `tsc --noEmit`（obs/plugins 占位包除外） |
 
-CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`；事件同步落盘同一份 jsonl。
+CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`（能力）+ `bundles/app`（产品面 app-ui）；事件同步落盘同一份 jsonl。
 
 ### Bundle / Profile
 
@@ -51,8 +51,8 @@ Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm 
 ```
 core/                 注册器、事件总线、分发器、插件发现、Profile/Bundle 组合、运行时装配、JSONL 读写
 contracts/            服务契约层（服务名 ↔ 接口绑定：LoggerService / EventsService / ConsoleService，独立于任何插件）
-bundles/              可分发 patch 层（base 挂入现有四个插件）
-profiles/             可运行组合（default 叠 base；可选 wizard.patch.json 本地覆盖）
+bundles/              可分发 patch 层（base = 能力插件含 trajectory；app = app-chat + app-ui）
+profiles/             可运行组合（default 叠 base + app；可选 wizard.patch.json 本地覆盖）
 obs/spec/             观测契约（ObsSpec）
 obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
@@ -83,7 +83,9 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
 4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管 System Prompt。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
 5. **system-prompt（已落地薄切片）** — 按 session 登记当前 System Prompt；`apply` 才写入 session。说明：[docs/plugins/system-prompt.html](docs/plugins/system-prompt.html)
-6. **agent-loop（已落地薄切片）** — 编排 `llm.complete` + `tools.call`，循环开始时 `systemPrompt.apply`。文本协议 `echo …` / `tool name {json}`。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+6. **agent-loop（已落地薄切片）** — 编排 `llm.complete` + `tools.call`，循环开始时 `systemPrompt.apply`。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+7. **trajectory（已落地薄切片）** — 执行轨迹：拼提示词、HTTP、工具进出、complete。不替代 session。说明：[docs/plugins/trajectory.html](docs/plugins/trajectory.html)
+8. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口）；`app-ui` 是薄壳窗口，`ui.rpc` 调 `appChat.send`，右栏只读 `trajectory.latest`。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
 
 ## 许可
 

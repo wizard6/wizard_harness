@@ -18,4 +18,6 @@ export interface EventsService {
   history(query?: EventQuery): PluginEvent[];
   /** 当前缓冲的事件条数 */
   count(): number;
+  /** 清空内存历史。不发事件。落盘账本由运行时壳一并截断。 */
+  clear(): void;
 }

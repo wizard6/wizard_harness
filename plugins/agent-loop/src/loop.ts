@@ -9,6 +9,7 @@ import type {
   SessionService,
   SystemPromptService,
   ToolsService,
+  TrajectoryService,
 } from '@wizard-harness/contracts';
 
 export interface ToolIntent {
@@ -64,6 +65,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
     async run(opts: AgentLoopRunOpts = {}): Promise<AgentLoopResult> {
       const agents = need(ctx.agent ?? ctx.get<AgentService>('agent'), 'agent');
       const prompts = ctx.systemPrompt ?? ctx.get<SystemPromptService>('systemPrompt');
+      const traj = ctx.trajectory ?? ctx.get<TrajectoryService>('trajectory');
       const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 8));
       let id = opts.agentId?.trim();
       if (!id) id = agents.spawn({ title: 'agent-loop' }).id;
@@ -73,12 +75,14 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
       const tools = need(handle.ctx.tools ?? handle.ctx.get<ToolsService>('tools'), 'tools');
       const session = handle.ctx.session ?? handle.ctx.get<SessionService>('session');
       const sessionId = handle.sessionId;
+      const useTools = opts.useTools !== false;
+      const trace = traj?.start({ agentId: id, sessionId });
+      trace?.append('run-start', { maxSteps, useTools });
       if (opts.systemPrompt) prompts?.set(sessionId, opts.systemPrompt);
       prompts?.apply(sessionId);
 
       const ac = new AbortController();
       running.set(id, ac);
-      const useTools = opts.useTools !== false;
       const listed = useTools
         ? tools.list().map((t) => ({ name: t.name, description: t.description }))
         : [];
@@ -116,7 +120,11 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
           ctx.emit({ action: 'agent-loop/step', target: id, payload: { steps, phase: 'complete' } });
         }
         ctx.emit({ action: 'agent-loop/end', target: id, payload: { steps } });
+        trace?.append('run-end', { steps, text: result.text, provider: result.provider });
         return { agentId: id, sessionId, text: result.text, steps, provider: result.provider };
+      } catch (err) {
+        trace?.append('run-end', { error: String(err) });
+        throw err;
       } finally {
         running.delete(id);
       }

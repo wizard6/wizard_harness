@@ -28,7 +28,7 @@ const agentLoopPlugin: Plugin = {
     config: { maxSteps: 8, compactKeep: 0 },
     tier: 'standard',
   },
-  inject: { agent: true, llm: true, tools: true, systemPrompt: false, logger: false },
+  inject: { agent: true, llm: true, tools: true, systemPrompt: false, logger: false, trajectory: false },
   api,
   ui: {
     title: 'Agent 循环',

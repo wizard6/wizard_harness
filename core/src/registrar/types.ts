@@ -176,10 +176,11 @@ export interface PluginContext {
       patch: Record<string, unknown>,
     ) => void,
   ): () => void;
-  /** 事件观测侧：订阅总线 / 查最近事件历史（只读） */
+  /** 事件观测侧：订阅总线 / 查最近事件历史 / 清空内存缓冲 */
   events: {
     subscribe(listener: (event: PluginEvent) => void): () => void;
     history(): PluginEvent[];
+    clear(): void;
   };
 }
 

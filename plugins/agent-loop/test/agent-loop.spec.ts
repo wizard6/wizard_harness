@@ -35,6 +35,7 @@ describe('agent-loop 插件', () => {
       tools: true,
       systemPrompt: false,
       logger: false,
+      trajectory: false,
     });
   });
 

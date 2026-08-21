@@ -1,0 +1,36 @@
+import type { Plugin } from '@wizard-harness/core';
+import { APP_UI_SERVICE } from '@wizard-harness/contracts';
+import type { AppUiService } from '@wizard-harness/contracts';
+import { APP_UI_HTML } from './page.js';
+
+/**
+ * app-ui：产品薄壳窗口。只经 ui.rpc 调 appChat，不碰 agentLoop。
+ * 说明文档：docs/plugins/app-ui.html
+ */
+const api: AppUiService = { title: 'App demo' };
+
+const appUiPlugin: Plugin = {
+  manifest: {
+    id: 'app-ui',
+    version: '0.1.0',
+    name: 'App demo',
+    description: '产品聊天窗口。经 appChat.send 发消息，右栏只读本轮轨迹。',
+    provides: [APP_UI_SERVICE],
+    config: {},
+    tier: 'standard',
+  },
+  inject: { appChat: true, trajectory: false, logger: false },
+  api,
+  ui: {
+    title: 'App demo',
+    width: 1080,
+    height: 720,
+    rpc: { appChat: ['send', 'cancel'], trajectory: ['latest', 'list', 'snapshot'] },
+    content: APP_UI_HTML,
+  },
+  register(c) {
+    c.logger?.info?.('app-ui 插件就绪（产品薄壳）');
+  },
+};
+
+export default appUiPlugin;

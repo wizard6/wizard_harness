@@ -3,7 +3,7 @@
   "private": true,
   "wizardHarness": {
     "profile": {
-      "bundles": ["base"]
+      "bundles": ["base", "app"]
     }
   }
 }

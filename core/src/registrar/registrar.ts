@@ -239,6 +239,9 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
       services: servicesView,
       subscribe: (listener) => bus.subscribe(listener),
       history: () => [...history],
+      clearHistory: () => {
+        history.length = 0;
+      },
     });
     if (key) tagContext(self, key);
     attachScopeFork(self, (nextKey, pe) => bindContext(plugin, pe, nextKey));

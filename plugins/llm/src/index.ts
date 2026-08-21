@@ -1,12 +1,16 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
-import type { LlmMessage, LlmService, SessionService } from '@wizard-harness/contracts';
-import { runModel } from './adapter.js';
+import type { LlmMessage, LlmService, SessionService, TrajectoryService } from '@wizard-harness/contracts';
+import { runModel, toWireMessages } from './adapter.js';
 
 /**
  * llm 插件：一个模型适配器，读写都落到 session。
  * 说明文档：docs/plugins/llm.html
  */
 let ctx: PluginContext | undefined;
+
+function trajOf(): TrajectoryService | undefined {
+  return ctx?.trajectory ?? ctx?.get<TrajectoryService>('trajectory');
+}
 
 function sessionOf(): SessionService {
   const s = ctx?.session ?? ctx?.get<SessionService>('session');
@@ -58,7 +62,14 @@ const api: LlmService = {
 
     const cfg = cfgOf();
     const messages = asMessages(sess.replay());
+    const wire = toWireMessages(messages);
     ctx?.emit({ action: 'llm/request', target: sess.id, payload: { provider: cfg.provider, n: messages.length } });
+    trajOf()?.record(sess.id, 'prompt', {
+      phase: 'assemble',
+      messages,
+      wire,
+      tools: input.tools ?? [],
+    });
     sess.append('turn', { phase: 'start' });
     try {
       const { text, provider, toolCalls } = await runModel(messages, cfg, {
@@ -68,12 +79,16 @@ const api: LlmService = {
           ctx?.emit({ action: 'llm/delta', target: sess.id, payload: { bytes: chunk.length } });
           input.onDelta?.(chunk);
         },
+        onHttp: (http) => {
+          trajOf()?.record(sess.id, 'http', http);
+        },
       });
       sess.append('message', {
         role: 'assistant',
         content: text,
         ...(toolCalls ? { tool_calls: toolCalls } : {}),
       });
+      trajOf()?.record(sess.id, 'complete', { provider, text, toolCalls: toolCalls ?? [] });
       ctx?.emit({
         action: 'llm/result',
         target: sess.id,
@@ -96,7 +111,7 @@ const llmPlugin: Plugin = {
     config: { provider: 'mock', baseUrl: '', apiKey: '', model: 'gpt-4o-mini' },
     tier: 'standard',
   },
-  inject: { session: true, logger: false },
+  inject: { session: true, logger: false, trajectory: false },
   api,
   ui: {
     title: '模型适配器',
