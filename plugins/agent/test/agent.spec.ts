@@ -46,6 +46,26 @@ describe('agent 插件', () => {
     expect(seen.some((e) => e.action === 'agent/stop' && e.target === 'a')).toBe(true);
   });
 
+  it('spawn / setSystemPrompt 把 system 消息写入绑定 session', async () => {
+    const bus = createEventBus();
+    const seen: PluginEvent[] = [];
+    bus.subscribe((e) => seen.push(e));
+    const harness = createHarness({ bus });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(agentPlugin);
+    const agent = harness.services.get<AgentService>('agent')!;
+    const session = harness.services.get<SessionService>('session')!;
+    const h = agent.spawn({ id: 'p', systemPrompt: 'be brief' });
+    expect(h.systemPrompt).toBe('be brief');
+    const first = session.get(h.sessionId)!.replay();
+    expect(first).toHaveLength(1);
+    expect(first[0]?.data).toMatchObject({ role: 'system', content: 'be brief' });
+    agent.setSystemPrompt('p', 'be terse');
+    expect(agent.get('p')?.systemPrompt).toBe('be terse');
+    expect(session.get(h.sessionId)!.replay()).toHaveLength(2);
+    expect(seen.filter((e) => e.action === 'agent/prompt')).toHaveLength(2);
+  });
+
   it('重名 spawn 抛错；未知 stop 抛错；不调 llm', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await harness.registry.register(sessionPlugin);

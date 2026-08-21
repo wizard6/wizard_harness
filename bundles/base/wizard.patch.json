@@ -8,7 +8,8 @@
       { "id": "session", "name": "session" },
       { "id": "llm", "name": "llm" },
       { "id": "tools", "name": "tools" },
-      { "id": "agent", "name": "agent" }
+      { "id": "agent", "name": "agent" },
+      { "id": "agent-loop", "name": "agent-loop" }
     ]
   }
 ]

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agent-loop 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 18px 0 0; font-size: 13px; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+    .issue { border-color: rgba(255,166,87,.4); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>agent-loop — 编排循环</h1>
+      <p class="lede">想 → <code>llm.complete</code> → 若命中文本协议则 <code>tools.call</code> → 再 complete。读写 agent 绑定的 session。不是 live agent，也不拥有 System Prompt。</p>
+      <div class="badges">
+        <span class="badge ok">id: agent-loop</span>
+        <span class="badge ok">provides: agentLoop</span>
+        <span class="badge">inject: agent · llm · tools</span>
+      </div>
+      <nav>
+        <a href="#why">用途</a>
+        <a href="#api">服务 API</a>
+        <a href="#code">代码结构</a>
+        <a href="#deps">依赖</a>
+        <a href="#ai">给后续 AI</a>
+        <a href="#issues">已知问题</a>
+      </nav>
+    </header>
+
+    <h2 id="why">1. 用途与边界</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>唯一允许把「模型步」和「工具步」串起来的地方。禁止在 agent / llm / tools 里写循环。</p>
+    </div>
+    <ul class="tight">
+      <li>管：<code>run</code>、maxSteps、文本工具协议、观测 start/step/end</li>
+      <li>不管：live 身份（agent）、System Prompt 存储（agent → session system 消息）、官方 tool_call、流式、调度</li>
+    </ul>
+    <pre>await ctx.agentLoop.run({
+  systemPrompt: 'You are brief.',
+  prompt: 'echo hi',
+  maxSteps: 4,
+})
+// spawn agent → append system → complete → tools.call('echo') → complete</pre>
+
+    <h2 id="api">2. 提供的服务</h2>
+    <p>服务名 <code>AGENT_LOOP_SERVICE = 'agentLoop'</code>。消费方：<code>ctx.agentLoop</code> 或 <code>ctx.get('agentLoop')</code>。插件 id 是 <code>agent-loop</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">run({ agentId?, prompt?, maxSteps?, systemPrompt? })</td><td>无 agentId 则 spawn；有 systemPrompt 则交给 agent；循环 complete / call</td><td>缺服务 / 未知 agent / 未知工具抛错</td></tr>
+      </tbody>
+    </table>
+    <p>经 <code>handle.ctx</code> 取 llm / tools，以便以后 per-agent overlay 生效。历史只在绑定 session。</p>
+    <h3>薄切片工具协议</h3>
+    <p>解析 <b>assistant 文本</b>（会去掉 <code>[mock] </code> 前缀），不是 OpenAI <code>tool_calls</code>：</p>
+    <table>
+      <thead><tr><th>文本</th><th>调用</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">echo &lt;text&gt;</td><td class="mono">tools.call('echo', { input })</td></tr>
+        <tr><td class="mono">tool &lt;name&gt; {json}</td><td class="mono">tools.call(name, json)</td></tr>
+      </tbody>
+    </table>
+    <p>mock 会回显 user 内容，所以 user 发 <code>echo hi</code> 时 assistant 为 <code>[mock] echo hi</code>，第一轮会命中。工具结果投影成 <code>[echo] hi</code> 后不再命中，循环结束。</p>
+
+    <h2 id="code">3. 代码结构（核心方法）</h2>
+    <table>
+      <thead><tr><th>文件</th><th>核心符号</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">contracts/src/agent-loop.ts</td><td>AGENT_LOOP_SERVICE, AgentLoopService</td></tr>
+        <tr><td class="mono">plugins/agent-loop/src/loop.ts</td><td>createAgentLoop, parseToolCall, run</td></tr>
+        <tr><td class="mono">plugins/agent-loop/src/index.ts</td><td>api 转发到本轮 impl</td></tr>
+      </tbody>
+    </table>
+    <div class="card">
+      <b>调用链：</b>
+      <span class="mono">run → agent.spawn|get → llm.complete → parseToolCall? tools.call → complete → agent-loop/end</span>
+    </div>
+
+    <h2 id="deps">4. 依赖 / 期望被依赖</h2>
+    <table>
+      <thead><tr><th>方向</th><th>对象</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr><td>依赖</td><td class="mono">agent / llm / tools</td><td>必选 inject</td></tr>
+        <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
+        <tr><td>不拥有</td><td class="mono">session</td><td>经 llm/tools/agent 读写</td></tr>
+        <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
+      </tbody>
+    </table>
+    <p>观测：<code>agent-loop/start</code>、<code>agent-loop/step</code>、<code>agent-loop/end</code>（target = agent id）。actor = <code>plugin:agent-loop</code>。</p>
+
+    <h2 id="ai">5. 给后续 AI 的硬约束</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在本插件存 messages[] 或 systemPrompt 副本；prompt 只经 <code>agent.setSystemPrompt</code> / spawn 写入 session。</li>
+        <li>不要绕过 <code>ctx.llm.complete</code> / <code>ctx.tools.call</code> 直接 fetch / exec。</li>
+        <li>不要把官方 tool_call 协议塞进 llm 插件；解析留在本循环，升级协议时只改 <code>parseToolCall</code>。</li>
+        <li>不要把 createScope / spawn 逻辑搬过来；身份只走 agent。</li>
+        <li>流式、并行工具、compaction 另开切片。</li>
+      </ul>
+    </div>
+
+    <h2 id="issues">6. 已知问题</h2>
+    <div class="card issue">
+      <ul class="tight">
+        <li>弹窗是说明页，不能从 UI 点 run（通用 UI 桥未做）。</li>
+        <li>工具协议靠模型「说出」echo/tool 行；真模型未按此格式时不会调工具。</li>
+        <li>llm 仍把 tool-result 投影成 user 文本，不是 tool role。</li>
+        <li>未知工具会 throw，中断循环（不写成 ok:false 的协议失败——那是 tools.call 对 handler 抛错的行为）。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/agent-loop/</span> · 契约 <span class="mono">contracts/src/agent-loop.ts</span></p>
+  </div>
+</body>
+</html>

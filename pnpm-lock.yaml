@@ -133,6 +133,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/agent-loop:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/console:
     dependencies:
       '@wizard-harness/contracts':
