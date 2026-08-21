@@ -145,7 +145,7 @@ const PLUGIN_CHROME_CSS = `
     background: rgba(22,22,30,.88);
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
-    -webkit-app-region: drag;
+    -webkit-app-region: no-drag;
     border-bottom: 1px solid rgba(255,255,255,.08);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
@@ -153,9 +153,11 @@ const PLUGIN_CHROME_CSS = `
     color: #e6e6ef;
     overflow: hidden;
   }
-  #wh-titlebar .win-caption { display: flex; align-items: stretch; margin-left: auto; height: 38px; -webkit-app-region: no-drag; }
+  #wh-titlebar .win-caption,
+  #wh-titlebar .win-caption * { -webkit-app-region: no-drag; }
+  #wh-titlebar .win-caption { display: flex; align-items: stretch; margin-left: auto; height: 38px; }
   #wh-titlebar .win-caption button {
-    width: 46px; height: 38px; border: none; padding: 0; cursor: default;
+    width: 46px; height: 38px; border: none; padding: 0; cursor: pointer;
     background: transparent; color: #d7d7e0;
     display: flex; align-items: center; justify-content: center;
   }
@@ -164,10 +166,11 @@ const PLUGIN_CHROME_CSS = `
   #wh-titlebar .wc-close:hover { background: #e81123; }
   #wh-titlebar .wc-min:active { background: rgba(255,255,255,.14); }
   #wh-titlebar .wc-close:active { background: #c50f1f; }
-  #wh-titlebar .win-caption svg { width: 10px; height: 10px; display: block; }
+  #wh-titlebar .win-caption svg { width: 10px; height: 10px; display: block; pointer-events: none; }
   #wh-titlebar .title {
-    flex: 1; text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
-    pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0; height: 38px; display: flex; align-items: center;
+    text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
+    -webkit-app-region: drag; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   /* 全局滚动条（与观测窗口一致） */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -200,9 +203,12 @@ function injectPluginChrome(win, title) {
         + '</div>';
       bar.querySelector('.title').textContent = ${safeTitle};
       bar.querySelectorAll('[data-act]').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const act = btn.getAttribute('data-act');
           if (window.wh && typeof window.wh.windowControl === 'function') {
-            window.wh.windowControl(btn.getAttribute('data-act'));
+            window.wh.windowControl(act);
           }
         });
       });
