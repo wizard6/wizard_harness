@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { assembleRuntime, createEventBus } from '../src/index.js';
+import { assembleRuntime, createEventBus, syncRuntime } from '../src/index.js';
 import type { Plugin, PluginEvent } from '../src/index.js';
 
 /** 生成最小插件 */
@@ -128,5 +128,35 @@ describe('assembleRuntime（运行时壳装配助手）', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  it('syncRuntime 把后来才出现的插件装进已运行的 harness', async () => {
+    const rt = await assembleRuntime({
+      bus: createEventBus(),
+      config: {},
+      pluginsDir: dir,
+      discover: { load },
+    });
+    expect(rt.harness.registry.has('late')).toBe(false);
+
+    byName.late = makePlugin('late', { manifest: { id: 'late', version: '0.1.0', provides: ['late'] }, api: { ok: () => 1 } });
+    writePluginDir(dir, 'late');
+
+    const sync = await syncRuntime({
+      harness: rt.harness,
+      pluginsDir: dir,
+      discover: { load },
+    });
+    expect(sync.loaded.map((p) => p.manifest.id)).toContain('late');
+    expect(rt.harness.registry.has('late')).toBe(true);
+    expect(rt.harness.services.get('late')).toBeDefined();
+
+    const again = await syncRuntime({
+      harness: rt.harness,
+      pluginsDir: dir,
+      discover: { load },
+    });
+    expect(again.loaded).toEqual([]);
+    expect(again.already).toContain('late');
   });
 });

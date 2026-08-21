@@ -19,11 +19,13 @@ export { discoverPlugins } from './discovery.js';
 export type { DiscoverOptions, DiscoverResult } from './discovery.js';
 export { createHarness } from './harness.js';
 export type { BootResult, CreateHarnessOptions, SystemContext, SystemStatus } from './harness.js';
-export { assembleRuntime } from './shell.js';
+export { assembleRuntime, syncRuntime } from './shell.js';
 export type {
   AssembleRuntimeOptions,
   AssembleRuntimeResult,
   RuntimeSkipped,
+  SyncRuntimeOptions,
+  SyncRuntimeResult,
 } from './shell.js';
 export {
   PATCH_FILENAME,

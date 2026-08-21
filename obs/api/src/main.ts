@@ -8,6 +8,7 @@ import {
   createFileSink,
   resolveHomeDir,
   resolveProfileDir,
+  syncRuntime,
 } from '@wizard-harness/core';
 import type { CompositionSnapshot, SystemContext } from '@wizard-harness/core';
 import { createHandlers } from './handlers.js';
@@ -34,7 +35,12 @@ const FILE = process.env.WH_EVENTS || resolve(process.cwd(), 'docs/logs/events.j
 const PLUGINS_DIR = process.env.WH_PLUGINS_DIR || resolve(process.cwd(), 'plugins');
 const PORT = Number(process.env.PORT || 8787);
 
-const runtime: { harness?: SystemContext; composition?: CompositionSnapshot } = {};
+const runtime: {
+  harness?: SystemContext;
+  composition?: CompositionSnapshot;
+  pluginsDir: string;
+  profileDir?: string | null;
+} = { pluginsDir: PLUGINS_DIR };
 
 function readConfig(): Record<string, unknown> {
   const config: Record<string, unknown> = {};
@@ -73,6 +79,8 @@ async function init(): Promise<void> {
   const bus = createEventBus();
   bus.subscribe(createFileSink(FILE));
   const profileDir = resolveProfileDir(process.env.WH_PROFILE, process.cwd());
+  runtime.pluginsDir = PLUGINS_DIR;
+  runtime.profileDir = profileDir;
   const rt = await assembleRuntime({
     bus,
     config: readConfig(),
@@ -102,6 +110,31 @@ const handlers = createHandlers({
   expose: apiExpose,
   getHarness: () => runtime.harness,
   getComposition: () => runtime.composition,
+  scanPlugins: async () => {
+    const harness = runtime.harness;
+    if (!harness) throw new Error('harness 未就绪');
+    const r = await syncRuntime({
+      harness,
+      pluginsDir: runtime.pluginsDir,
+      ...(runtime.profileDir
+        ? {
+            profileDir: runtime.profileDir,
+            bundlesDir: resolve(process.cwd(), 'bundles'),
+            homeDir: resolveHomeDir(),
+          }
+        : {}),
+    });
+    if (r.composition) runtime.composition = r.composition;
+    return {
+      ok: true,
+      loaded: r.loaded.map((p) => p.manifest.id),
+      already: r.already,
+      skipped: r.skipped,
+      pending: r.pending.map((p) => ({ id: p.plugin.manifest.id, missing: p.missing })),
+      failures: r.failures,
+      warnings: r.warnings,
+    };
+  },
 });
 
 const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -110,6 +143,9 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   if (req.method === 'GET' && url.pathname === '/events/stream') return handlers.stream(req, res);
   if (req.method === 'GET' && url.pathname === '/state') return handlers.state(req, res);
   if (req.method === 'GET' && url.pathname === '/plugins') return handlers.plugins(req, res);
+  if ((req.method === 'POST' || req.method === 'GET') && url.pathname === '/plugins/scan') {
+    return void handlers.scan(req, res);
+  }
   if (req.method === 'GET' && url.pathname === '/services') return handlers.services(req, res);
   if (req.method === 'POST' && url.pathname === '/rpc') return void handlers.rpc(req, res);
   handlers.notFound(res);

@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('wh', {
   openPlugin: (id) => ipcRenderer.invoke('wh:open-plugin', id),
   reloadPlugin: (id) => ipcRenderer.invoke('wh:reload-plugin', id),
   unregisterPlugin: (id) => ipcRenderer.invoke('wh:unregister-plugin', id),
+  scanPlugins: () => ipcRenderer.invoke('wh:scan-plugins'),
   openQuality: () => ipcRenderer.invoke('wh:open-quality'),
   qualityData: () => ipcRenderer.invoke('wh:quality-data'),
   rerunCheck: () => ipcRenderer.invoke('wh:rerun-check'),

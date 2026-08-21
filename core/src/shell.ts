@@ -160,3 +160,91 @@ export async function assembleRuntime(
     composition,
   };
 }
+
+export interface SyncRuntimeOptions {
+  harness: SystemContext;
+  pluginsDir: string;
+  discover?: DiscoverOptions;
+  profileDir?: string;
+  bundlesDir?: string;
+  homeDir?: string;
+  overlays?: readonly (readonly PatchOptions[])[];
+}
+
+export interface SyncRuntimeResult {
+  /** 本次新 boot 成功的插件 */
+  loaded: Plugin[];
+  /** 已在注册表中、本轮跳过 */
+  already: string[];
+  pending: BootResult['pending'];
+  failures: BootResult['failures'];
+  skipped: RuntimeSkipped[];
+  warnings: string[];
+  composition?: CompositionSnapshot;
+}
+
+/**
+ * 运行时再扫描：重读 profile + 插件目录，把尚未注册的可加载插件 boot 进去。
+ * 不卸载已加载插件，不自动 reload。观测台/API 热发现用。
+ */
+export async function syncRuntime(opts: SyncRuntimeOptions): Promise<SyncRuntimeResult> {
+  const { harness, pluginsDir } = opts;
+  const config: Record<string, unknown> = { ...harness.config };
+  let composition: CompositionSnapshot | undefined;
+  if (opts.profileDir) {
+    composition = loadProfile({
+      profileDir: opts.profileDir,
+      bundlesDir: opts.bundlesDir,
+      homeDir: opts.homeDir,
+      overlays: opts.overlays,
+    });
+    Object.assign(config, mergeProfileConfig(config, composition.entries));
+  }
+
+  const { plugins: found, warnings } = await discoverPlugins(pluginsDir, {
+    cacheBust: true,
+    ...opts.discover,
+  });
+  const { loadable, skipped, missing } = filterLoadable(found, config, composition?.entries);
+  const allWarnings = [
+    ...warnings,
+    ...(composition?.warnings ?? []),
+    ...missing.map((id) => `组合树未解析到插件：${id}`),
+  ];
+
+  const already: string[] = [];
+  const newcomers: Plugin[] = [];
+  for (const p of loadable) {
+    if (harness.registry.has(p.manifest.id)) already.push(p.manifest.id);
+    else newcomers.push(p);
+  }
+
+  const { loaded, pending, failures } = await harness.boot(newcomers);
+  for (const r of loaded) {
+    const row = composition?.entries.find((e) => e.name === r.plugin.manifest.id);
+    if (row?.config) harness.updateConfig(r.plugin.manifest.id, row.config);
+  }
+
+  const shellEvent = (action: string, target: string, payload: unknown): void => {
+    harness.emit({ id: randomUUID(), ts: Date.now(), actor: 'shell', action, target, payload });
+  };
+  shellEvent('scan', 'plugins', {
+    loaded: loaded.map((r) => r.plugin.manifest.id),
+    already,
+    skipped,
+    pending: pending.map((p) => p.plugin.manifest.id),
+    failures: failures.map((f) => f.id),
+  });
+  for (const s of skipped) shellEvent('skipped', s.id, { reason: s.reason });
+  for (const p of pending) shellEvent('inject-pending', p.plugin.manifest.id, { missing: p.missing });
+
+  return {
+    loaded: loaded.map((r) => r.plugin),
+    already,
+    pending,
+    failures,
+    skipped,
+    warnings: allWarnings,
+    composition,
+  };
+}

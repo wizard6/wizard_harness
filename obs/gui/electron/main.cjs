@@ -216,8 +216,8 @@ let harness;
 let registrar;
 let bus;
 const events = [];
-let plugins = [];
 let composition;
+let runtimeDirs = { pluginsDir: '', profileDir: undefined, bundlesDir: undefined, homeDir: undefined };
 
 async function init() {
   core = await import('@wizard-harness/core');
@@ -239,6 +239,12 @@ async function init() {
   const config = { disabledPlugins: [] };
   const pluginsDir = path.resolve(__dirname, '..', '..', '..', 'plugins');
   const profileDir = core.resolveProfileDir(process.env.WH_PROFILE, REPO_ROOT);
+  runtimeDirs = {
+    pluginsDir,
+    profileDir: profileDir || undefined,
+    bundlesDir: path.join(REPO_ROOT, 'bundles'),
+    homeDir: core.resolveHomeDir(),
+  };
   const rt = await core.assembleRuntime({
     bus,
     config,
@@ -259,7 +265,6 @@ async function init() {
   }
   harness = rt.harness;
   registrar = harness.registry;
-  plugins = rt.plugins;
   composition = rt.composition;
 
   // 冒烟：通过服务目录调用 logger 服务
@@ -294,6 +299,23 @@ function startGateway() {
       }
     }
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+
+    if (url.pathname === '/plugins/scan' && (req.method === 'GET' || req.method === 'POST')) {
+      if (req.method === 'POST') {
+        for await (const chunk of req) {
+          void chunk;
+        }
+      }
+      try {
+        const result = await scanPlugins();
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: String(err) }));
+      }
+      return;
+    }
 
     if (req.method === 'GET' && url.pathname === '/events/stream') {
       res.writeHead(200, {
@@ -358,7 +380,7 @@ function startGateway() {
   });
   server.listen(port, host, () => {
     console.log(
-      `[gateway] 跨进程事件网关 http://${host}:${port}（/call /publish /events/stream${token ? '，已启用 token 鉴权' : ''}）`,
+      `[gateway] 跨进程事件网关 http://${host}:${port}（/call /publish /plugins/scan /events/stream${token ? '，已启用 token 鉴权' : ''}）`,
     );
   });
 }
@@ -385,8 +407,48 @@ function createWindow(view = 'registry') {
   return win;
 }
 
+function snapshotPlugins() {
+  if (!harness) return [];
+  return harness.registry.list().map((p) => {
+    const ctx = harness.pluginContext(p.manifest.id);
+    return {
+      manifest: p.manifest,
+      ui: p.ui,
+      services: harness.services.providedBy(p.manifest.id),
+      config: ctx?.config ?? {},
+    };
+  });
+}
+
+async function scanPlugins() {
+  if (!harness || !core) throw new Error('harness 未就绪');
+  const r = await core.syncRuntime({
+    harness,
+    pluginsDir: runtimeDirs.pluginsDir,
+    ...(runtimeDirs.profileDir
+      ? {
+          profileDir: runtimeDirs.profileDir,
+          bundlesDir: runtimeDirs.bundlesDir,
+          homeDir: runtimeDirs.homeDir,
+        }
+      : {}),
+  });
+  if (r.composition) composition = r.composition;
+  for (const w of r.warnings) console.warn('[scan]', w);
+  console.log('[scan] loaded', r.loaded.map((p) => p.manifest.id).join(', ') || '(none)');
+  return {
+    ok: true,
+    loaded: r.loaded.map((p) => p.manifest.id),
+    already: r.already,
+    skipped: r.skipped,
+    pending: r.pending.map((p) => ({ id: p.plugin.manifest.id, missing: p.missing })),
+    failures: r.failures,
+    warnings: r.warnings,
+  };
+}
+
 function openPluginWindow(id) {
-  const plugin = plugins.find((p) => p.manifest.id === id);
+  const plugin = harness?.registry.get(id);
   if (!plugin || !plugin.ui) return;
   const title = plugin.ui.title || plugin.manifest.id;
   // 安全：仅 trusted 插件的弹窗注入 execCommand（任意命令执行能力）；其余插件只给低风险的事件历史
@@ -411,26 +473,9 @@ function openPluginWindow(id) {
 
 ipcMain.handle('wh:get-state', () => ({
   events: events.slice(-100),
-  // 系统级全局配置（createHarness 传入）
   config: harness ? harness.config : {},
   composition: composition ?? null,
-  plugins: plugins.map((p) => {
-    const ctx = harness ? harness.pluginContext(p.manifest.id) : undefined;
-    return {
-      manifest: p.manifest,
-      ui: p.ui,
-      // 运行时绑定：该插件实际挂出的服务名（一名可多插件、一插件可多名）
-      services: harness
-        ? harness.services.providedBy(p.manifest.id)
-        : Array.isArray(p.manifest.provides)
-          ? p.manifest.provides
-          : p.api !== undefined
-            ? [p.manifest.id]
-            : [],
-      // 合并后的生效配置（插件默认 + 全局覆盖）
-      config: ctx?.config ?? {},
-    };
-  }),
+  plugins: snapshotPlugins(),
 }));
 
 ipcMain.handle('wh:open-plugin', (_evt, id) => openPluginWindow(id));
@@ -450,6 +495,13 @@ ipcMain.handle('wh:unregister-plugin', async (_evt, id) => {
   try {
     await harness.registry.unregister(String(id));
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+ipcMain.handle('wh:scan-plugins', async () => {
+  try {
+    return await scanPlugins();
   } catch (err) {
     return { ok: false, error: String(err) };
   }

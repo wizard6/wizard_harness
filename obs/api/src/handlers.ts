@@ -15,6 +15,16 @@ export interface HandlerDeps {
   getHarness(): SystemContext | undefined;
   /** 当前 profile 组合快照（未使用 profile 时为 undefined） */
   getComposition?(): CompositionSnapshot | undefined;
+  /** 运行时再扫描插件目录（POST /plugins/scan） */
+  scanPlugins?: () => Promise<{
+    ok: boolean;
+    loaded: string[];
+    already: string[];
+    skipped: { id: string; reason: string }[];
+    pending?: { id: string; missing: string[] }[];
+    failures?: { id: string; error: string }[];
+    warnings?: string[];
+  }>;
 }
 
 export interface ApiHandlers {
@@ -22,6 +32,7 @@ export interface ApiHandlers {
   stream(req: IncomingMessage, res: ServerResponse): void;
   state(req: IncomingMessage, res: ServerResponse): void;
   plugins(req: IncomingMessage, res: ServerResponse): void;
+  scan(req: IncomingMessage, res: ServerResponse): Promise<void>;
   services(req: IncomingMessage, res: ServerResponse): void;
   rpc(req: IncomingMessage, res: ServerResponse): Promise<void>;
   notFound(res: ServerResponse): void;
@@ -29,7 +40,7 @@ export interface ApiHandlers {
 
 /** 组装各 HTTP 端点处理（依赖经 deps 注入，main.ts 只做路由分发） */
 export function createHandlers(deps: HandlerDeps): ApiHandlers {
-  const { file, expose, getHarness, getComposition } = deps;
+  const { file, expose, getHarness, getComposition, scanPlugins } = deps;
 
   function sendJson(res: ServerResponse, code: number, body: unknown): void {
     res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -162,6 +173,17 @@ export function createHandlers(deps: HandlerDeps): ApiHandlers {
         };
       });
       sendJson(res, 200, { plugins });
+    },
+    async scan(_req, res) {
+      if (!scanPlugins) {
+        sendJson(res, 501, { ok: false, error: '未启用运行时扫描' });
+        return;
+      }
+      try {
+        sendJson(res, 200, await scanPlugins());
+      } catch (err) {
+        sendJson(res, 500, { ok: false, error: String(err) });
+      }
     },
     services(req, res) {
       sendJson(res, 200, { services: getHarness() ? getHarness()!.services.bindings() : [] });

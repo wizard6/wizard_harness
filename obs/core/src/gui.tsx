@@ -15,6 +15,8 @@ export interface RegistryPanelProps {
   onReload?: (id: string) => Promise<unknown> | void;
   /** 卸载该插件 */
   onUnregister?: (id: string) => Promise<unknown> | void;
+  /** 再扫描插件目录，装入尚未注册的插件 */
+  onScan?: () => Promise<unknown> | void;
   /** 标题栏右侧槽（桌面壳放入交通灯） */
   trailing?: React.ReactNode;
   /** 双击标题栏（桌面壳用于最大化） */
@@ -131,6 +133,7 @@ export function RegistryPanel({
   onOpenPlugin,
   onReload,
   onUnregister,
+  onScan,
   trailing,
   onHeaderDoubleClick,
 }: RegistryPanelProps): React.ReactElement {
@@ -180,6 +183,16 @@ export function RegistryPanel({
               <button type="button" className={filter === 'ui' ? 'rp-sub on' : 'rp-sub'} onClick={() => setFilter('ui')}>
                 有弹窗 {withUi.length}
               </button>
+              {onScan && (
+                <button
+                  type="button"
+                  className="rp-sub"
+                  title="重新扫描 plugins/ 并加载尚未注册的插件"
+                  onClick={() => void onScan()}
+                >
+                  扫描新插件
+                </button>
+              )}
             </>
           )}
           <input

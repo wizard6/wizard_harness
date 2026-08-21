@@ -33,6 +33,13 @@ declare global {
       openPlugin(id: string): Promise<void>;
       reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
       unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
+      scanPlugins(): Promise<{
+        ok: boolean;
+        loaded?: string[];
+        already?: string[];
+        skipped?: { id: string; reason: string }[];
+        error?: string;
+      }>;
       windowControl(action: 'min' | 'max' | 'close'): void;
       openQuality(): Promise<void>;
       qualityData(): Promise<QualityData>;
@@ -75,6 +82,7 @@ function RegistryApp(): React.ReactElement | null {
       onOpenPlugin={(id) => void window.wh.openPlugin(id)}
       onReload={(id) => void window.wh.reloadPlugin(id)}
       onUnregister={(id) => void window.wh.unregisterPlugin(id)}
+      onScan={() => window.wh.scanPlugins()}
     />
   );
 }
