@@ -71,7 +71,7 @@
 
     <h2 id="why">1. 用途与边界</h2>
     <div class="card">
-      <p style="margin:0"><b>一句话：</b>会话的唯一追加日志。llm 要从这里投影历史；tools 的结果要写回来；agent 循环只编排，不另存一份聊天记录。</p>
+      <p style="margin:0"><b>一句话：</b>会话的唯一追加日志。llm 要从这里投影历史；tools 的结果要写回来；agent 只绑定这条日志；agent-loop 只编排，不另存一份聊天记录。</p>
     </div>
     <div class="two">
       <div class="card">
@@ -98,7 +98,7 @@
       <div class="arr">→</div>
       <div class="box"><b>session</b>发生过什么（本插件）</div>
       <div class="arr">→</div>
-      <div class="box"><b>llm / tools / agent</b>读写本日志</div>
+      <div class="box"><b>llm / tools / agent / agent-loop</b>读写本日志</div>
     </div>
 
     <h2 id="api">2. 提供的服务</h2>
@@ -148,7 +148,7 @@
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile</td><td>default 组合树会挂入本插件</td></tr>
         <tr><td>期望被依赖</td><td class="mono">llm</td><td>下一阶段</td><td>deriveMessages / replay 组请求；模型输出 append message</td></tr>
         <tr><td>期望被依赖</td><td class="mono">tools</td><td>下一阶段</td><td>调用结果 append tool-result</td></tr>
-        <tr><td>期望被依赖</td><td class="mono">agent</td><td>再后</td><td>每个 live agent 一个 scope，循环只读写 session</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent</td><td>再后</td><td>每个 live agent 绑定一条 session；循环是 agent-loop</td></tr>
       </tbody>
     </table>
 

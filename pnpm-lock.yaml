@@ -124,6 +124,15 @@ importers:
         specifier: ^18.3.0
         version: 18.3.31
 
+  plugins/agent:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/console:
     dependencies:
       '@wizard-harness/contracts':

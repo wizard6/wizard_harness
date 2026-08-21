@@ -27,6 +27,8 @@ export const registrySpec: ObsSpec = {
       'tools/register': '#ffa657',
       'tools/call': '#ffa657',
       'tools/result': '#ffa657',
+      'agent/spawn': '#d2a8ff',
+      'agent/stop': '#d2a8ff',
     },
     panel: { bg: '#16161e', fg: '#e6e6ef' },
   },

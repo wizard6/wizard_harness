@@ -106,7 +106,7 @@
         <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
         <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
-        <tr><td>期望被依赖</td><td class="mono">agent</td><td>循环里调 complete，不要自己 fetch 模型</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>循环里调 complete，不要自己 fetch 模型；agent 本身不调 llm</td></tr>
         <tr><td>期望被依赖</td><td class="mono">tools</td><td>不直接依赖 llm；tool-result 由 tools 写入 session，下次 complete 会读到</td></tr>
       </tbody>
     </table>
@@ -115,8 +115,8 @@
     <h2 id="ai">5. 给后续 AI 的硬约束</h2>
     <div class="card ai">
       <ul class="tight">
-        <li>不要在 agent 里绕过本服务直接调 HTTP；模型出口只有 <code>ctx.llm.complete</code>。</li>
-        <li>不要把工具循环塞进本插件。tool call 是下一阶段 tools/agent。</li>
+        <li>不要在 agent-loop 里绕过本服务直接调 HTTP；模型出口只有 <code>ctx.llm.complete</code>。</li>
+        <li>不要把工具循环塞进本插件。循环是后续 agent-loop，不是 agent。</li>
         <li>流式 / 多提供方路由另开切片，不要顺手做。</li>
         <li>密钥只走 config / 环境，不要写进仓库或 HTML。</li>
       </ul>

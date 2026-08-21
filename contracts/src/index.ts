@@ -5,6 +5,7 @@ import type { ConsoleService } from './console.js';
 import type { SessionService } from './session.js';
 import type { LlmService } from './llm.js';
 import type { ToolsService } from './tools.js';
+import type { AgentService } from './agent.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -18,6 +19,8 @@ export { LLM_SERVICE } from './llm.js';
 export type { LlmCompleteInput, LlmCompleteResult, LlmMessage, LlmService } from './llm.js';
 export { TOOLS_SERVICE } from './tools.js';
 export type { ToolCallResult, ToolHandler, ToolInfo, ToolSpec, ToolsService } from './tools.js';
+export { AGENT_SERVICE } from './agent.js';
+export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -36,5 +39,6 @@ declare module '@wizard-harness/core' {
     readonly session?: SessionService;
     readonly llm?: LlmService;
     readonly tools?: ToolsService;
+    readonly agent?: AgentService;
   }
 }

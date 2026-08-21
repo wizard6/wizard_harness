@@ -98,7 +98,7 @@
         <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
         <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
-        <tr><td>期望被依赖</td><td class="mono">agent</td><td>循环里只 call 本服务</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>循环里只 call 本服务；agent 本身不调 tools</td></tr>
         <tr><td>不依赖</td><td class="mono">llm</td><td>工具执行与模型调用解耦</td></tr>
       </tbody>
     </table>
@@ -107,8 +107,8 @@
     <h2 id="ai">5. 给后续 AI 的硬约束</h2>
     <div class="card ai">
       <ul class="tight">
-        <li>不要在 agent 里绕过本服务直接跑命令；出口只有 <code>ctx.tools.call</code>。</li>
-        <li>不要把模型 tool-call 解析塞进本插件。那是 agent 切片。</li>
+        <li>不要在 agent-loop 里绕过本服务直接跑命令；出口只有 <code>ctx.tools.call</code>。</li>
+        <li>不要把模型 tool-call 解析塞进本插件。那是 agent-loop 切片。</li>
         <li>不要再造一份 toolResults[] 当真相源；只 append / replay session。</li>
         <li>新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
       </ul>

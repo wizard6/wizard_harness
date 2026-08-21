@@ -76,12 +76,13 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 
 ## 计划
 
-骨架插件（hello / logger / events / console）已够演示基座。下一阶段按能力插件顺序补齐，先做薄、不顺带做 agent 循环或通用 UI 桥：
+骨架插件（hello / logger / events / console）已够演示基座。下一阶段按能力插件顺序补齐，先做薄、不顺带做 agent-loop 或通用 UI 桥：
 
 1. **session（已落地薄切片）** — 会话日志（领域源：追加 turn / message / tool-result，只读回放；观测 `session/start`、`session/append`）。scope 管「这次运行看得见什么」，session 管「发生过什么」。说明：[docs/plugins/session.html](docs/plugins/session.html)
 2. **llm（已落地薄切片）** — 一个模型适配器，读写都落到 session。默认 mock；`provider=openai` 且配置 baseUrl 才走兼容 HTTP。说明：[docs/plugins/llm.html](docs/plugins/llm.html)
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
-4. **agent** — 用 `createScope` 串起 session + llm + tools 的最小循环（每个 live agent 一个 scope）。
+4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。管身份与可见性，不管模型/工具循环。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
+5. **agent-loop（未做）** — 编排 `llm.complete` + `tools.call`，读写 agent 绑定的 session。
 
 ## 许可
 

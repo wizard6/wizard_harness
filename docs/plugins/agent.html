@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agent 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; --purple:#d2a8ff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--purple); border-color: rgba(210,168,255,.35); background: rgba(210,168,255,.08); }
+    nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 18px 0 0; font-size: 13px; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+    .issue { border-color: rgba(255,166,87,.4); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>agent — live 实例</h1>
+      <p class="lede">每个 live agent 一个 <code>createScope</code>，绑定一条 session。管「这次运行是谁、看得见什么」。不是 agent-loop（想 → 调模型 → 调工具）。</p>
+      <div class="badges">
+        <span class="badge ok">id: agent</span>
+        <span class="badge ok">provides: agent</span>
+        <span class="badge">inject: session</span>
+        <span class="badge">不 inject llm / tools</span>
+      </div>
+      <nav>
+        <a href="#why">用途</a>
+        <a href="#api">服务 API</a>
+        <a href="#code">代码结构</a>
+        <a href="#deps">依赖</a>
+        <a href="#ai">给后续 AI</a>
+        <a href="#issues">已知问题</a>
+      </nav>
+    </header>
+
+    <h2 id="why">1. 用途与边界</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>agent 是身份与可见性；agent-loop 才是编排。禁止在本插件里 <code>llm.complete</code> 或 <code>tools.call</code>。</p>
+    </div>
+    <ul class="tight">
+      <li>管：<code>spawn</code> / <code>get</code> / <code>list</code> / <code>stop</code>、每个实例一个 scope、绑定 session、overlay <code>agent.live</code></li>
+      <li>不管：模型调用、工具执行、maxSteps、流式、调度、多 agent 通信、通用弹窗 RPC</li>
+    </ul>
+    <div class="card">
+      <b>分层：</b>
+      <span class="mono">scope</span> 看得见什么 →
+      <span class="mono">session</span> 发生过什么 →
+      <span class="mono">agent</span> 这次运行是谁（本插件）→
+      <span class="mono">agent-loop</span> 怎么跑（后续插件）
+    </div>
+
+    <h2 id="api">2. 提供的服务</h2>
+    <p>服务名 <code>AGENT_SERVICE = 'agent'</code>。消费方：<code>ctx.agent</code> 或 <code>ctx.get('agent')</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">spawn({ id?, sessionId?, title? })</td><td>开 scope；无 sessionId 则 start 新会话；overlay provide agent.live</td><td>id 重复 / session 不存在抛错</td></tr>
+        <tr><td class="mono">get(id)</td><td>活实例句柄（含 scoped ctx）</td><td>无则 undefined</td></tr>
+        <tr><td class="mono">list()</td><td>id + sessionId，不含 ctx</td><td>—</td></tr>
+        <tr><td class="mono">stop(id)</td><td>dispose scope，撕 overlay</td><td>未知 id 抛错</td></tr>
+      </tbody>
+    </table>
+    <pre>const h = ctx.agent.spawn({ id: 'demo' })
+h.ctx.get('agent.live')  // { id, sessionId }，兄弟 scope 互不可见
+await ctx.agent.stop(h.id)</pre>
+    <p>句柄上的 <code>ctx</code> 是打标子上下文。后续 agent-loop 应经它读写，以便 per-agent overlay 生效；不要把循环写进本插件。</p>
+
+    <h2 id="code">3. 代码结构（核心方法）</h2>
+    <table>
+      <thead><tr><th>文件</th><th>核心符号</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">contracts/src/agent.ts</td><td>AGENT_SERVICE, AgentService, AgentHandle</td></tr>
+        <tr><td class="mono">plugins/agent/src/host.ts</td><td>createAgentHost, AGENT_LIVE, spawn / stop</td></tr>
+        <tr><td class="mono">plugins/agent/src/index.ts</td><td>api 转发到本轮 impl；卸载时 stop 全部</td></tr>
+      </tbody>
+    </table>
+    <div class="card">
+      <b>调用链：</b>
+      <span class="mono">spawn → session.start|get → createScope → provide(agent.live) → agent/spawn</span><br />
+      <span class="mono">stop → Map 删除 → scope.dispose → agent/stop</span>
+    </div>
+
+    <h2 id="deps">4. 依赖 / 期望被依赖</h2>
+    <table>
+      <thead><tr><th>方向</th><th>对象</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
+        <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
+        <tr><td>不依赖</td><td class="mono">llm / tools</td><td>那是 agent-loop 的 inject</td></tr>
+        <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>拿 handle.ctx + sessionId 做编排</td></tr>
+      </tbody>
+    </table>
+    <p>观测：<code>agent/spawn</code>、<code>agent/stop</code>（target = agent id，payload.sessionId）。actor = <code>plugin:agent</code>。</p>
+
+    <h2 id="ai">5. 给后续 AI 的硬约束</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在本插件加 <code>step</code> / <code>run</code> / <code>maxSteps</code> 或解析 echo 协议。那是 agent-loop。</li>
+        <li>不要 inject llm 或 tools「顺便串起来」。live agent 不需要它们就能 spawn。</li>
+        <li>不要再造一份 messages[]；历史只在绑定的 session。</li>
+        <li>每个 live agent 必须 <code>createScope</code>；不要只用 Map 假装隔离。</li>
+        <li>卸载时 stop 全部活实例，避免 overlay 泄漏。</li>
+      </ul>
+    </div>
+
+    <h2 id="issues">6. 已知问题</h2>
+    <div class="card issue">
+      <ul class="tight">
+        <li>弹窗是说明页，不能从 UI spawn（通用 UI 桥未做）。</li>
+        <li>进程内 Map，不持久化；session 本身也是内存日志。</li>
+        <li>list() 不按 scope 分桶（应用层用不同 id 区分）。</li>
+        <li>agent-loop 尚未落地；本插件单独存在时不会自动调模型。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/agent/</span> · 契约 <span class="mono">contracts/src/agent.ts</span></p>
+  </div>
+</body>
+</html>
