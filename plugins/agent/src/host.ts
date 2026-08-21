@@ -15,7 +15,6 @@ interface Live {
   id: string;
   sessionId: string;
   scope: Scope;
-  systemPrompt?: string;
 }
 
 function sessionOf(ctx: PluginContext): SessionService {
@@ -25,24 +24,10 @@ function sessionOf(ctx: PluginContext): SessionService {
 }
 
 function asHandle(row: Live): AgentHandle {
-  return {
-    id: row.id,
-    sessionId: row.sessionId,
-    ctx: row.scope.ctx,
-    systemPrompt: row.systemPrompt,
-  };
+  return { id: row.id, sessionId: row.sessionId, ctx: row.scope.ctx };
 }
 
-function writeSystemPrompt(ctx: PluginContext, row: Live, content: string): void {
-  if (typeof content !== 'string') throw new Error('systemPrompt 必须是字符串');
-  const sess = sessionOf(ctx).get(row.sessionId);
-  if (!sess) throw new Error(`session 不存在：${row.sessionId}`);
-  sess.append('message', { role: 'system', content });
-  row.systemPrompt = content;
-  ctx.emit({ action: 'agent/prompt', target: row.id, payload: { bytes: content.length } });
-}
-
-/** live agent 登记表：spawn 开 scope 并绑 session；stop 撕 overlay。不调 llm / tools。 */
+/** live agent 登记表：spawn 开 scope 并绑 session；stop 撕 overlay。不调 llm / tools，不管 prompt。 */
 export function createAgentHost(ctx: PluginContext): AgentService {
   const live = new Map<string, Live>();
 
@@ -59,7 +44,6 @@ export function createAgentHost(ctx: PluginContext): AgentService {
       scope.ctx.provide(AGENT_LIVE, { id, sessionId: sess.id });
       const row: Live = { id, sessionId: sess.id, scope };
       live.set(id, row);
-      if (opts.systemPrompt) writeSystemPrompt(ctx, row, opts.systemPrompt);
       ctx.emit({ action: 'agent/spawn', target: id, payload: { sessionId: sess.id } });
       return asHandle(row);
     },
@@ -69,11 +53,6 @@ export function createAgentHost(ctx: PluginContext): AgentService {
     },
     list(): readonly AgentInfo[] {
       return [...live.values()].map(({ id, sessionId }) => ({ id, sessionId }));
-    },
-    setSystemPrompt(id, content) {
-      const row = live.get(id);
-      if (!row) throw new Error(`agent 不存在：${id}`);
-      writeSystemPrompt(ctx, row, content);
     },
     async stop(id) {
       const row = live.get(id);

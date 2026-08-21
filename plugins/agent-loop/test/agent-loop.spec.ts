@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { createEventBus, createHarness } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
 import { AGENT_LOOP_SERVICE } from '@wizard-harness/contracts';
-import type { AgentLoopService, AgentService, SessionService } from '@wizard-harness/contracts';
+import type {
+  AgentLoopService,
+  AgentService,
+  SessionService,
+  SystemPromptService,
+} from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
 import llmPlugin from '../../llm/src/index.js';
 import toolsPlugin from '../../tools/src/index.js';
+import systemPromptPlugin from '../../system-prompt/src/index.js';
 import agentPlugin from '../../agent/src/index.js';
 import agentLoopPlugin from '../src/index.js';
 import { parseToolCall } from '../src/loop.js';
@@ -20,10 +26,16 @@ describe('parseToolCall', () => {
 });
 
 describe('agent-loop 插件', () => {
-  it('服务名契约绑定 + inject agent/llm/tools', () => {
+  it('服务名契约绑定 + inject agent/llm/tools；systemPrompt 可选', () => {
     expect(AGENT_LOOP_SERVICE).toBe('agentLoop');
     expect(agentLoopPlugin.manifest.provides).toEqual(['agentLoop']);
-    expect(agentLoopPlugin.inject).toEqual({ agent: true, llm: true, tools: true, logger: false });
+    expect(agentLoopPlugin.inject).toEqual({
+      agent: true,
+      llm: true,
+      tools: true,
+      systemPrompt: false,
+      logger: false,
+    });
   });
 
   async function boot() {
@@ -34,6 +46,7 @@ describe('agent-loop 插件', () => {
     await harness.registry.register(sessionPlugin);
     await harness.registry.register(llmPlugin);
     await harness.registry.register(toolsPlugin);
+    await harness.registry.register(systemPromptPlugin);
     await harness.registry.register(agentPlugin);
     await harness.registry.register(agentLoopPlugin);
     return {
@@ -41,15 +54,15 @@ describe('agent-loop 插件', () => {
       loop: harness.services.get<AgentLoopService>('agentLoop')!,
       agent: harness.services.get<AgentService>('agent')!,
       session: harness.services.get<SessionService>('session')!,
+      prompts: harness.services.get<SystemPromptService>('systemPrompt')!,
     };
   }
 
-  it('无工具：一次 complete；systemPrompt 写入 session', async () => {
-    const { loop, session, seen } = await boot();
-    const out = await loop.run({
-      systemPrompt: 'you are a tester',
-      prompt: 'hello',
-    });
+  it('无工具：一次 complete；run 前 set 的 prompt 会被 apply', async () => {
+    const { loop, agent, session, prompts, seen } = await boot();
+    const h = agent.spawn({ id: 't' });
+    prompts.set(h.sessionId, 'you are a tester');
+    const out = await loop.run({ agentId: 't', prompt: 'hello' });
     expect(out.steps).toBe(1);
     expect(out.text).toBe('[mock] hello');
     const kinds = session.get(out.sessionId)!.replay().map((e) => `${e.kind}:${e.data.role ?? e.data.phase}`);
@@ -58,8 +71,8 @@ describe('agent-loop 插件', () => {
     expect(kinds).toContain('message:user');
     expect(kinds).toContain('message:assistant');
     expect(seen.some((e) => e.action === 'agent-loop/start' && e.target === out.agentId)).toBe(true);
-    expect(seen.some((e) => e.action === 'agent-loop/end')).toBe(true);
-    expect(seen.some((e) => e.action === 'agent/prompt')).toBe(true);
+    expect(seen.some((e) => e.action === 'system-prompt/apply')).toBe(true);
+    expect(seen.some((e) => e.action === 'agent/prompt')).toBe(false);
   });
 
   it('echo 协议：complete → tools.call → 再 complete', async () => {
@@ -75,7 +88,7 @@ describe('agent-loop 插件', () => {
 
   it('已有 agent：run 复用 session；未知 agent 抛错', async () => {
     const { loop, agent } = await boot();
-    const h = agent.spawn({ id: 'keep', systemPrompt: 'stay' });
+    const h = agent.spawn({ id: 'keep' });
     const out = await loop.run({ agentId: 'keep', prompt: 'ping' });
     expect(out.agentId).toBe('keep');
     expect(out.sessionId).toBe(h.sessionId);

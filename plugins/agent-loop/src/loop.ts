@@ -5,6 +5,7 @@ import type {
   AgentLoopService,
   AgentService,
   LlmService,
+  SystemPromptService,
   ToolsService,
 } from '@wizard-harness/contracts';
 
@@ -50,21 +51,18 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
   return {
     async run(opts: AgentLoopRunOpts = {}): Promise<AgentLoopResult> {
       const agents = need(ctx.agent ?? ctx.get<AgentService>('agent'), 'agent');
+      const prompts = ctx.systemPrompt ?? ctx.get<SystemPromptService>('systemPrompt');
       const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 8));
       let id = opts.agentId?.trim();
       if (!id) {
-        id = agents.spawn({
-          title: 'agent-loop',
-          systemPrompt: opts.systemPrompt,
-        }).id;
-      } else if (opts.systemPrompt) {
-        agents.setSystemPrompt(id, opts.systemPrompt);
+        id = agents.spawn({ title: 'agent-loop' }).id;
       }
       const handle = agents.get(id);
       if (!handle) throw new Error(`agent 不存在：${id}`);
       const llm = need(handle.ctx.llm ?? handle.ctx.get<LlmService>('llm'), 'llm');
       const tools = need(handle.ctx.tools ?? handle.ctx.get<ToolsService>('tools'), 'tools');
       const sessionId = handle.sessionId;
+      prompts?.apply(sessionId);
 
       ctx.emit({ action: 'agent-loop/start', target: id, payload: { sessionId, maxSteps } });
       let text = (await llm.complete({ sessionId, prompt: opts.prompt })).text;

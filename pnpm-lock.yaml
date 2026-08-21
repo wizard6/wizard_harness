@@ -196,6 +196,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/system-prompt:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/tools:
     dependencies:
       '@wizard-harness/contracts':

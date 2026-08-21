@@ -7,6 +7,7 @@ import type { LlmService } from './llm.js';
 import type { ToolsService } from './tools.js';
 import type { AgentService } from './agent.js';
 import type { AgentLoopService } from './agent-loop.js';
+import type { SystemPromptService } from './system-prompt.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -24,6 +25,8 @@ export { AGENT_SERVICE } from './agent.js';
 export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 export { AGENT_LOOP_SERVICE } from './agent-loop.js';
 export type { AgentLoopResult, AgentLoopRunOpts, AgentLoopService } from './agent-loop.js';
+export { SYSTEM_PROMPT_SERVICE } from './system-prompt.js';
+export type { SystemPromptService } from './system-prompt.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -44,5 +47,6 @@ declare module '@wizard-harness/core' {
     readonly tools?: ToolsService;
     readonly agent?: AgentService;
     readonly agentLoop?: AgentLoopService;
+    readonly systemPrompt?: SystemPromptService;
   }
 }

@@ -58,7 +58,7 @@ obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / llm / tools / agent / agent-loop）
+plugins/              业务插件包（hello / logger / events / console / session / system-prompt / llm / tools / agent / agent-loop）
 docs/confirmed/       人类确认意图
 docs/plugins/         插件说明（HTML，给人与后续 AI）
 docs/项目体检.md      源码核对清单（2026-08-19）
@@ -81,8 +81,9 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 1. **session（已落地薄切片）** — 会话日志（领域源：追加 turn / message / tool-result，只读回放；观测 `session/start`、`session/append`）。scope 管「这次运行看得见什么」，session 管「发生过什么」。说明：[docs/plugins/session.html](docs/plugins/session.html)
 2. **llm（已落地薄切片）** — 一个模型适配器，读写都落到 session。默认 mock；`provider=openai` 且配置 baseUrl 才走兼容 HTTP。说明：[docs/plugins/llm.html](docs/plugins/llm.html)
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
-4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。System Prompt 写入该 session 的 system 消息。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
-5. **agent-loop（已落地薄切片）** — 编排 `llm.complete` + `tools.call`，读写 agent 绑定的 session。文本协议 `echo …` / `tool name {json}`。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管 System Prompt。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
+5. **system-prompt（已落地薄切片）** — 按 session 登记当前 System Prompt；`apply` 才写入 session。说明：[docs/plugins/system-prompt.html](docs/plugins/system-prompt.html)
+6. **agent-loop（已落地薄切片）** — 编排 `llm.complete` + `tools.call`，循环开始时 `systemPrompt.apply`。文本协议 `echo …` / `tool name {json}`。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
 
 ## 许可
 

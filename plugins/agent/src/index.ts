@@ -3,7 +3,7 @@ import type { AgentService } from '@wizard-harness/contracts';
 import { createAgentHost } from './host.js';
 
 /**
- * agent 插件：live agent = createScope + 绑定 session。不是 agent-loop。
+ * agent 插件：live agent = createScope + 绑定 session。不是 agent-loop，不管 System Prompt。
  * 说明文档：docs/plugins/agent.html
  */
 let impl: AgentService | undefined;
@@ -17,7 +17,6 @@ const api: AgentService = {
   spawn: (opts) => live().spawn(opts),
   get: (id) => live().get(id),
   list: () => live().list(),
-  setSystemPrompt: (id, content) => live().setSystemPrompt(id, content),
   stop: (id) => live().stop(id),
 };
 
@@ -26,7 +25,7 @@ const agentPlugin: Plugin = {
     id: 'agent',
     version: '0.1.0',
     name: 'Agent',
-    description: '每个 live agent 一个 scope，绑定一条 session。System Prompt 写入该 session。不管循环。',
+    description: '每个 live agent 一个 scope，绑定一条 session。不管模型/工具循环，不管 System Prompt。',
     provides: ['agent'],
     config: {},
     tier: 'standard',
@@ -49,12 +48,11 @@ const agentPlugin: Plugin = {
       '</style></head><body><div class="card">',
       '<span class="badge">● agent 服务</span>',
       '<h1>Agent</h1>',
-      '<p class="desc">ctx.agent.spawn / get / list / setSystemPrompt / stop。System Prompt 是身份：append 到绑定 session 的 system 消息。编排 llm+tools 是 agent-loop。</p>',
+      '<p class="desc">ctx.agent.spawn / get / list / stop。每个实例一个 createScope，绑定一条 session。System Prompt 是独立插件；编排 llm+tools 是 agent-loop。</p>',
       '<div class="row"><span class="k">服务名</span><span class="v">agent</span></div>',
       '<div class="row"><span class="k">依赖</span><span class="v">session</span></div>',
-      '<div class="row"><span class="k">身份</span><span class="v">systemPrompt → session</span></div>',
-      '<div class="row"><span class="k">不管</span><span class="v">llm · tools · 循环</span></div>',
-      '<div class="row"><span class="k">观测</span><span class="v">agent/spawn · prompt · stop</span></div>',
+      '<div class="row"><span class="k">不管</span><span class="v">llm · tools · prompt · 循环</span></div>',
+      '<div class="row"><span class="k">观测</span><span class="v">agent/spawn · agent/stop</span></div>',
       '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/agent.html</span></div>',
       '</div></body></html>',
     ].join(''),
