@@ -78,10 +78,10 @@
     <table>
       <thead><tr><th>键</th><th>默认</th><th>说明</th></tr></thead>
       <tbody>
-        <tr><td class="mono">provider</td><td>mock</td><td>mock 或 openai。可被 <code>WH_LLM_PROVIDER</code> 覆盖</td></tr>
-        <tr><td class="mono">baseUrl</td><td>（空）</td><td>openai 时必填。可被 <code>WH_LLM_BASE_URL</code> 覆盖</td></tr>
-        <tr><td class="mono">apiKey</td><td>（空）</td><td><code>WH_LLM_API_KEY</code> 优先；勿提交真实密钥</td></tr>
-        <tr><td class="mono">model</td><td>gpt-4o-mini</td><td><code>WH_LLM_MODEL</code></td></tr>
+        <tr><td class="mono">provider</td><td>mock</td><td>mock / openai / deepseek。可被 <code>WH_LLM_PROVIDER</code> 覆盖</td></tr>
+        <tr><td class="mono">baseUrl</td><td>（空）</td><td>openai 时必填。deepseek 默认 <code>https://api.deepseek.com</code>。可被 <code>WH_LLM_BASE_URL</code> 覆盖</td></tr>
+        <tr><td class="mono">apiKey</td><td>（空）</td><td><code>WH_LLM_API_KEY</code> 或本机 <code>~/.wizard-harness/wizard.patch.json</code>；勿提交真实密钥</td></tr>
+        <tr><td class="mono">model</td><td>gpt-4o-mini</td><td>deepseek 的 <code>flash</code> 会映射为 <code>deepseek-v4-flash</code></td></tr>
       </tbody>
     </table>
 

@@ -27,7 +27,7 @@
 
 ### 2. 真模型 env
 
-- `WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL` 覆盖插件 config。仍要 `provider=openai` **且** 有 baseUrl 才走 HTTP。
+- `WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL` 覆盖插件 config。`openai` 或 `deepseek` 且有 baseUrl 才走 HTTP（deepseek 可省略地址，默认官方）。密钥只放本机 `$WH_HOME/wizard.patch.json`，不要提交仓库。
 - 文档：`docs/plugins/llm.html`。
 
 ### 3. 内置工具

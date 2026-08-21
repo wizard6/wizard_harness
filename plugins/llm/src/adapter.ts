@@ -103,13 +103,28 @@ async function readSseText(
   return text;
 }
 
+function isHttpProvider(provider: string): boolean {
+  return provider === 'openai' || provider === 'deepseek';
+}
+
+function resolveCfg(cfg: LlmAdapterConfig): LlmAdapterConfig {
+  const provider = cfg.provider.trim() || 'mock';
+  let { baseUrl, model } = cfg;
+  if (provider === 'deepseek') {
+    if (!baseUrl) baseUrl = 'https://api.deepseek.com';
+    if (!model || model === 'flash') model = 'deepseek-v4-flash';
+  }
+  return { ...cfg, provider, baseUrl, model };
+}
+
 export async function runModel(
   messages: LlmMessage[],
-  cfg: LlmAdapterConfig,
+  raw: LlmAdapterConfig,
   opts: RunModelOpts = {},
 ): Promise<{ text: string; provider: string; toolCalls?: LlmToolCall[] }> {
   if (opts.signal?.aborted) throw new Error('llm 已取消');
-  if (cfg.provider !== 'openai' || !cfg.baseUrl) {
+  const cfg = resolveCfg(raw);
+  if (!isHttpProvider(cfg.provider) || !cfg.baseUrl) {
     const mock = mockReply(messages, opts.tools);
     if (mock.text) opts.onDelta?.(mock.text);
     return { ...mock, provider: 'mock' };
@@ -128,6 +143,7 @@ export async function runModel(
       temperature: 0,
       ...(asOpenAiTools(opts.tools) ? { tools: asOpenAiTools(opts.tools) } : {}),
       ...(stream ? { stream: true } : {}),
+      ...(cfg.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
     }),
     signal: opts.signal,
   });
@@ -137,7 +153,7 @@ export async function runModel(
   }
   if (stream) {
     const text = await readSseText(res, opts.onDelta, opts.signal);
-    return { text, provider: 'openai' };
+    return { text, provider: cfg.provider };
   }
   const json = (await res.json()) as {
     choices?: Array<{ message?: { content?: string; tool_calls?: unknown } }>;
@@ -145,5 +161,5 @@ export async function runModel(
   const msg = json.choices?.[0]?.message;
   const text = msg?.content ?? '';
   if (text) opts.onDelta?.(text);
-  return { text, provider: 'openai', toolCalls: parseToolCalls(msg?.tool_calls) };
+  return { text, provider: cfg.provider, toolCalls: parseToolCalls(msg?.tool_calls) };
 }

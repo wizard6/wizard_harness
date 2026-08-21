@@ -114,7 +114,7 @@ const llmPlugin: Plugin = {
       '</style></head><body><div class="card">',
       '<span class="badge">● llm 服务</span>',
       '<h1>模型适配器</h1>',
-      '<p class="desc">ctx.llm.complete。默认 mock；WH_LLM_PROVIDER=openai 且 WH_LLM_BASE_URL（或 config）才走 HTTP。</p>',
+      '<p class="desc">ctx.llm.complete。默认 mock；provider=openai 或 deepseek 且有 baseUrl（deepseek 可省略，默认官方地址）才走 HTTP。</p>',
       '<div class="row"><span class="k">服务名</span><span class="v">llm</span></div>',
       '<div class="row"><span class="k">观测</span><span class="v">llm/request · delta · result</span></div>',
       '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/llm.html</span></div>',
