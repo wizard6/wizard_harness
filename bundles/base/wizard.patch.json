@@ -6,7 +6,8 @@
       { "id": "console", "name": "console" },
       { "id": "hello", "name": "hello" },
       { "id": "session", "name": "session" },
-      { "id": "llm", "name": "llm" }
+      { "id": "llm", "name": "llm" },
+      { "id": "tools", "name": "tools" }
     ]
   }
 ]

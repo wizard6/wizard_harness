@@ -178,6 +178,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/tools:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
 packages:
 
   '@alcalzone/ansi-tokenize@0.1.3':

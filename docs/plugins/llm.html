@@ -127,7 +127,7 @@
       <ul class="tight">
         <li>弹窗是说明页，不能从 UI 点一次 complete（通用 UI 桥未做）。试用：观测台 RPC/网关或后续 agent。</li>
         <li>默认 mock，不连真模型。openai 路径未做超时、重试、SSE。</li>
-        <li>deriveMessages 只认 data.role + data.content；tool-result 不会进模型上下文（等 tools 切片定投影规则）。</li>
+        <li>deriveMessages 仍只含 message；complete 已改走 replay，会把 tool-result 投影成 <code>[name] content</code> 的 user 消息（非正式 tool role）。</li>
         <li>模块级 ctx：单实例没问题，测并行会串。</li>
       </ul>
     </div>

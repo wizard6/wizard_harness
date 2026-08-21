@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tools 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 18px 0 0; font-size: 13px; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+    .issue { border-color: rgba(255,166,87,.4); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>tools — 工具注册表</h1>
+      <p class="lede">登记 / 调用工具。结果只写 session 的 tool-result。不是 agent 循环，也不是权限沙箱。</p>
+      <div class="badges">
+        <span class="badge ok">id: tools</span>
+        <span class="badge ok">provides: tools</span>
+        <span class="badge">inject: session</span>
+        <span class="badge">内置 echo</span>
+      </div>
+      <nav>
+        <a href="#why">用途</a>
+        <a href="#api">服务 API</a>
+        <a href="#code">代码结构</a>
+        <a href="#deps">依赖</a>
+        <a href="#ai">给后续 AI</a>
+        <a href="#issues">已知问题</a>
+      </nav>
+    </header>
+
+    <h2 id="why">1. 用途与边界</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>唯一允许「执行工具并记入会话」的地方。禁止在 agent 里直接 exec / fetch 当工具。</p>
+    </div>
+    <ul class="tight">
+      <li>管：<code>register</code> / <code>list</code> / <code>call</code>、内置 echo、观测 register/call/result</li>
+      <li>不管：agent 循环、工具 schema 给模型、沙箱、通用弹窗 RPC</li>
+    </ul>
+
+    <h2 id="api">2. 提供的服务</h2>
+    <p>服务名 <code>TOOLS_SERVICE = 'tools'</code>。消费方：<code>ctx.tools</code> 或 <code>ctx.get('tools')</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">register({ name, description?, handler })</td><td>登记工具</td><td>无名/无 handler/重名抛错</td></tr>
+        <tr><td class="mono">list()</td><td>已登记工具（无 handler）</td><td>—</td></tr>
+        <tr><td class="mono">call(name, args?, { sessionId?, callId? })</td><td>执行并 append tool-result</td><td>未知工具抛错；handler 抛错则 ok:false 仍写入</td></tr>
+      </tbody>
+    </table>
+    <pre>await ctx.tools.call('echo', { input: 'hi' })
+// session 追加 { kind:'tool-result', data:{ callId, name:'echo', content:'hi', ok:true } }</pre>
+    <p>条目约定：<code>{ callId, name, content, ok }</code>。llm 下次 complete 会把 tool-result 投影成 <code>[name] content</code> 的 user 消息（最小映射，不是 OpenAI tool_call 协议）。</p>
+
+    <h2 id="code">3. 代码结构（核心方法）</h2>
+    <table>
+      <thead><tr><th>文件</th><th>核心符号</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">contracts/src/tools.ts</td><td>TOOLS_SERVICE, ToolsService</td></tr>
+        <tr><td class="mono">plugins/tools/src/registry.ts</td><td>createToolRegistry, call, asContent</td></tr>
+        <tr><td class="mono">plugins/tools/src/index.ts</td><td>register 内建 echo；api 转发到本轮 impl</td></tr>
+      </tbody>
+    </table>
+    <div class="card">
+      <b>调用链：</b>
+      <span class="mono">call → 取/建 session → tools/call → handler → append tool-result → tools/result</span>
+    </div>
+
+    <h2 id="deps">4. 依赖 / 期望被依赖</h2>
+    <table>
+      <thead><tr><th>方向</th><th>对象</th><th>强度</th></tr></thead>
+      <tbody>
+        <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
+        <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
+        <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent</td><td>循环里只 call 本服务</td></tr>
+        <tr><td>不依赖</td><td class="mono">llm</td><td>工具执行与模型调用解耦</td></tr>
+      </tbody>
+    </table>
+    <p>观测：<code>tools/register</code>、<code>tools/call</code>、<code>tools/result</code>（target = 工具名）。actor = <code>plugin:tools</code>。</p>
+
+    <h2 id="ai">5. 给后续 AI 的硬约束</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在 agent 里绕过本服务直接跑命令；出口只有 <code>ctx.tools.call</code>。</li>
+        <li>不要把模型 tool-call 解析塞进本插件。那是 agent 切片。</li>
+        <li>不要再造一份 toolResults[] 当真相源；只 append / replay session。</li>
+        <li>新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
+      </ul>
+    </div>
+
+    <h2 id="issues">6. 已知问题</h2>
+    <div class="card issue">
+      <ul class="tight">
+        <li>弹窗是说明页，不能从 UI 点 echo（通用 UI 桥未做）。</li>
+        <li>无参数 schema、无超时、无并发锁、无按 scope 隔离工具表。</li>
+        <li>handler 失败不会 throw 给调用方（ok:false）；未知工具才会 throw。</li>
+        <li>llm 投影把 tool-result 当成 user 文本，不是官方 tool role。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/tools/</span> · 契约 <span class="mono">contracts/src/tools.ts</span></p>
+  </div>
+</body>
+</html>

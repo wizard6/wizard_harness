@@ -58,7 +58,7 @@ obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / llm）
+plugins/              业务插件包（hello / logger / events / console / session / llm / tools）
 docs/confirmed/       人类确认意图
 docs/plugins/         插件说明（HTML，给人与后续 AI）
 docs/项目体检.md      源码核对清单（2026-08-19）
@@ -80,7 +80,7 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 
 1. **session（已落地薄切片）** — 会话日志（领域源：追加 turn / message / tool-result，只读回放；观测 `session/start`、`session/append`）。scope 管「这次运行看得见什么」，session 管「发生过什么」。说明：[docs/plugins/session.html](docs/plugins/session.html)
 2. **llm（已落地薄切片）** — 一个模型适配器，读写都落到 session。默认 mock；`provider=openai` 且配置 baseUrl 才走兼容 HTTP。说明：[docs/plugins/llm.html](docs/plugins/llm.html)
-3. **tools** — 工具注册表（登记 / 调用）；调用写入 session。
+3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
 4. **agent** — 用 `createScope` 串起 session + llm + tools 的最小循环（每个 live agent 一个 scope）。
 
 ## 许可

@@ -14,13 +14,19 @@ function sessionOf(): SessionService {
   return s;
 }
 
-function asMessages(entries: readonly { data: Record<string, unknown> }[]): LlmMessage[] {
+function asMessages(entries: readonly { kind: string; data: Record<string, unknown> }[]): LlmMessage[] {
   const out: LlmMessage[] = [];
   for (const e of entries) {
-    const role = e.data.role;
-    const content = e.data.content;
-    if ((role === 'system' || role === 'user' || role === 'assistant') && typeof content === 'string') {
-      out.push({ role, content });
+    if (e.kind === 'message') {
+      const role = e.data.role;
+      const content = e.data.content;
+      if ((role === 'system' || role === 'user' || role === 'assistant') && typeof content === 'string') {
+        out.push({ role, content });
+      }
+    } else if (e.kind === 'tool-result') {
+      const name = typeof e.data.name === 'string' ? e.data.name : 'tool';
+      const content = typeof e.data.content === 'string' ? e.data.content : '';
+      out.push({ role: 'user', content: `[${name}] ${content}` });
     }
   }
   return out;
@@ -41,7 +47,7 @@ const api: LlmService = {
       apiKey: String(ctx?.config.apiKey ?? ''),
       model: String(ctx?.config.model ?? 'gpt-4o-mini'),
     };
-    const messages = asMessages(sessions.deriveMessages(sess.id));
+    const messages = asMessages(sess.replay());
     ctx?.emit({ action: 'llm/request', target: sess.id, payload: { provider: cfg.provider, n: messages.length } });
     sess.append('turn', { phase: 'start' });
     try {
