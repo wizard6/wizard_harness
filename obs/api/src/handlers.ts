@@ -3,8 +3,10 @@ import { queryEvents, readEvents, tailEvents } from '@wizard-harness/core';
 import type { CompositionSnapshot, PluginEvent, SystemContext } from '@wizard-harness/core';
 import { registrySpec } from '@wizard-harness/obs-core';
 
-/** WH_EXPOSE 白名单：{ 服务名: true | string[] } */
-export type ExposeMap = Record<string, true | string[]>;
+import type { ExposeMap } from './expose.js';
+import { methodAllowed } from './expose.js';
+
+export type { ExposeMap };
 
 export interface HandlerDeps {
   /** 事件文件路径（读 /events、/state） */
@@ -87,14 +89,8 @@ export function createHandlers(deps: HandlerDeps): ApiHandlers {
     if (typeof service !== 'string' || typeof method !== 'string') {
       return { status: 400, body: { ok: false, error: '需要 service 与 method（字符串）' } };
     }
-    // 白名单门：默认不暴露任何服务调用
-    const allow = expose[service];
-    if (!allow) {
-      return { status: 403, body: { ok: false, error: `服务 ${service} 未在 WH_EXPOSE 白名单` } };
-    }
-    const allowed = allow === true || (Array.isArray(allow) && allow.includes(method));
-    if (!allowed) {
-      return { status: 403, body: { ok: false, error: `方法 ${service}.${method} 未在白名单` } };
+    if (!methodAllowed(expose, service, method)) {
+      return { status: 403, body: { ok: false, error: `方法 ${service}.${method} 未在 WH_EXPOSE 白名单` } };
     }
     const svc = getHarness()?.services.get(service);
     if (!svc) {

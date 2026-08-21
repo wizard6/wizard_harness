@@ -18,7 +18,14 @@ export type { ConsoleService, ExecResult } from './console.js';
 export { SESSION_SERVICE } from './session.js';
 export type { Session, SessionEntry, SessionKind, SessionService } from './session.js';
 export { LLM_SERVICE } from './llm.js';
-export type { LlmCompleteInput, LlmCompleteResult, LlmMessage, LlmService } from './llm.js';
+export type {
+  LlmCompleteInput,
+  LlmCompleteResult,
+  LlmMessage,
+  LlmService,
+  LlmToolCall,
+  LlmToolSpec,
+} from './llm.js';
 export { TOOLS_SERVICE } from './tools.js';
 export type { ToolCallResult, ToolHandler, ToolInfo, ToolSpec, ToolsService } from './tools.js';
 export { AGENT_SERVICE } from './agent.js';

@@ -42,7 +42,7 @@ CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:e
 | `GET /services` | 服务绑定列表（provider/access/lifetime/scoped） |
 | `POST /rpc` | 白名单服务调用：`{ service, method, args }`，未白名单一律 403 |
 
-环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON，如 `{"greeter":["greet"]}`，默认不暴露任何调用）、`WH_EVENTS`、`PORT`。
+环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`systemPrompt.set|get|apply`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_EVENTS`、`PORT`。
 
 Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm gui:start` 会先跑 `scripts/ensure-electron.cjs`：缺二进制时补装，必要时用缓存 zip 解压。
 

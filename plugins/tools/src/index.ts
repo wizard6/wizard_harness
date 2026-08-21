@@ -37,7 +37,7 @@ const toolsPlugin: Plugin = {
     id: 'tools',
     version: '0.1.0',
     name: '工具注册表',
-    description: '登记 / 调用工具；结果 append tool-result 到 session。内置 echo。',
+    description: '登记 / 调用工具；结果 append tool-result 到 session。内置 echo / now / upper。',
     provides: ['tools'],
     config: {},
     tier: 'standard',
@@ -79,7 +79,17 @@ const toolsPlugin: Plugin = {
       description: '原样返回 args.input（没有则返回整个 args）',
       handler: (args) => (args.input !== undefined ? args.input : args),
     });
-    c.logger?.info?.('tools 插件就绪（内置 echo）');
+    impl.register({
+      name: 'now',
+      description: '返回当前 ISO 时间',
+      handler: () => new Date().toISOString(),
+    });
+    impl.register({
+      name: 'upper',
+      description: '把 args.input 转成大写',
+      handler: (args) => String(args.input ?? '').toUpperCase(),
+    });
+    c.logger?.info?.('tools 插件就绪（内置 echo / now / upper）');
     c.effect(() => () => {
       impl = undefined;
       ctx = undefined;

@@ -1,27 +1,43 @@
 /**
  * 服务契约层：llm 服务。
  *
- * 契约属于系统而非任何插件。读写都落到 session：历史从 deriveMessages 投影，
- * 模型输出 append message。薄切片：一次 complete，不做流式 / tool call / 多模型路由。
+ * 契约属于系统而非任何插件。读写都落到 session。
+ * 支持一次 complete、官方 tool_calls、可选流式 delta 与 AbortSignal。
  */
 export const LLM_SERVICE = 'llm';
 
+export interface LlmToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+export interface LlmToolSpec {
+  name: string;
+  description?: string;
+}
+
 export interface LlmMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  tool_call_id?: string;
+  name?: string;
+  tool_calls?: LlmToolCall[];
 }
 
 export interface LlmCompleteInput {
-  /** 不传则用 session.current()，没有则 start 一个 */
   sessionId?: string;
-  /** 若有，先 append 为 user message 再调用模型 */
   prompt?: string;
+  tools?: readonly LlmToolSpec[];
+  signal?: AbortSignal;
+  onDelta?: (chunk: string) => void;
 }
 
 export interface LlmCompleteResult {
   sessionId: string;
   text: string;
   provider: string;
+  toolCalls?: LlmToolCall[];
 }
 
 export interface LlmService {

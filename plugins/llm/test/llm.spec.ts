@@ -32,4 +32,26 @@ describe('llm 插件', () => {
     expect(seen.some((e) => e.action === 'llm/request' && e.target === out.sessionId)).toBe(true);
     expect(seen.some((e) => e.action === 'llm/result' && e.target === out.sessionId)).toBe(true);
   });
+
+  it('tools 传入 echo 时 mock 返回官方 toolCalls；onDelta 收到全文', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(llmPlugin);
+    const llm = harness.services.get<LlmService>('llm')!;
+    const chunks: string[] = [];
+    const tools = await llm.complete({ prompt: 'echo hi', tools: [{ name: 'echo' }] });
+    expect(tools.toolCalls?.[0]).toMatchObject({ name: 'echo', args: { input: 'hi' } });
+    const ping = await llm.complete({ prompt: 'ping', onDelta: (c) => chunks.push(c) });
+    expect(chunks.join('')).toBe(ping.text);
+  });
+
+  it('已 abort 的 signal 使 complete 失败', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(llmPlugin);
+    const llm = harness.services.get<LlmService>('llm')!;
+    const ac = new AbortController();
+    ac.abort();
+    await expect(llm.complete({ prompt: 'x', signal: ac.signal })).rejects.toThrow(/取消/);
+  });
 });

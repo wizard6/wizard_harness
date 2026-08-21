@@ -35,4 +35,6 @@ export interface SessionService {
   current(): Session | undefined;
   /** 从日志投影出 message 条目（给后续 llm 用；不是第二份存储） */
   deriveMessages(sessionId: string): readonly SessionEntry[];
+  /** 丢掉最老的条目，保留 keep 条并记一条 compact turn；返回丢掉的条数 */
+  compact(sessionId: string, opts?: { keep?: number }): number;
 }

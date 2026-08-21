@@ -56,7 +56,7 @@
         <span class="badge ok">id: session</span>
         <span class="badge ok">provides: session</span>
         <span class="badge">v0.1.0 · standard</span>
-        <span class="badge warn">内存日志 · 进程内</span>
+        <span class="badge ok">可选磁盘持久化</span>
       </div>
       <nav>
         <a href="#why">用途</a>
@@ -80,7 +80,9 @@
           <li>开会话 <code>start</code></li>
           <li>追加 <code>turn</code> / <code>message</code> / <code>tool-result</code></li>
           <li>只读 <code>replay</code> / <code>deriveMessages</code></li>
-          <li>广播 <code>session/start</code>、<code>session/append</code></li>
+          <li><code>compact</code>（丢掉最老条目）</li>
+          <li>可选落盘：<code>config.persistDir</code> 或 <code>WH_SESSIONS_DIR</code></li>
+          <li>广播 <code>session/start</code>、<code>session/append</code>、<code>session/compact</code></li>
         </ul>
       </div>
       <div class="card">
@@ -88,7 +90,7 @@
         <ul class="tight">
           <li>scope / isolate（可见性在 <code>core/src/scope</code>）</li>
           <li>模型调用、工具执行、agent 循环</li>
-          <li>磁盘持久化、compaction、fork/resume</li>
+          <li>fork/resume、SQLite、从 events.jsonl 重建</li>
           <li>通用 UI 桥（弹窗只是说明页）</li>
         </ul>
       </div>
@@ -111,6 +113,7 @@
         <tr><td class="mono">replay()</td><td>只读返回该会话全部条目（保序）</td><td>—</td></tr>
         <tr><td class="mono">get(id) / list() / current()</td><td>查找 / 列举 / 最近 start 的会话</td><td>无则 undefined</td></tr>
         <tr><td class="mono">deriveMessages(id)</td><td>投影 kind===message 的条目（给 llm）</td><td>未知 id 返回 []</td></tr>
+        <tr><td class="mono">compact(id, { keep? })</td><td>丢掉最老条目，保留 keep（默认 40），写一条 compact turn</td><td>未知 id 抛错</td></tr>
       </tbody>
     </table>
     <h3>条目形状</h3>
@@ -158,6 +161,7 @@
       <tbody>
         <tr><td class="mono">session/start</td><td>session id</td><td class="mono">{ title? }</td></tr>
         <tr><td class="mono">session/append</td><td>session id</td><td class="mono">{ entry }</td></tr>
+        <tr><td class="mono">session/compact</td><td>session id</td><td class="mono">{ dropped, keep }</td></tr>
       </tbody>
     </table>
     <p>actor 为 <code>plugin:session</code>。总线若挂了 jsonl sink，观测壳能看到这些事件；<b>那不是会话存储</b>，不能当 replay 源（条目结构在 payload 里，重启后内存 Map 已空）。</p>
@@ -167,7 +171,7 @@
       <ul class="tight">
         <li>不要在 llm/tools/agent 里再造一份 messages[] 当真相源；只 append / replay 本服务。</li>
         <li>不要把 scope 标签写进 session 条目来「模拟隔离」；可见性走 <code>createScope</code>。</li>
-        <li>不要在本插件加模型、工具、HTTP、SQLite，除非单独确认；薄切片故意不做。</li>
+        <li>不要在本插件加模型、工具、HTTP、SQLite，除非单独确认。</li>
         <li>扩展事件类型（如 <code>tool/call</code>）应先改 <code>contracts/src/session.ts</code> 的 <code>SessionKind</code>，再改 store 白名单。</li>
         <li>DSH 用 <code>ctx.sessions</code>（复数）+ 细事件名（<code>user/message</code>）；本仓库服务名是 <code>session</code>，kind 只有三类。对齐 DSH 是后续工作，不要 silently 改名。</li>
       </ul>
@@ -177,8 +181,9 @@
     <div class="card issue">
       <h3 style="margin-top:0">已知问题</h3>
       <ul class="tight">
-        <li><b>不持久化：</b>进程退出后 replay 为空。事件 jsonl 里可能有 session/append，但没有从 jsonl 重建日志的代码。</li>
-        <li><b>无 flush / 崩溃恢复：</b>与 DSH <code>ctx.sessions.flush</code> 不对齐。</li>
+        <li><b>落盘可选：</b>GUI/API 默认 <code>~/.wizard-harness/sessions/{id}.json</code>。测试环境（vitest）忽略 <code>WH_SESSIONS_DIR</code>，除非 config.persistDir。重启后 <code>current()</code> 为空，用 <code>list()/get</code>。</li>
+        <li><b>compact 会改写 seq：</b>不是纯追加；只保留尾部 + 一条 turn。agent-loop 的 <code>compactKeep</code> 默认 0（不自动压）。</li>
+        <li><b>无 flush / 崩溃 WAL：</b>每次 append 整文件重写；与 DSH <code>ctx.sessions.flush</code> 不对齐。</li>
         <li><b>模块级 ctx：</b>emit 闭包读插件模块变量；单进程单实例没问题，测并行或多实例会串。</li>
         <li><b>get() 每次新句柄：</b>同一 id 多次 get 得到不同 Session 对象，内部指向同一 entries 数组（行为正确，引用相等性不要当身份）。</li>
         <li><b>无按 scope 分桶：</b>所有会话在一张全局 Map；多 agent 同时跑会看到彼此的 list()（应用层用不同 session id 区分）。</li>
@@ -188,8 +193,8 @@
     <div class="card no">
       <h3 style="margin-top:0">明确非目标（本切片）</h3>
       <ul class="tight">
-        <li>YAML/DSH 全量 SessionEvent 目录、surface replace、compaction</li>
-        <li>磁盘 JSONL/SQLite 后端</li>
+        <li>YAML/DSH 全量 SessionEvent 目录、surface replace</li>
+        <li>SQLite / 从 events.jsonl 重建会话</li>
         <li>通用弹窗 RPC（当前 ui 是静态说明页）</li>
       </ul>
     </div>

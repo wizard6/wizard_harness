@@ -22,7 +22,7 @@ describe('tools 插件', () => {
     await harness.registry.register(toolsPlugin);
 
     const tools = harness.services.get<ToolsService>('tools')!;
-    expect(tools.list().map((t) => t.name)).toContain('echo');
+    expect(tools.list().map((t) => t.name).sort()).toEqual(['echo', 'now', 'upper']);
     const out = await tools.call('echo', { input: 'hi' });
     expect(out.ok).toBe(true);
     expect(out.content).toBe('hi');
@@ -50,5 +50,17 @@ describe('tools 插件', () => {
     const out = await tools.call('boom');
     expect(out.ok).toBe(false);
     expect(out.content).toMatch(/broke/);
+  });
+
+  it('内置 now / upper', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(toolsPlugin);
+    const tools = harness.services.get<ToolsService>('tools')!;
+    const now = await tools.call('now');
+    expect(now.ok).toBe(true);
+    expect(now.content).toMatch(/^\d{4}-/);
+    const upper = await tools.call('upper', { input: 'ab' });
+    expect(upper.content).toBe('AB');
   });
 });

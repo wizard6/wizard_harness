@@ -12,12 +12,13 @@ import {
 } from '@wizard-harness/core';
 import type { CompositionSnapshot, SystemContext } from '@wizard-harness/core';
 import { createHandlers } from './handlers.js';
-import type { ExposeMap } from './handlers.js';
+import { parseExpose } from './expose.js';
+import type { ExposeMap } from './expose.js';
 
 /**
  * obs-api：运行时壳（分层定位 v2）。
  * - 观测：/events /events/stream /state（读 events.jsonl，与 CLI/TUI 一致）
- * - 运行时：/plugins /services 只读状态；/rpc 白名单服务调用（默认不暴露任何调用）
+ * - 运行时：/plugins /services 只读状态；/rpc 白名单服务调用（未设 WH_EXPOSE 时默认 agent 试跑名单）
  * 端点处理见 handlers.ts，本文件只负责配置读取、装配与路由分发。
  *
  * 环境变量：
@@ -27,7 +28,8 @@ import type { ExposeMap } from './handlers.js';
  *   WH_ENABLE_EXPERIMENTAL 逗号分隔的显式启用 experimental 插件 id
  *   WH_PROFILE  profile 名或路径（默认 profiles/default；off 关闭组合、退回目录发现）
  *   WH_HOME     机级 home（默认 ~/.wizard-harness），可读 wizard.patch.json
- *   WH_EXPOSE   服务白名单 JSON：{ "服务名": true | ["method", ...] }，默认 {}
+ *   WH_EXPOSE   服务白名单 JSON。未设置时默认暴露 agent/list|stop、systemPrompt/set|get|apply、agentLoop/run|cancel。
+ *               `off` 或 `{}` 关闭全部。
  *   PORT        监听端口（默认 8787）
  */
 
@@ -56,26 +58,24 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readExpose(): ExposeMap {
-  const raw = process.env.WH_EXPOSE;
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const out: ExposeMap = {};
-    for (const [name, v] of Object.entries(parsed)) {
-      if (v === true) out[name] = true;
-      else if (Array.isArray(v)) out[name] = v.filter((m): m is string => typeof m === 'string');
+  const parsed = parseExpose(process.env.WH_EXPOSE);
+  if (process.env.WH_EXPOSE && process.env.WH_EXPOSE.trim() !== '' && process.env.WH_EXPOSE.trim() !== 'off') {
+    try {
+      JSON.parse(process.env.WH_EXPOSE);
+    } catch {
+      console.warn('[config] WH_EXPOSE 不是合法 JSON，回退默认 agent 试跑白名单');
     }
-    return out;
-  } catch {
-    console.warn('[config] WH_EXPOSE 不是合法 JSON，忽略（默认不暴露任何服务调用）');
-    return {};
   }
+  return parsed;
 }
 
 const apiExpose = readExpose();
 
 async function init(): Promise<void> {
   mkdirSync(resolve(FILE, '..'), { recursive: true });
+  if (!process.env.WH_SESSIONS_DIR) {
+    process.env.WH_SESSIONS_DIR = resolve(resolveHomeDir(), 'sessions');
+  }
   const bus = createEventBus();
   bus.subscribe(createFileSink(FILE));
   const profileDir = resolveProfileDir(process.env.WH_PROFILE, process.cwd());

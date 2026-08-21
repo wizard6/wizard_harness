@@ -95,4 +95,11 @@ describe('agent-loop 插件', () => {
     expect(out.text).toBe('[mock] ping');
     await expect(loop.run({ agentId: 'nope', prompt: 'x' })).rejects.toThrow(/不存在/);
   });
+
+  it('run.systemPrompt 转交给 system-prompt；cancel 空闲无副作用', async () => {
+    const { loop, session } = await boot();
+    loop.cancel('nobody');
+    const out = await loop.run({ prompt: 'hello', systemPrompt: 'be brief' });
+    expect(session.get(out.sessionId)!.replay()[0]?.data.content).toBe('be brief');
+  });
 });

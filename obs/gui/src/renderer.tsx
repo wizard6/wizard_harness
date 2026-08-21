@@ -40,6 +40,11 @@ declare global {
         skipped?: { id: string; reason: string }[];
         error?: string;
       }>;
+      callService(
+        service: string,
+        method: string,
+        args: unknown[],
+      ): Promise<{ ok: boolean; result?: unknown; error?: string }>;
       windowControl(action: 'min' | 'max' | 'close'): void;
       openQuality(): Promise<void>;
       qualityData(): Promise<QualityData>;
@@ -99,6 +104,7 @@ function RegistryApp(): React.ReactElement | null {
         await refresh();
         return r;
       }}
+      onCallService={(service, method, args) => window.wh.callService(service, method, args)}
     />
   );
 }

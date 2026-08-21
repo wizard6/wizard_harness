@@ -1,5 +1,5 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
-import type { SessionService } from '@wizard-harness/contracts';
+import type { Session, SessionEntry, SessionKind, SessionService } from '@wizard-harness/contracts';
 import { createSessionStore } from './store.js';
 
 /**
@@ -7,19 +7,30 @@ import { createSessionStore } from './store.js';
  * 说明文档：docs/plugins/session.html
  */
 let ctx: PluginContext | undefined;
+let impl: SessionService | undefined;
 
-const api: SessionService = createSessionStore((action, target, payload) => {
-  ctx?.emit({ action, target, payload });
-});
+function live(): SessionService {
+  if (!impl) throw new Error('session 未就绪');
+  return impl;
+}
+
+const api: SessionService = {
+  start: (opts) => live().start(opts),
+  get: (id) => live().get(id),
+  list: () => live().list(),
+  current: () => live().current(),
+  deriveMessages: (id) => live().deriveMessages(id),
+  compact: (id, opts) => live().compact(id, opts),
+};
 
 const sessionPlugin: Plugin = {
   manifest: {
     id: 'session',
     version: '0.1.0',
     name: '会话日志',
-    description: '追加型会话日志：start / append(turn|message|tool-result) / 只读 replay',
+    description: '追加型会话日志：start / append / replay；可选磁盘持久化与 compact。',
     provides: ['session'],
-    config: {},
+    config: { persistDir: '', compactKeep: 0 },
     tier: 'standard',
   },
   inject: { logger: false },
@@ -40,21 +51,29 @@ const sessionPlugin: Plugin = {
       '</style></head><body><div class="card">',
       '<span class="badge">● session 服务</span>',
       '<h1>会话日志</h1>',
-      '<p class="desc">追加型领域源：ctx.session.start / append / replay。llm、tools、agent 应读写本服务，而不是另建聊天记录。</p>',
+      '<p class="desc">ctx.session.start / append / replay / compact。WH_SESSIONS_DIR 或 config.persistDir 开启落盘。</p>',
       '<div class="row"><span class="k">服务名</span><span class="v">session</span></div>',
       '<div class="row"><span class="k">条目 kind</span><span class="v">turn · message · tool-result</span></div>',
-      '<div class="row"><span class="k">观测</span><span class="v">session/start · session/append</span></div>',
+      '<div class="row"><span class="k">观测</span><span class="v">session/start · append · compact</span></div>',
       '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/session.html</span></div>',
       '</div></body></html>',
     ].join(''),
   },
   register(c) {
     ctx = c;
-    c.logger?.info?.('session 插件就绪（内存日志，进程内有效）');
+    const persistDir = (process.env.VITEST || process.env.VITEST_WORKER_ID)
+      ? String(c.config.persistDir || '').trim()
+      : String(c.config.persistDir || process.env.WH_SESSIONS_DIR || '').trim();
+    impl = createSessionStore((action, target, payload) => {
+      ctx?.emit({ action, target, payload });
+    }, persistDir ? { persistDir } : {});
+    c.logger?.info?.(persistDir ? `session 插件就绪（持久化 ${persistDir}）` : 'session 插件就绪（内存）');
     c.effect(() => () => {
+      impl = undefined;
       ctx = undefined;
     });
   },
 };
 
 export default sessionPlugin;
+export type { Session, SessionEntry, SessionKind };

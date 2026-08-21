@@ -14,19 +14,34 @@ function sessionOf(): SessionService {
   return s;
 }
 
+function cfgOf() {
+  const c = ctx?.config ?? {};
+  return {
+    provider: String(process.env.WH_LLM_PROVIDER || c.provider || 'mock'),
+    baseUrl: String(process.env.WH_LLM_BASE_URL || c.baseUrl || ''),
+    apiKey: String(process.env.WH_LLM_API_KEY || c.apiKey || ''),
+    model: String(process.env.WH_LLM_MODEL || c.model || 'gpt-4o-mini'),
+  };
+}
+
 function asMessages(entries: readonly { kind: string; data: Record<string, unknown> }[]): LlmMessage[] {
   const out: LlmMessage[] = [];
   for (const e of entries) {
     if (e.kind === 'message') {
       const role = e.data.role;
-      const content = e.data.content;
-      if ((role === 'system' || role === 'user' || role === 'assistant') && typeof content === 'string') {
-        out.push({ role, content });
+      const content = typeof e.data.content === 'string' ? e.data.content : '';
+      if (role === 'system' || role === 'user' || role === 'assistant' || role === 'tool') {
+        const msg: LlmMessage = { role, content };
+        if (typeof e.data.tool_call_id === 'string') msg.tool_call_id = e.data.tool_call_id;
+        if (typeof e.data.name === 'string') msg.name = e.data.name;
+        if (Array.isArray(e.data.tool_calls)) msg.tool_calls = e.data.tool_calls as LlmMessage['tool_calls'];
+        out.push(msg);
       }
     } else if (e.kind === 'tool-result') {
       const name = typeof e.data.name === 'string' ? e.data.name : 'tool';
       const content = typeof e.data.content === 'string' ? e.data.content : '';
-      out.push({ role: 'user', content: `[${name}] ${content}` });
+      const callId = typeof e.data.callId === 'string' ? e.data.callId : '';
+      out.push({ role: 'tool', content, name, tool_call_id: callId || undefined });
     }
   }
   return out;
@@ -41,20 +56,30 @@ const api: LlmService = {
     if (!sess) throw new Error(`session 不存在：${input.sessionId}`);
     if (input.prompt) sess.append('message', { role: 'user', content: input.prompt });
 
-    const cfg = {
-      provider: String(ctx?.config.provider ?? 'mock'),
-      baseUrl: String(ctx?.config.baseUrl ?? ''),
-      apiKey: String(ctx?.config.apiKey ?? ''),
-      model: String(ctx?.config.model ?? 'gpt-4o-mini'),
-    };
+    const cfg = cfgOf();
     const messages = asMessages(sess.replay());
     ctx?.emit({ action: 'llm/request', target: sess.id, payload: { provider: cfg.provider, n: messages.length } });
     sess.append('turn', { phase: 'start' });
     try {
-      const { text, provider } = await runModel(messages, cfg);
-      sess.append('message', { role: 'assistant', content: text });
-      ctx?.emit({ action: 'llm/result', target: sess.id, payload: { provider, bytes: text.length } });
-      return { sessionId: sess.id, text, provider };
+      const { text, provider, toolCalls } = await runModel(messages, cfg, {
+        tools: input.tools,
+        signal: input.signal,
+        onDelta: (chunk) => {
+          ctx?.emit({ action: 'llm/delta', target: sess.id, payload: { bytes: chunk.length } });
+          input.onDelta?.(chunk);
+        },
+      });
+      sess.append('message', {
+        role: 'assistant',
+        content: text,
+        ...(toolCalls ? { tool_calls: toolCalls } : {}),
+      });
+      ctx?.emit({
+        action: 'llm/result',
+        target: sess.id,
+        payload: { provider, bytes: text.length, tools: toolCalls?.length ?? 0 },
+      });
+      return { sessionId: sess.id, text, provider, toolCalls };
     } finally {
       sess.append('turn', { phase: 'end' });
     }
@@ -66,7 +91,7 @@ const llmPlugin: Plugin = {
     id: 'llm',
     version: '0.1.0',
     name: '模型适配器',
-    description: '一次 complete：从 session 投影历史，把回复 append 回去。默认 mock。',
+    description: 'complete：session 投影历史；支持 tool_calls、流式 delta、AbortSignal。默认 mock。',
     provides: ['llm'],
     config: { provider: 'mock', baseUrl: '', apiKey: '', model: 'gpt-4o-mini' },
     tier: 'standard',
@@ -89,17 +114,16 @@ const llmPlugin: Plugin = {
       '</style></head><body><div class="card">',
       '<span class="badge">● llm 服务</span>',
       '<h1>模型适配器</h1>',
-      '<p class="desc">ctx.llm.complete 读写 session，不另存聊天记录。默认 mock；config.provider=openai 且填 baseUrl 才走 HTTP。</p>',
+      '<p class="desc">ctx.llm.complete。默认 mock；WH_LLM_PROVIDER=openai 且 WH_LLM_BASE_URL（或 config）才走 HTTP。</p>',
       '<div class="row"><span class="k">服务名</span><span class="v">llm</span></div>',
-      '<div class="row"><span class="k">依赖</span><span class="v">session（必选）</span></div>',
-      '<div class="row"><span class="k">观测</span><span class="v">llm/request · llm/result</span></div>',
+      '<div class="row"><span class="k">观测</span><span class="v">llm/request · delta · result</span></div>',
       '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/llm.html</span></div>',
       '</div></body></html>',
     ].join(''),
   },
   register(c) {
     ctx = c;
-    c.logger?.info?.(`llm 插件就绪（provider=${String(c.config.provider ?? 'mock')}）`);
+    c.logger?.info?.(`llm 插件就绪（provider=${cfgOf().provider}）`);
     c.effect(() => () => {
       ctx = undefined;
     });

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createEventBus, createHarness } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
 import { SESSION_SERVICE } from '@wizard-harness/contracts';
 import type { SessionService } from '@wizard-harness/contracts';
 import sessionPlugin from '../src/index.js';
+import { createSessionStore } from '../src/store.js';
 
 describe('session 插件', () => {
   it('服务名契约绑定', () => {
@@ -45,5 +49,34 @@ describe('session 插件', () => {
     const entry = s.append('message', { role: 'user', content: 'x' });
     expect(Object.isFrozen(entry)).toBe(true);
     expect(Object.isFrozen(entry.data)).toBe(true);
+  });
+
+  it('compact 丢掉最老条目并记 compact turn', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    const svc = harness.services.get<SessionService>('session')!;
+    const s = svc.start({ id: 'sc' });
+    s.append('message', { role: 'user', content: '1' });
+    s.append('message', { role: 'user', content: '2' });
+    s.append('message', { role: 'user', content: '3' });
+    expect(svc.compact('sc', { keep: 2 })).toBe(1);
+    const log = s.replay();
+    expect(log[0]?.data).toMatchObject({ phase: 'compact', dropped: 1 });
+    expect(log.map((e) => e.seq)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('session 持久化', () => {
+  it('persistDir 重启后能 replay', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'wh-sess-'));
+    try {
+      const a = createSessionStore(() => {}, { persistDir: dir });
+      a.start({ id: 'p' }).append('message', { role: 'user', content: 'hi' });
+      const b = createSessionStore(() => {}, { persistDir: dir });
+      expect(b.get('p')?.replay()).toHaveLength(1);
+      expect(b.get('p')?.replay()[0]?.data.content).toBe('hi');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

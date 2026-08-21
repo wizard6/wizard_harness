@@ -191,6 +191,11 @@ export interface PluginUi {
   content?: string;
   width?: number;
   height?: number;
+  /**
+   * 弹窗可调的服务方法白名单（通用 UI 桥薄切片）。
+   * 未声明的 service.method 一律拒绝。观测台试跑走壳白名单，不走这里。
+   */
+  rpc?: Record<string, string[]>;
 }
 
 /** 插件约定 */

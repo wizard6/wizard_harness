@@ -1,0 +1,67 @@
+# Agent 能力待办
+
+> 来源：薄切片 agent 链已齐，但还不能当产品用。排序按依赖：先能调起来，再协议与真模型，再流式/取消，最后落盘与通用桥。
+> 插件说明：`docs/plugins/*.html`。本页记顺序与实现结果。
+
+## 顺序
+
+| # | id | 项 | 状态 | 为何排这里 |
+|---|-----|-----|------|------------|
+| 1 | rpc-expose | 观测台 RPC + 试跑入口 | 已落地 | 不改任意方法桥也能从壳调用 |
+| 2 | real-llm | 真模型：env `WH_LLM_*` | 已落地 | 已有 openai 适配器，先把密钥/地址从环境接入 |
+| 3 | more-tools | 内置工具 `now` / `upper` | 已落地 | 协议升级前先有可调工具 |
+| 4 | tool-calls | 官方 `tool_calls` | 已落地 | 循环改吃模型返回的调用；文本协议作回退 |
+| 5 | llm-stream | llm 流式 | 已落地 | complete 的 delta / SSE |
+| 6 | loop-cancel | agent-loop 取消 | 已落地 | 依赖 complete 的 AbortSignal |
+| 7 | session-persist | session 持久化 | 已落地 | 关进程不丢 |
+| 8 | compaction | session compaction | 已落地 | 依赖可写回的 session |
+| 9 | ui-bridge | 弹窗白名单 RPC | 已落地 | 插件 `ui.rpc` 声明才放行，不是任意方法桥 |
+
+## 实现结果
+
+### 1. 观测台 RPC + 试跑
+
+- **obs:api**：未设 `WH_EXPOSE` 时默认暴露 `agent.list|stop`、`systemPrompt.set|get|apply`、`agentLoop.run|cancel`。`off` 或 `{}` 关闭。不含 `console.exec` / `tools.call`。
+- **观测台**：新增「试跑」页，经 IPC `wh:call-service` 调同一白名单。`agent.spawn` 不暴露（句柄带 ctx，不能 JSON）。
+- 文档：`README.md` 环境变量；本页。
+
+### 2. 真模型 env
+
+- `WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL` 覆盖插件 config。仍要 `provider=openai` **且** 有 baseUrl 才走 HTTP。
+- 文档：`docs/plugins/llm.html`。
+
+### 3. 内置工具
+
+- `echo`、`now`（ISO 时间）、`upper`（`args.input` 大写）。无 shell。
+- 文档：`docs/plugins/tools.html`。
+
+### 4. 官方 tool_calls
+
+- `llm.complete({ tools })` 把 OpenAI `tool_calls` 带回；mock 在 user 为 `echo …` 且 tools 含 echo 时直接返回调用。
+- tool-result 投影为 `role: tool`。循环优先 `result.toolCalls`，否则文本协议。
+- 文档：`docs/plugins/llm.html`、`docs/plugins/agent-loop.html`。
+
+### 5. llm 流式
+
+- `onDelta`；观测 `llm/delta`。openai **无 tools** 时走 SSE；有 tools 时等完整响应（需要 tool_calls）。
+- 文档：`docs/plugins/llm.html`。
+
+### 6. agent-loop 取消
+
+- `complete({ signal })`；`agentLoop.cancel(agentId)` abort 该次 run。空闲 cancel 无操作。
+- 文档：`docs/plugins/agent-loop.html`。
+
+### 7. session 持久化
+
+- `config.persistDir` 或 `WH_SESSIONS_DIR`。GUI/API 默认 `~/.wizard-harness/sessions/{id}.json`。vitest 忽略环境变量，避免测脏。
+- 文档：`docs/plugins/session.html`。
+
+### 8. compaction
+
+- `session.compact(id, { keep })`：丢掉最老条目，写一条 `turn { phase:'compact' }`。agent-loop `compactKeep` 默认 0。
+- 文档：`docs/plugins/session.html`。
+
+### 9. 弹窗白名单 RPC
+
+- `PluginUi.rpc: { 服务名: 方法[] }`。preload-safe 暴露 `wh.call`；主进程按弹窗所属插件校验。agent-loop 弹窗声明 `run`/`cancel` 并可点运行。
+- **不是**任意服务桥。观测台试跑走壳白名单，不经过 `ui.rpc`。

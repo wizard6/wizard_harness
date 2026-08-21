@@ -60,8 +60,8 @@
       <p style="margin:0"><b>一句话：</b>唯一允许「把模型输出写进会话」的地方。禁止在 llm 里自建 messages[] 当真相源。</p>
     </div>
     <ul class="tight">
-      <li>管：<code>complete</code>、mock / 可选 OpenAI 兼容 HTTP、观测 <code>llm/request</code> <code>llm/result</code></li>
-      <li>不管：流式、tool call、多模型路由、agent 循环、通用弹窗 RPC</li>
+      <li>管：<code>complete</code>（含 <code>tools</code> / <code>onDelta</code> / <code>signal</code>）、mock / OpenAI 兼容 HTTP、观测 request/delta/result</li>
+      <li>不管：agent 循环、多模型路由、密钥托管</li>
     </ul>
 
     <h2 id="api">2. 提供的服务</h2>
@@ -69,7 +69,7 @@
     <table>
       <thead><tr><th>方法</th><th>作用</th></tr></thead>
       <tbody>
-        <tr><td class="mono">complete({ sessionId?, prompt? })</td><td>可选写入 user prompt → 投影历史 → 调模型 → append assistant。无 session 则 start。</td></tr>
+        <tr><td class="mono">complete({ sessionId?, prompt?, tools?, signal?, onDelta? })</td><td>可选写入 user → 投影历史（含 tool role）→ 调模型 → append assistant（可带 tool_calls）。无 session 则 start。</td></tr>
       </tbody>
     </table>
     <pre>await ctx.llm.complete({ prompt: 'hello' })
@@ -78,10 +78,10 @@
     <table>
       <thead><tr><th>键</th><th>默认</th><th>说明</th></tr></thead>
       <tbody>
-        <tr><td class="mono">provider</td><td>mock</td><td>mock 或 openai</td></tr>
-        <tr><td class="mono">baseUrl</td><td>（空）</td><td>openai 时必填，如 https://api.openai.com/v1</td></tr>
-        <tr><td class="mono">apiKey</td><td>（空）</td><td>写入 Authorization；勿提交真实密钥</td></tr>
-        <tr><td class="mono">model</td><td>gpt-4o-mini</td><td>仅 openai 路径使用</td></tr>
+        <tr><td class="mono">provider</td><td>mock</td><td>mock 或 openai。可被 <code>WH_LLM_PROVIDER</code> 覆盖</td></tr>
+        <tr><td class="mono">baseUrl</td><td>（空）</td><td>openai 时必填。可被 <code>WH_LLM_BASE_URL</code> 覆盖</td></tr>
+        <tr><td class="mono">apiKey</td><td>（空）</td><td><code>WH_LLM_API_KEY</code> 优先；勿提交真实密钥</td></tr>
+        <tr><td class="mono">model</td><td>gpt-4o-mini</td><td><code>WH_LLM_MODEL</code></td></tr>
       </tbody>
     </table>
 
@@ -116,18 +116,18 @@
     <div class="card ai">
       <ul class="tight">
         <li>不要在 agent-loop 里绕过本服务直接调 HTTP；模型出口只有 <code>ctx.llm.complete</code>。</li>
-        <li>不要把工具循环塞进本插件。循环是后续 agent-loop，不是 agent。</li>
-        <li>流式 / 多提供方路由另开切片，不要顺手做。</li>
-        <li>密钥只走 config / 环境，不要写进仓库或 HTML。</li>
+        <li>不要把工具循环塞进本插件。循环是 agent-loop，不是 agent。</li>
+        <li>密钥只走 config / 环境变量，不要写进仓库或 HTML。</li>
+        <li>有 <code>tools</code> 时 openai 路径不走 SSE（要等完整 tool_calls）；无 tools 且给了 onDelta 才 stream。</li>
       </ul>
     </div>
 
     <h2 id="issues">6. 已知问题</h2>
     <div class="card issue">
       <ul class="tight">
-        <li>弹窗是说明页，不能从 UI 点一次 complete（通用 UI 桥未做）。试用：观测台 RPC/网关或后续 agent。</li>
-        <li>默认 mock，不连真模型。openai 路径未做超时、重试、SSE。</li>
-        <li>deriveMessages 仍只含 message；complete 已改走 replay，会把 tool-result 投影成 <code>[name] content</code> 的 user 消息（非正式 tool role）。</li>
+        <li>弹窗仍是说明页。试跑走观测台「试跑」页或 <code>POST /rpc</code>。</li>
+        <li>默认 mock。openai 无超时/重试；带 tools 时不走 SSE。</li>
+        <li>tool-result 投影为 OpenAI <code>role: tool</code>（带 callId）。mock 在「上一条是 tool」时回 <code>[mock] [name] content</code>，避免再次发出 tool_calls。</li>
         <li>模块级 ctx：单实例没问题，测并行会串。</li>
       </ul>
     </div>

@@ -261,6 +261,9 @@ async function init() {
     bundlesDir: path.join(REPO_ROOT, 'bundles'),
     homeDir: core.resolveHomeDir(),
   };
+  if (!process.env.WH_SESSIONS_DIR) {
+    process.env.WH_SESSIONS_DIR = path.join(runtimeDirs.homeDir, 'sessions');
+  }
   const rt = await core.assembleRuntime({
     bus,
     config,
@@ -467,6 +470,8 @@ async function scanPlugins() {
   };
 }
 
+const popupPluginId = new WeakMap();
+
 function openPluginWindow(id) {
   const plugin = harness?.registry.get(id);
   if (!plugin || !plugin.ui) return;
@@ -488,6 +493,7 @@ function openPluginWindow(id) {
   attachGlass(popup);
   injectPluginChrome(popup, title);
   const html = plugin.ui.content || '<p>（无内容）</p>';
+  popupPluginId.set(popup, id);
   popup.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
@@ -522,6 +528,59 @@ ipcMain.handle('wh:unregister-plugin', async (_evt, id) => {
 ipcMain.handle('wh:scan-plugins', async () => {
   try {
     return await scanPlugins();
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+/** 观测台试跑白名单（与 obs:api DEFAULT_EXPOSE 对齐，不含 console/tools.call） */
+const CALL_ALLOW = {
+  agent: ['list', 'stop'],
+  systemPrompt: ['set', 'get', 'apply'],
+  agentLoop: ['run', 'cancel'],
+};
+
+async function invokeService(service, method, args) {
+  if (!harness) return { ok: false, error: 'harness 未就绪' };
+  const allow = CALL_ALLOW[service];
+  if (!Array.isArray(allow) || !allow.includes(String(method))) {
+    return { ok: false, error: `方法 ${service}.${method} 未在壳白名单` };
+  }
+  const svc = harness.services.get(service);
+  if (!svc || typeof svc[method] !== 'function') {
+    return { ok: false, error: `服务 ${service}.${method} 不可用` };
+  }
+  try {
+    const result = await svc[method].apply(svc, Array.isArray(args) ? args : []);
+    return { ok: true, result };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+ipcMain.handle('wh:call-service', async (_evt, payload) => {
+  const { service, method, args } = payload || {};
+  return invokeService(service, method, args);
+});
+
+ipcMain.handle('wh:plugin-call', async (evt, payload) => {
+  const { service, method, args } = payload || {};
+  const win = BrowserWindow.fromWebContents(evt.sender);
+  const pluginId = win ? popupPluginId.get(win) : undefined;
+  if (!pluginId || !harness) return { ok: false, error: '不是插件弹窗' };
+  const plugin = harness.registry.get(pluginId);
+  const rpc = (plugin && plugin.ui && plugin.ui.rpc) || {};
+  const methods = rpc[service];
+  if (!Array.isArray(methods) || !methods.includes(String(method))) {
+    return { ok: false, error: `${pluginId} 未在 ui.rpc 声明 ${service}.${method}` };
+  }
+  const svc = harness.services.get(service);
+  if (!svc || typeof svc[method] !== 'function') {
+    return { ok: false, error: `服务 ${service}.${method} 不可用` };
+  }
+  try {
+    const result = await svc[method].apply(svc, Array.isArray(args) ? args : []);
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
