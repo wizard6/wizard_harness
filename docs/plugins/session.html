@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>session 插件 · wizard-harness</title>
+  <style>
+    :root {
+      --bg: #101018; --panel: #1b1b28; --line: #2c2c3e; --text: #e6e6ef;
+      --muted: #a8a8bd; --blue: #79c0ff; --green: #7ee787; --orange: #ffa657; --red: #ff7b72;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    header .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    .badge.warn { color: var(--orange); border-color: rgba(255,166,87,.35); background: rgba(255,166,87,.08); }
+    nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 18px 0 0; font-size: 13px; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    h3 { font-size: 14px; color: var(--blue); margin: 18px 0 8px; }
+    p, li { color: #d7d7e4; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; line-height: 1.55; }
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; margin: 12px 0; }
+    .flow .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; }
+    .flow .box b { display: block; color: var(--blue); font-size: 13px; }
+    .flow .arr { color: var(--muted); }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+    .issue { border-color: rgba(255,166,87,.4); }
+    .no { border-color: rgba(255,123,114,.35); }
+    ul.tight li { margin: 4px 0; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .flow, .two { grid-template-columns: 1fr; } .flow .arr { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>session — 会话日志</h1>
+      <p class="lede">追加型领域源：记录「发生过什么」。不是 scope（看得见什么），不是 llm，不是 agent 循环。</p>
+      <div class="badges">
+        <span class="badge ok">id: session</span>
+        <span class="badge ok">provides: session</span>
+        <span class="badge">v0.1.0 · standard</span>
+        <span class="badge warn">内存日志 · 进程内</span>
+      </div>
+      <nav>
+        <a href="#why">用途</a>
+        <a href="#api">服务 API</a>
+        <a href="#code">代码结构</a>
+        <a href="#deps">依赖</a>
+        <a href="#events">观测</a>
+        <a href="#ai">给后续 AI</a>
+        <a href="#issues">已知问题</a>
+      </nav>
+    </header>
+
+    <h2 id="why">1. 用途与边界</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>会话的唯一追加日志。llm 要从这里投影历史；tools 的结果要写回来；agent 循环只编排，不另存一份聊天记录。</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3 style="margin-top:0">管什么</h3>
+        <ul class="tight">
+          <li>开会话 <code>start</code></li>
+          <li>追加 <code>turn</code> / <code>message</code> / <code>tool-result</code></li>
+          <li>只读 <code>replay</code> / <code>deriveMessages</code></li>
+          <li>广播 <code>session/start</code>、<code>session/append</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">不管什么</h3>
+        <ul class="tight">
+          <li>scope / isolate（可见性在 <code>core/src/scope</code>）</li>
+          <li>模型调用、工具执行、agent 循环</li>
+          <li>磁盘持久化、compaction、fork/resume</li>
+          <li>通用 UI 桥（弹窗只是说明页）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="box"><b>scope</b>这次运行看得见什么</div>
+      <div class="arr">→</div>
+      <div class="box"><b>session</b>发生过什么（本插件）</div>
+      <div class="arr">→</div>
+      <div class="box"><b>llm / tools / agent</b>读写本日志</div>
+    </div>
+
+    <h2 id="api">2. 提供的服务</h2>
+    <p>服务名常量 <code>SESSION_SERVICE = 'session'</code>。消费方：<code>ctx.session</code> 或 <code>ctx.get('session')</code>。</p>
+    <table>
+      <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">start({ id?, title? })</td><td>新建会话，成为 current</td><td>id 重复抛错</td></tr>
+        <tr><td class="mono">append(kind, data?)</td><td>追加一条冻结条目，seq+1</td><td>未知 kind / data 非 JSON 对象</td></tr>
+        <tr><td class="mono">replay()</td><td>只读返回该会话全部条目（保序）</td><td>—</td></tr>
+        <tr><td class="mono">get(id) / list() / current()</td><td>查找 / 列举 / 最近 start 的会话</td><td>无则 undefined</td></tr>
+        <tr><td class="mono">deriveMessages(id)</td><td>投影 kind===message 的条目（给 llm）</td><td>未知 id 返回 []</td></tr>
+      </tbody>
+    </table>
+    <h3>条目形状</h3>
+    <pre>{ seq: number, time: number, kind: 'turn' | 'message' | 'tool-result', data: object }</pre>
+    <p>约定（给后续插件，本层不强制 schema）：</p>
+    <ul class="tight">
+      <li><code>turn</code> → <code>{ phase: 'start' | 'end' }</code></li>
+      <li><code>message</code> → <code>{ role: 'user' | 'assistant' | 'system' | 'tool', content: string }</code></li>
+      <li><code>tool-result</code> → <code>{ callId, name, content, ok?: boolean }</code></li>
+    </ul>
+
+    <h2 id="code">3. 代码结构（核心方法）</h2>
+    <table>
+      <thead><tr><th>文件</th><th>职责</th><th>核心符号</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">contracts/src/session.ts</td><td>契约：服务名 + 接口。不属于本插件</td><td>SESSION_SERVICE, SessionService, Session.append</td></tr>
+        <tr><td class="mono">plugins/session/src/store.ts</td><td>内存追加日志</td><td>createSessionStore, asData, handle.append / replay</td></tr>
+        <tr><td class="mono">plugins/session/src/index.ts</td><td>插件壳：挂 api、emit、可选 logger、说明弹窗</td><td>register, createSessionStore(emit)</td></tr>
+        <tr><td class="mono">plugins/session/test/session.spec.ts</td><td>start/append/replay/事件/冻结</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="card">
+      <b>调用链：</b> <span class="mono">start → Map 建 SessionState → handle() 包成 Session</span><br />
+      <span class="mono">append → 校验 kind → JSON 克隆并 freeze → push → ctx.emit('session/append')</span><br />
+      <span class="mono">register → 保存 ctx 供 emit 用；effect 在卸载时清空 ctx</span>
+    </div>
+
+    <h2 id="deps">4. 依赖 / 期望被依赖</h2>
+    <table>
+      <thead><tr><th>方向</th><th>对象</th><th>强度</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>依赖（包）</td><td class="mono">@wizard-harness/core</td><td>硬</td><td>Plugin / ctx.emit / ctx.effect</td></tr>
+        <tr><td>依赖（包）</td><td class="mono">@wizard-harness/contracts</td><td>硬</td><td>实现 SessionService，不拥有契约</td></tr>
+        <tr><td>依赖（服务）</td><td class="mono">logger</td><td>可选 inject</td><td>register 时打一行 info；无 logger 仍加载</td></tr>
+        <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile</td><td>default 组合树会挂入本插件</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">llm</td><td>下一阶段</td><td>deriveMessages / replay 组请求；模型输出 append message</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">tools</td><td>下一阶段</td><td>调用结果 append tool-result</td></tr>
+        <tr><td>期望被依赖</td><td class="mono">agent</td><td>再后</td><td>每个 live agent 一个 scope，循环只读写 session</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="events">5. 观测点</h2>
+    <table>
+      <thead><tr><th>action</th><th>target</th><th>payload</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">session/start</td><td>session id</td><td class="mono">{ title? }</td></tr>
+        <tr><td class="mono">session/append</td><td>session id</td><td class="mono">{ entry }</td></tr>
+      </tbody>
+    </table>
+    <p>actor 为 <code>plugin:session</code>。总线若挂了 jsonl sink，观测壳能看到这些事件；<b>那不是会话存储</b>，不能当 replay 源（条目结构在 payload 里，重启后内存 Map 已空）。</p>
+
+    <h2 id="ai">6. 给后续 AI 的硬约束</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在 llm/tools/agent 里再造一份 messages[] 当真相源；只 append / replay 本服务。</li>
+        <li>不要把 scope 标签写进 session 条目来「模拟隔离」；可见性走 <code>createScope</code>。</li>
+        <li>不要在本插件加模型、工具、HTTP、SQLite，除非单独确认；薄切片故意不做。</li>
+        <li>扩展事件类型（如 <code>tool/call</code>）应先改 <code>contracts/src/session.ts</code> 的 <code>SessionKind</code>，再改 store 白名单。</li>
+        <li>DSH 用 <code>ctx.sessions</code>（复数）+ 细事件名（<code>user/message</code>）；本仓库服务名是 <code>session</code>，kind 只有三类。对齐 DSH 是后续工作，不要 silently 改名。</li>
+      </ul>
+    </div>
+
+    <h2 id="issues">7. 已知问题与非目标</h2>
+    <div class="card issue">
+      <h3 style="margin-top:0">已知问题</h3>
+      <ul class="tight">
+        <li><b>不持久化：</b>进程退出后 replay 为空。事件 jsonl 里可能有 session/append，但没有从 jsonl 重建日志的代码。</li>
+        <li><b>无 flush / 崩溃恢复：</b>与 DSH <code>ctx.sessions.flush</code> 不对齐。</li>
+        <li><b>模块级 ctx：</b>emit 闭包读插件模块变量；单进程单实例没问题，测并行或多实例会串。</li>
+        <li><b>get() 每次新句柄：</b>同一 id 多次 get 得到不同 Session 对象，内部指向同一 entries 数组（行为正确，引用相等性不要当身份）。</li>
+        <li><b>无按 scope 分桶：</b>所有会话在一张全局 Map；多 agent 同时跑会看到彼此的 list()（应用层用不同 session id 区分）。</li>
+        <li><b>deriveMessages 很薄：</b>不过滤 role、不拼 tool 轨迹，llm 接入时几乎肯定要加投影规则。</li>
+      </ul>
+    </div>
+    <div class="card no">
+      <h3 style="margin-top:0">明确非目标（本切片）</h3>
+      <ul class="tight">
+        <li>YAML/DSH 全量 SessionEvent 目录、surface replace、compaction</li>
+        <li>磁盘 JSONL/SQLite 后端</li>
+        <li>通用弹窗 RPC（当前 ui 是静态说明页）</li>
+      </ul>
+    </div>
+
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/session/</span> · 契约 <span class="mono">contracts/src/session.ts</span> · 计划见仓库 README「能力插件顺序」</p>
+  </div>
+</body>
+</html>

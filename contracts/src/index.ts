@@ -2,6 +2,7 @@ import type { PluginContext, EventQuery } from '@wizard-harness/core';
 import type { LoggerService } from './logger.js';
 import type { EventsService } from './events.js';
 import type { ConsoleService } from './console.js';
+import type { SessionService } from './session.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -9,6 +10,8 @@ export { EVENTS_SERVICE } from './events.js';
 export type { EventsService } from './events.js';
 export { CONSOLE_SERVICE } from './console.js';
 export type { ConsoleService, ExecResult } from './console.js';
+export { SESSION_SERVICE } from './session.js';
+export type { Session, SessionEntry, SessionKind, SessionService } from './session.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -24,5 +27,6 @@ declare module '@wizard-harness/core' {
   interface PluginContext {
     readonly logger?: LoggerService;
     readonly console?: ConsoleService;
+    readonly session?: SessionService;
   }
 }
