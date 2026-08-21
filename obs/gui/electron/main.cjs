@@ -5,6 +5,16 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { mkdirSync, readFileSync, readdirSync, existsSync } = require('node:fs');
 
+/** 父终端关掉后 stdout 会 EPIPE；console.log 不应打崩主进程 */
+function ignoreBrokenPipe(stream) {
+  if (!stream || typeof stream.on !== 'function') return;
+  stream.on('error', (err) => {
+    if (err && err.code === 'EPIPE') return;
+  });
+}
+ignoreBrokenPipe(process.stdout);
+ignoreBrokenPipe(process.stderr);
+
 /** 仓库根：obs/gui/electron → 上三级 */
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const QUALITY_STATE_FILE = path.join(REPO_ROOT, '.quality-state.json');
@@ -440,8 +450,12 @@ async function scanPlugins() {
       : {}),
   });
   if (r.composition) composition = r.composition;
-  for (const w of r.warnings) console.warn('[scan]', w);
-  console.log('[scan] loaded', r.loaded.map((p) => p.manifest.id).join(', ') || '(none)');
+  try {
+    for (const w of r.warnings) console.warn('[scan]', w);
+    console.log('[scan] loaded', r.loaded.map((p) => p.manifest.id).join(', ') || '(none)');
+  } catch {
+    // stdout 已断开时忽略
+  }
   return {
     ok: true,
     loaded: r.loaded.map((p) => p.manifest.id),
