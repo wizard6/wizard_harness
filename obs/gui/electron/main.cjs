@@ -404,16 +404,21 @@ function startGateway() {
   });
 }
 
-/** 创建观测窗口（registry=注册表 / quality=质量检测，各自独立窗口） */
+/** 创建观测窗口（registry / quality / demo 各自独立窗口） */
 function createWindow(view = 'registry') {
   const isQuality = view === 'quality';
+  const isDemo = view === 'demo';
   const win = new BrowserWindow(
     glassOptions({
-      width: isQuality ? 1180 : 960,
-      height: 720,
-      minWidth: isQuality ? 900 : 720,
-      minHeight: 480,
-      title: isQuality ? 'wizard-harness · 质量检测' : 'wizard-harness · 观测台',
+      width: isQuality ? 1180 : isDemo ? 720 : 960,
+      height: isDemo ? 680 : 720,
+      minWidth: isQuality ? 900 : isDemo ? 520 : 720,
+      minHeight: isDemo ? 480 : 480,
+      title: isQuality
+        ? 'wizard-harness · 质量检测'
+        : isDemo
+          ? 'wizard-harness · App demo'
+          : 'wizard-harness · 观测台',
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
@@ -717,6 +722,21 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
+let demoWindow = null;
+function openDemoWindow() {
+  if (demoWindow && !demoWindow.isDestroyed()) {
+    demoWindow.focus();
+    return;
+  }
+  demoWindow = createWindow('demo');
+  demoWindow.on('closed', () => {
+    demoWindow = null;
+  });
+}
+ipcMain.handle('wh:open-demo', () => {
+  openDemoWindow();
+});
+
 /** 系统托盘：常驻后台 + 快捷菜单（观测台 / 质量检测 / 退出） */
 let tray = null;
 function setupTray() {
@@ -726,6 +746,7 @@ function setupTray() {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: '显示观测台', click: () => openRegistryWindow() },
+      { label: '打开 App demo', click: () => openDemoWindow() },
       { label: '打开质量检测', click: () => openQualityWindow() },
       { type: 'separator' },
       { label: '退出', click: () => app.quit() },

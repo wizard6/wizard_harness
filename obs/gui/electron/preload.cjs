@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('wh', {
   scanPlugins: () => ipcRenderer.invoke('wh:scan-plugins'),
   callService: (service, method, args) => ipcRenderer.invoke('wh:call-service', { service, method, args }),
   openQuality: () => ipcRenderer.invoke('wh:open-quality'),
+  openDemo: () => ipcRenderer.invoke('wh:open-demo'),
   qualityData: () => ipcRenderer.invoke('wh:quality-data'),
   rerunCheck: () => ipcRenderer.invoke('wh:rerun-check'),
   openFile: (rel) => ipcRenderer.invoke('wh:open-file', rel),

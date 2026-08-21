@@ -1,16 +1,18 @@
 // Electron 渲染进程入口：按窗口视图渲染对应面板
 // - index.html?view=registry（默认）→ 注册表面板
 // - index.html?view=quality → 质量检测面板
+// - index.html?view=demo → App demo
 // 职责：拉取数据 + 渲染；面板均为纯 props 展示组件（数据源经 IPC 注入）
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { CompositionSnapshot, Plugin, PluginEvent } from '@wizard-harness/core';
-import { QualityPanel } from '@wizard-harness/obs-core';
+import { QualityPanel, AgentRunPanel } from '@wizard-harness/obs-core';
 import type { QualityData } from '@wizard-harness/obs-core';
 import { RegistryView } from '../views/registry.js';
 import { TrafficLights } from './TrafficLights.js';
 
-const view = new URLSearchParams(window.location.search).get('view') === 'quality' ? 'quality' : 'registry';
+const viewParam = new URLSearchParams(window.location.search).get('view');
+const view = viewParam === 'quality' || viewParam === 'demo' ? viewParam : 'registry';
 
 interface PluginState {
   manifest: { id: string; version: string; name?: string };
@@ -47,6 +49,7 @@ declare global {
       ): Promise<{ ok: boolean; result?: unknown; error?: string }>;
       windowControl(action: 'min' | 'max' | 'close'): void;
       openQuality(): Promise<void>;
+      openDemo(): Promise<void>;
       qualityData(): Promise<QualityData>;
       rerunCheck(): Promise<QualityData & { error?: string }>;
       openFile(rel: string): Promise<{ ok: boolean; error?: string }>;
@@ -104,7 +107,6 @@ function RegistryApp(): React.ReactElement | null {
         await refresh();
         return r;
       }}
-      onCallService={(service, method, args) => window.wh.callService(service, method, args)}
     />
   );
 }
@@ -178,16 +180,34 @@ function emptyQuality(): QualityData {
   };
 }
 
-/** 窗口控制条：拖动区 + 质量入口 + Windows 窗口按钮 */
+function DemoApp(): React.ReactElement {
+  return (
+    <AgentRunPanel
+      onCall={(service, method, args) => window.wh.callService(service, method, args)}
+    />
+  );
+}
+
+function winTitle(): string {
+  if (view === 'quality') return '质量检测';
+  if (view === 'demo') return 'App demo';
+  return '观测台';
+}
+
 function WinBar(): React.ReactElement {
   return (
     <div className="winbar">
-      <span className="winbar-title">{view === 'quality' ? '质量检测' : '观测台'}</span>
+      <span className="winbar-title">{winTitle()}</span>
       <div className="winbar-actions">
         {view === 'registry' && (
-          <button className="winbar-quality" title="打开质量检测窗口" onClick={() => void window.wh.openQuality()}>
-            质量检测
-          </button>
+          <>
+            <button className="winbar-quality" title="打开 App demo" onClick={() => void window.wh.openDemo()}>
+              App demo
+            </button>
+            <button className="winbar-quality" title="打开质量检测窗口" onClick={() => void window.wh.openQuality()}>
+              质量检测
+            </button>
+          </>
         )}
         <TrafficLights />
       </div>
@@ -215,7 +235,9 @@ function App(): React.ReactElement {
         .win-body { flex:1; overflow:hidden; background:#16161e; min-height:0; }
       `}</style>
       <WinBar />
-      <div className="win-body">{view === 'quality' ? <QualityApp /> : <RegistryApp />}</div>
+      <div className="win-body">
+        {view === 'quality' ? <QualityApp /> : view === 'demo' ? <DemoApp /> : <RegistryApp />}
+      </div>
     </div>
   );
 }

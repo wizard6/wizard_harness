@@ -128,7 +128,7 @@ await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
     <h2 id="issues">6. 已知问题</h2>
     <div class="card issue">
       <ul class="tight">
-        <li>观测台「试跑」走壳白名单 IPC，不经过弹窗。弹窗需 <code>window.wh.call</code>（preload-safe），且方法在 <code>ui.rpc</code>。</li>
+        <li>观测台 <b>App demo</b> 走壳白名单 IPC，不经过弹窗。弹窗需 <code>window.wh.call</code>（preload-safe），且方法在 <code>ui.rpc</code>。</li>
         <li>未知工具会 throw，中断循环。</li>
         <li>openai 带 tools 时 complete 非流式；取消靠 AbortSignal。</li>
         <li><code>compactKeep</code> 默认 0。大于 0 时每步 <code>session.compact</code>。</li>

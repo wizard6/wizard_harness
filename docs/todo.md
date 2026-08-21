@@ -22,7 +22,7 @@
 ### 1. 观测台 RPC + 试跑
 
 - **obs:api**：未设 `WH_EXPOSE` 时默认暴露 `agent.list|stop`、`systemPrompt.set|get|apply`、`agentLoop.run|cancel`。`off` 或 `{}` 关闭。不含 `console.exec` / `tools.call`。
-- **观测台**：新增「试跑」页，经 IPC `wh:call-service` 调同一白名单。`agent.spawn` 不暴露（句柄带 ctx，不能 JSON）。
+- **观测台**：独立窗口 **App demo**（标题栏 / 托盘进入），经 IPC `wh:call-service` 调同一白名单。`agent.spawn` 不暴露（句柄带 ctx，不能 JSON）。
 - 文档：`README.md` 环境变量；本页。
 
 ### 2. 真模型 env
@@ -64,4 +64,4 @@
 ### 9. 弹窗白名单 RPC
 
 - `PluginUi.rpc: { 服务名: 方法[] }`。preload-safe 暴露 `wh.call`；主进程按弹窗所属插件校验。agent-loop 弹窗声明 `run`/`cancel` 并可点运行。
-- **不是**任意服务桥。观测台试跑走壳白名单，不经过 `ui.rpc`。
+- **不是**任意服务桥。App demo / 观测台试跑走壳白名单，不经过 `ui.rpc`。

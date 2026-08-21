@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { CompositionSnapshot, Plugin, PluginEvent } from '@wizard-harness/core';
 import { registrySpec } from './spec.js';
-import { AgentRunPanel } from './agent-run.js';
 
 export interface RegistryPanelProps {
   /** 插件列表（GUI 展示扩展：services = 该插件提供的服务名，config = 合并后的生效配置） */
@@ -18,8 +17,6 @@ export interface RegistryPanelProps {
   onUnregister?: (id: string) => Promise<unknown> | void;
   /** 再扫描插件目录，装入尚未注册的插件 */
   onScan?: () => Promise<ScanFeedback | void> | ScanFeedback | void;
-  /** 壳白名单服务调用（试跑 agent） */
-  onCallService?: (service: string, method: string, args: unknown[]) => Promise<{ ok: boolean; result?: unknown; error?: string }>;
   /** 标题栏右侧槽（桌面壳放入交通灯） */
   trailing?: React.ReactNode;
   /** 双击标题栏（桌面壳用于最大化） */
@@ -114,17 +111,7 @@ const PANEL_CSS = `
     .rp-tl-time { color:${MUTED}; font-size:11px; font-family:ui-monospace,Consolas,monospace; }
     .rp-tl-actor { color:#cfcfe0; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .rp-tl-arrow { color:${MUTED}; font-size:12px; }
-    .ar { padding: 4px 2px 24px; max-width: 640px; }
-    .ar-lede { color:${MUTED}; font-size:12px; line-height:1.55; margin:0 0 12px; }
-    .ar-lede code { color:${GREEN}; font-size:12px; }
-    .ar-lab { display:flex; flex-direction:column; gap:6px; font-size:12px; color:${MUTED}; margin-bottom:10px; }
-    .ar-ta { box-sizing:border-box; width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
-             border-radius:8px; color:#e6e6ef; font:12px/1.5 ui-monospace,Consolas,monospace; padding:8px 10px; resize:vertical; }
-    .ar-btn { background:rgba(126,231,135,.14); border:1px solid rgba(126,231,135,.35); color:${GREEN};
-              border-radius:8px; padding:6px 14px; font-size:12px; cursor:pointer; font-family:inherit; font-weight:600; }
-    .ar-btn:disabled { opacity:.45; cursor:default; }
-    .ar-out { margin:12px 0 0; background:#14141e; border:1px solid rgba(255,255,255,.08); border-radius:8px;
-              padding:10px 12px; font-size:12px; white-space:pre-wrap; word-break:break-all; color:#d7d7e4; min-height:72px; }
+    .rp-tl-text { font-size:12px; word-break:break-all; font-family:ui-monospace,Consolas,monospace; }
 `;
 
 function fmtTime(ts: number): string {
@@ -133,7 +120,7 @@ function fmtTime(ts: number): string {
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-type TabId = 'plugins' | 'services' | 'config' | 'events' | 'run';
+type TabId = 'plugins' | 'services' | 'config' | 'events';
 type PluginFilter = 'all' | 'services' | 'ui';
 
 function collectServices(
@@ -166,7 +153,6 @@ export function RegistryPanel({
   onReload,
   onUnregister,
   onScan,
-  onCallService,
   trailing,
   onHeaderDoubleClick,
 }: RegistryPanelProps): React.ReactElement {
@@ -247,7 +233,6 @@ export function RegistryPanel({
           {tabBtn('services', '服务', serviceEntries.length)}
           {tabBtn('config', '配置', composition ? composition.entries.length : Object.keys(globalConfig).length)}
           {tabBtn('events', '事件', events.length)}
-          {tabBtn('run', '试跑')}
         </div>
         {trailing ? <span className="rp-trail">{trailing}</span> : null}
       </div>
@@ -520,13 +505,6 @@ export function RegistryPanel({
             </ul>
             );
           })()}
-
-        {tab === 'run' &&
-          (onCallService ? (
-            <AgentRunPanel onCall={onCallService} />
-          ) : (
-            <div className="rp-empty">当前壳未接入服务调用（需要观测台 IPC 或 obs:api /rpc）。</div>
-          ))}
       </div>
     </div>
   );
