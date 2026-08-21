@@ -45,6 +45,20 @@ describe('llm 插件', () => {
     expect(chunks.join('')).toBe(ping.text);
   });
 
+  it('toWireMessages 给 assistant.tool_calls 补 type:function', async () => {
+    const { toWireMessages } = await import('../src/adapter.js');
+    const wire = toWireMessages([
+      { role: 'user', content: 'echo hi' },
+      { role: 'assistant', content: '', tool_calls: [{ id: 'c1', name: 'echo', args: { input: 'hi' } }] },
+      { role: 'tool', content: 'hi', tool_call_id: 'c1', name: 'echo' },
+    ]);
+    expect(wire[1]).toMatchObject({
+      role: 'assistant',
+      tool_calls: [{ id: 'c1', type: 'function', function: { name: 'echo', arguments: '{"input":"hi"}' } }],
+    });
+    expect(wire[2]).toEqual({ role: 'tool', tool_call_id: 'c1', content: 'hi' });
+  });
+
   it('已 abort 的 signal 使 complete 失败', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await harness.registry.register(sessionPlugin);

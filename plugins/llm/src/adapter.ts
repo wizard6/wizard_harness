@@ -39,13 +39,39 @@ function mockReply(
 function asOpenAiTools(tools: readonly LlmToolSpec[] | undefined) {
   if (!tools?.length) return undefined;
   return tools.map((t) => ({
-    type: 'function',
+    type: 'function' as const,
     function: {
       name: t.name,
       description: t.description ?? '',
       parameters: { type: 'object', additionalProperties: true },
     },
   }));
+}
+
+/** 内部 LlmMessage → OpenAI/DeepSeek Chat Completions 线格式（必须带 tool_calls.type） */
+export function toWireMessages(messages: LlmMessage[]): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
+  for (const m of messages) {
+    if (m.role === 'tool') {
+      if (!m.tool_call_id) continue;
+      out.push({ role: 'tool', tool_call_id: m.tool_call_id, content: m.content ?? '' });
+      continue;
+    }
+    if (m.role === 'assistant' && m.tool_calls?.length) {
+      out.push({
+        role: 'assistant',
+        content: m.content || null,
+        tool_calls: m.tool_calls.map((c) => ({
+          id: c.id,
+          type: 'function',
+          function: { name: c.name, arguments: JSON.stringify(c.args ?? {}) },
+        })),
+      });
+      continue;
+    }
+    out.push({ role: m.role, content: m.content ?? '' });
+  }
+  return out;
 }
 
 function parseToolCalls(raw: unknown): LlmToolCall[] | undefined {
@@ -139,7 +165,7 @@ export async function runModel(
     },
     body: JSON.stringify({
       model: cfg.model,
-      messages,
+      messages: toWireMessages(messages),
       temperature: 0,
       ...(asOpenAiTools(opts.tools) ? { tools: asOpenAiTools(opts.tools) } : {}),
       ...(stream ? { stream: true } : {}),

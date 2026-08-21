@@ -96,6 +96,13 @@ describe('agent-loop 插件', () => {
     await expect(loop.run({ agentId: 'nope', prompt: 'x' })).rejects.toThrow(/不存在/);
   });
 
+  it('useTools:false 时 echo hi 不再调工具', async () => {
+    const { loop, session } = await boot();
+    const out = await loop.run({ prompt: 'echo hi', useTools: false, maxSteps: 4 });
+    expect(out.steps).toBe(1);
+    expect(session.get(out.sessionId)!.replay().some((e) => e.kind === 'tool-result')).toBe(false);
+  });
+
   it('run.systemPrompt 转交给 system-prompt；cancel 空闲无副作用', async () => {
     const { loop, session } = await boot();
     loop.cancel('nobody');

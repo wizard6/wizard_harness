@@ -127,7 +127,7 @@
       <ul class="tight">
         <li>弹窗仍是说明页。试跑走观测台 <b>App demo</b> 窗口或 <code>POST /rpc</code>。</li>
         <li>默认 mock。openai 无超时/重试；带 tools 时不走 SSE。</li>
-        <li>tool-result 投影为 OpenAI <code>role: tool</code>（带 callId）。mock 在「上一条是 tool」时回 <code>[mock] [name] content</code>，避免再次发出 tool_calls。</li>
+        <li>HTTP 出站经 <code>toWireMessages</code>：assistant.tool_calls 带 <code>type:function</code>；tool 消息必须有 tool_call_id。session 仍存内部结构。</li>
         <li>模块级 ctx：单实例没问题，测并行会串。</li>
       </ul>
     </div>

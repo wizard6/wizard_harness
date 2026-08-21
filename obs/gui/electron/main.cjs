@@ -410,10 +410,10 @@ function createWindow(view = 'registry') {
   const isDemo = view === 'demo';
   const win = new BrowserWindow(
     glassOptions({
-      width: isQuality ? 1180 : isDemo ? 720 : 960,
-      height: isDemo ? 680 : 720,
-      minWidth: isQuality ? 900 : isDemo ? 520 : 720,
-      minHeight: isDemo ? 480 : 480,
+      width: isQuality ? 1180 : isDemo ? 860 : 960,
+      height: isDemo ? 760 : 720,
+      minWidth: isQuality ? 900 : isDemo ? 640 : 720,
+      minHeight: isDemo ? 560 : 480,
       title: isQuality
         ? 'wizard-harness · 质量检测'
         : isDemo

@@ -78,18 +78,21 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
 
       const ac = new AbortController();
       running.set(id, ac);
-      const listed = tools.list().map((t) => ({ name: t.name, description: t.description }));
+      const useTools = opts.useTools !== false;
+      const listed = useTools
+        ? tools.list().map((t) => ({ name: t.name, description: t.description }))
+        : [];
       const keep = Number(ctx.config.compactKeep ?? 0);
       const maybeCompact = () => {
         if (keep > 0) session?.compact(sessionId, { keep });
       };
 
-      ctx.emit({ action: 'agent-loop/start', target: id, payload: { sessionId, maxSteps } });
+      ctx.emit({ action: 'agent-loop/start', target: id, payload: { sessionId, maxSteps, useTools } });
       try {
         let result = await llm.complete({
           sessionId,
           prompt: opts.prompt,
-          tools: listed,
+          tools: listed.length ? listed : undefined,
           signal: ac.signal,
         });
         let steps = 1;
@@ -97,7 +100,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
         ctx.emit({ action: 'agent-loop/step', target: id, payload: { steps, phase: 'complete' } });
         while (steps < maxSteps) {
           if (ac.signal.aborted) throw new Error('agent-loop 已取消');
-          const intents = intentsOf(result.text, result.toolCalls);
+          const intents = useTools ? intentsOf(result.text, result.toolCalls) : [];
           if (!intents.length) break;
           for (const intent of intents) {
             await tools.call(intent.name, intent.args, { sessionId, callId: intent.id });
@@ -113,7 +116,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
           ctx.emit({ action: 'agent-loop/step', target: id, payload: { steps, phase: 'complete' } });
         }
         ctx.emit({ action: 'agent-loop/end', target: id, payload: { steps } });
-        return { agentId: id, sessionId, text: result.text, steps };
+        return { agentId: id, sessionId, text: result.text, steps, provider: result.provider };
       } finally {
         running.delete(id);
       }
