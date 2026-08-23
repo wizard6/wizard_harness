@@ -31,7 +31,7 @@ export const APP_UI_HTML = [
   '#go:disabled{opacity:.4}',
   TRAJECTORY_VIEW_CSS,
   '</style></head><body><div class="app" id="app">',
-  '<div class="bar"><label><input type="checkbox" id="tools"> 允许调用工具</label>',
+  '<div class="bar"><label><input type="checkbox" id="tools" checked> 允许调用工具</label>',
   '<label><input type="checkbox" id="show-traj" checked> 执行轨迹</label>',
   '<button class="ghost" id="neu" type="button">新对话</button></div>',
   '<div class="main"><div id="log"><div class="empty">Enter 发送，Shift+Enter 换行。右侧是本轮怎么跑出来的。</div></div>',

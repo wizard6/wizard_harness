@@ -21,7 +21,7 @@ describe('app-chat 插件', () => {
     expect(appChatPlugin.ui).toBeUndefined();
   });
 
-  it('send 包装 agentLoop：无 tools 时用默认提示词与步数', async () => {
+  it('send 默认开启工具并按 OTA 人设转交 agentLoop', async () => {
     const seen: unknown[] = [];
     const harness = createHarness({ bus: createEventBus() });
     await harness.registry.register(
@@ -36,13 +36,13 @@ describe('app-chat 插件', () => {
     expect(out).toEqual({ agentId: 'a1', text: 'ok:你好', provider: undefined });
     expect(seen[0]).toMatchObject({
       prompt: '你好',
-      useTools: false,
-      maxSteps: 1,
-      systemPrompt: '你是简洁的助手，用中文回答。',
+      useTools: true,
+      maxSteps: 12,
     });
-    const again = await chat!.send({ prompt: '二', agentId: out.agentId, useTools: true });
+    expect(String((seen[0] as { persona?: string }).persona)).toContain('观察-思考-行动');
+    const again = await chat!.send({ prompt: '二', agentId: out.agentId, useTools: false });
     expect(again.agentId).toBe('a1');
-    expect(seen[1]).toMatchObject({ agentId: 'a1', useTools: true, maxSteps: 4 });
-    expect((seen[1] as { systemPrompt?: string }).systemPrompt).toBeUndefined();
+    expect(seen[1]).toMatchObject({ agentId: 'a1', useTools: false, maxSteps: 1 });
+    expect((seen[1] as { persona?: string }).persona).toBeUndefined();
   });
 });

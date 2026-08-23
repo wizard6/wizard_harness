@@ -5,16 +5,16 @@ import { AGENT_LOOP_SERVICE } from '@wizard-harness/contracts';
 import type {
   AgentLoopService,
   AgentService,
+  PromptContextService,
   SessionService,
-  SystemPromptService,
 } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
 import llmPlugin from '../../llm/src/index.js';
 import toolsPlugin from '../../tools/src/index.js';
-import systemPromptPlugin from '../../system-prompt/src/index.js';
+import promptContextPlugin from '../../prompt-context/src/index.js';
 import agentPlugin from '../../agent/src/index.js';
 import agentLoopPlugin from '../src/index.js';
-import { parseToolCall } from '../src/loop.js';
+import { parseToolCall } from '../src/intents.js';
 
 describe('parseToolCall', () => {
   it('解析 echo 与 mock 前缀；[echo] 结果不再命中', () => {
@@ -26,14 +26,14 @@ describe('parseToolCall', () => {
 });
 
 describe('agent-loop 插件', () => {
-  it('服务名契约绑定 + inject agent/llm/tools；systemPrompt 可选', () => {
+  it('服务名契约绑定 + inject agent/llm/tools；promptContext 可选', () => {
     expect(AGENT_LOOP_SERVICE).toBe('agentLoop');
     expect(agentLoopPlugin.manifest.provides).toEqual(['agentLoop']);
     expect(agentLoopPlugin.inject).toEqual({
       agent: true,
       llm: true,
       tools: true,
-      systemPrompt: false,
+      promptContext: false,
       logger: false,
       trajectory: false,
     });
@@ -47,7 +47,7 @@ describe('agent-loop 插件', () => {
     await harness.registry.register(sessionPlugin);
     await harness.registry.register(llmPlugin);
     await harness.registry.register(toolsPlugin);
-    await harness.registry.register(systemPromptPlugin);
+    await harness.registry.register(promptContextPlugin);
     await harness.registry.register(agentPlugin);
     await harness.registry.register(agentLoopPlugin);
     return {
@@ -55,14 +55,14 @@ describe('agent-loop 插件', () => {
       loop: harness.services.get<AgentLoopService>('agentLoop')!,
       agent: harness.services.get<AgentService>('agent')!,
       session: harness.services.get<SessionService>('session')!,
-      prompts: harness.services.get<SystemPromptService>('systemPrompt')!,
+      prompts: harness.services.get<PromptContextService>('promptContext')!,
     };
   }
 
-  it('无工具：一次 complete；run 前 set 的 prompt 会被 apply', async () => {
+  it('无工具：一次 complete；run 前 setPersona 会被 apply', async () => {
     const { loop, agent, session, prompts, seen } = await boot();
     const h = agent.spawn({ id: 't' });
-    prompts.set(h.sessionId, 'you are a tester');
+    prompts.setPersona(h.sessionId, 'you are a tester');
     const out = await loop.run({ agentId: 't', prompt: 'hello' });
     expect(out.steps).toBe(1);
     expect(out.text).toBe('[mock] hello');
@@ -72,15 +72,18 @@ describe('agent-loop 插件', () => {
     expect(kinds).toContain('message:user');
     expect(kinds).toContain('message:assistant');
     expect(seen.some((e) => e.action === 'agent-loop/start' && e.target === out.agentId)).toBe(true);
-    expect(seen.some((e) => e.action === 'system-prompt/apply')).toBe(true);
+    expect(seen.some((e) => e.action === 'agent-loop/observe')).toBe(true);
+    expect(seen.some((e) => e.action === 'agent-loop/think')).toBe(true);
+    expect(seen.some((e) => e.action === 'agent-loop/done')).toBe(true);
     expect(seen.some((e) => e.action === 'agent/prompt')).toBe(false);
   });
 
-  it('echo 协议：complete → tools.call → 再 complete', async () => {
-    const { loop, session } = await boot();
+  it('echo 协议：OTA 两轮 — think→act→think→完成', async () => {
+    const { loop, session, seen } = await boot();
     const out = await loop.run({ prompt: 'echo hi', maxSteps: 4 });
     expect(out.steps).toBe(2);
     expect(out.text).toBe('[mock] [echo] hi');
+    expect(seen.some((e) => e.action === 'agent-loop/act')).toBe(true);
     const replay = session.get(out.sessionId)!.replay();
     expect(replay.some((e) => e.kind === 'tool-result' && e.data.name === 'echo' && e.data.content === 'hi')).toBe(
       true,
@@ -104,7 +107,7 @@ describe('agent-loop 插件', () => {
     expect(session.get(out.sessionId)!.replay().some((e) => e.kind === 'tool-result')).toBe(false);
   });
 
-  it('run.systemPrompt 转交给 system-prompt；cancel 空闲无副作用', async () => {
+  it('run.persona / systemPrompt 转交给 prompt-context；cancel 空闲无副作用', async () => {
     const { loop, session } = await boot();
     loop.cancel('nobody');
     const out = await loop.run({ prompt: 'hello', systemPrompt: 'be brief' });

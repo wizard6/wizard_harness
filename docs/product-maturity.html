@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wizard-harness · 下一步路线图</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #16161e;
+      --border: #2a2a3a;
+      --text: #e6e6ef;
+      --muted: #a8a8bd;
+      --accent: #7aa2f7;
+      --green: #9ece6a;
+      --yellow: #e0af68;
+      --purple: #bb9af7;
+      --red: #f7768e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
+    h1 { font-size: 1.75rem; margin: 0 0 8px; }
+    .subtitle { color: var(--muted); margin: 0 0 24px; font-size: 0.95rem; }
+    .banner {
+      background: rgba(158, 206, 106, 0.08);
+      border: 1px solid rgba(158, 206, 106, 0.28);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+    .banner strong { color: var(--green); }
+    .intro {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      font-size: 0.92rem;
+    }
+    .intro strong { color: var(--accent); }
+    h2 {
+      font-size: 1.12rem;
+      margin: 32px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--purple);
+    }
+    .phase-label {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .p0 { background: rgba(247, 118, 142, 0.15); color: var(--red); }
+    .p1 { background: rgba(224, 175, 104, 0.15); color: var(--yellow); }
+    .p2 { background: rgba(122, 162, 247, 0.15); color: var(--accent); }
+    .p3 { background: rgba(168, 168, 189, 0.12); color: var(--muted); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .card dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 5.5em 1fr;
+      gap: 6px 12px;
+      font-size: 0.86rem;
+    }
+    .card dt { color: var(--muted); margin: 0; }
+    .card dd { margin: 0; }
+    .card code {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.82em;
+      background: #1a1a24;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .done-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .done-chip {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(158, 206, 106, 0.1);
+      border: 1px solid rgba(158, 206, 106, 0.22);
+      color: var(--green);
+      text-align: center;
+    }
+    .later {
+      background: rgba(168, 168, 189, 0.06);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .later ul { margin: 8px 0 0; padding-left: 1.2em; }
+    footer {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>wizard-harness · 下一步路线图</h1>
+    <p class="subtitle">能力链已齐，问题变成「下一步改什么、先改什么」。按依赖与体感排序，不是成熟度打分。</p>
+
+    <div class="banner">
+      <strong>当前：</strong>session → llm → tools → agent → prompt-context → agent-loop → trajectory → app-chat/app-ui 薄切片已落地；
+      <code>docs/todo.md</code> 第一阶段 10 项已完成。链路能跑，App demo 能聊，但架构与产品仍有几处硬缺口。
+    </div>
+
+    <div class="intro">
+      <strong>怎么用本文：</strong>从上往下做。每一张卡片 = 一件可交付的事；「完成标志」= 可以勾掉的标准。
+      详细插件说明见 <a href="plugins/session.html">docs/plugins/</a>；待办记录见 <a href="../todo.md">docs/todo.md</a>（可在此页基础上开第二阶段）。
+    </div>
+
+    <h2>已完成（不必再做）</h2>
+    <div class="done-grid">
+      <span class="done-chip">session</span>
+      <span class="done-chip">llm</span>
+      <span class="done-chip">tools</span>
+      <span class="done-chip">agent + scope</span>
+      <span class="done-chip">prompt-context</span>
+      <span class="done-chip">agent-loop</span>
+      <span class="done-chip">trajectory</span>
+      <span class="done-chip">app-chat / app-ui</span>
+      <span class="done-chip">持久化 / compact</span>
+      <span class="done-chip">tool_calls / 流式 / 取消</span>
+      <span class="done-chip">ui.rpc 白名单</span>
+      <span class="done-chip">Bundle/Profile</span>
+    </div>
+
+    <h2>建议下一步（按顺序）</h2>
+
+    <div class="card">
+      <h3><span class="phase-label p0">P0</span> Scope 接到 tools</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd><code>tools</code> 用 <code>ScopedLayers</code> 归档；<code>prompt-context</code> 已支持 scoped 注册（<code>bind(agent.ctx)</code>）与每步 <code>assemble+apply</code>。</dd>
+        <dt>为什么现在</dt>
+        <dd>工具仍是全局一张表——多 agent 会串。prompt 组装层已对齐 DSH 薄切片。</dd>
+        <dt>动哪里</dt>
+        <dd><code>plugins/tools</code> · <code>plugins/agent-loop</code></dd>
+        <dt>完成标志</dt>
+        <dd>两个 agent 各注册同名工具，互不可见；loop 只看见当前 agent scope 内的 tools。有单测锁住。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p0">P0</span> App：会话列表 + 恢复</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd><code>app-ui</code> 左侧列历史 session（读 <code>~/.wizard-harness/sessions</code> 或 <code>session.list</code>）；点选加载回放/继续聊。</dd>
+        <dt>为什么现在</dt>
+        <dd>持久化已有，但 UI 每次像新会话——产品体感断层最大的一项。</dd>
+        <dt>动哪里</dt>
+        <dd><code>plugins/app-ui</code> · <code>plugins/app-chat</code>（可能要 <code>send</code> 支持指定 sessionId）</dd>
+        <dt>完成标志</dt>
+        <dd>关窗口重开，能点开昨天的会话并继续发消息；session 条目与磁盘文件一致。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p1">P1</span> App：流式输出进聊天窗</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd><code>llm/delta</code> 或 <code>appChat</code> 流式回调接到 <code>app-ui</code> 消息气泡，边生成边显示；保留取消按钮联动 <code>cancel</code>。</dd>
+        <dt>为什么现在</dt>
+        <dd>后端已支持 <code>onDelta</code>，前端仍等多段 complete——真模型时等待感明显。</dd>
+        <dt>动哪里</dt>
+        <dd><code>plugins/app-chat</code> · <code>plugins/app-ui/src/page.ts</code> · 可能扩展 <code>ui.rpc</code> 为 SSE/增量</dd>
+        <dt>完成标志</dt>
+        <dd>DeepSeek/OpenAI 回复逐字出现；点取消后流立即停止，trajectory 有 aborted 记录。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p1">P1</span> App：错误与状态可见</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd>鉴权失败、超时、tool 失败、loop 步数用尽——在聊天区显示可读文案，右栏 trajectory 可展开详情；不要静默失败。</dd>
+        <dt>为什么现在</dt>
+        <dd>排错仍靠观测台/trajectory，普通用户不知道去哪看。</dd>
+        <dt>动哪里</dt>
+        <dd><code>app-chat</code> 错误映射 · <code>app-ui</code> 展示 · 可选统一 <code>AppChatSendResult.error</code> 契约</dd>
+        <dt>完成标志</dt>
+        <dd>故意配错 API key，界面明确提示；tool 抛错时 session 与 UI 一致显示失败。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p1">P1</span> manifest / config schema 校验</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd>启动时校验 <code>manifest</code> 与 <code>config[pluginId]</code> 形状；畸形 fail-loud，对齐缺口清单 #1。</dd>
+        <dt>为什么现在</dt>
+        <dd>插件数量上来后，静默畸形最浪费时间；成本低、收益稳。</dd>
+        <dt>动哪里</dt>
+        <dd><code>core/src/registrar/validate.ts</code> · 各插件 config 可选 schema 声明</dd>
+        <dt>完成标志</dt>
+        <dd>故意写坏 <code>provides</code> / <code>tier</code>，boot 即报错并指明插件 id；有单测。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p2">P2</span> 文档与体检同步</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd>更新 <code>docs/项目体检.md</code>（包数、测试数、scope 模型）；补一篇「不回话怎么查」排错短链；<code>docs/todo.md</code> 开第二阶段表。</dd>
+        <dt>为什么现在</dt>
+        <dd>文档仍写 4 插件 / 旧 scope 语义，会误导后续自己与他人。</dd>
+        <dt>动哪里</dt>
+        <dd><code>docs/</code> 纯文档，不动运行时</dd>
+        <dt>完成标志</dt>
+        <dd>体检度量与 <code>pnpm test</code> 一致；排错路径一页纸可跟着点。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p2">P2</span> 观测台：插件启用 / 禁用 / 重载</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd>GUI 注册表面板可操作：disabled、reload、配合已有 <code>/plugins/scan</code>；状态写回 profile 或运行时 config。</dd>
+        <dt>为什么现在</dt>
+        <dd>改插件仍要重启整个 Electron；开发迭代摩擦大。</dd>
+        <dt>动哪里</dt>
+        <dd><code>obs/core</code> · <code>obs/gui</code> · harness <code>reload</code> API</dd>
+        <dt>完成标志</dt>
+        <dd>在 GUI 里禁用 hello 后无需重启即不加载；reload 单个插件有事件可观测。</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3><span class="phase-label p2">P2</span> 对外 plugin-sdk（契约发布）</h3>
+      <dl>
+        <dt>做什么</dt>
+        <dd>定 <code>@wizard-harness/plugin-sdk</code>（<code>contracts</code> + 插件宿主类型重导出）+ 可选 <code>plugin-testing</code> mock harness；写「外部插件最小示例」。</dd>
+        <dt>为什么现在</dt>
+        <dd>契约层价值在并行开发与对外发布；单仓内不急，但若多人/第三方写插件应提前定边界。</dd>
+        <dt>动哪里</dt>
+        <dd>新包或 <code>contracts</code> 扩 exports · <code>package.json</code> 发布字段 · 示例 repo/目录</dd>
+        <dt>完成标志</dt>
+        <dd>空目录只装 sdk + testing，能 typecheck 通过并跑通一个假插件单测，不依赖全仓 plugins。</dd>
+      </dl>
+    </div>
+
+    <h2>明确暂缓</h2>
+    <div class="later">
+      没有清晰用例前不做，避免摊大饼：
+      <ul>
+        <li><code>ctx.dispatcher</code> 接入（waterfall/serial）— 等协作型插件</li>
+        <li>通用任意方法 UI 桥 — 已有 <code>ui.rpc</code> 白名单</li>
+        <li>Goal / Commands / 子 agent fork — DSH 进阶，本地 demo 非必需</li>
+        <li>插件市场 / P2P / 沙箱 — 确认稿边界外或暂缓</li>
+        <li>删掉 <code>contracts/</code> 改 Cordis 式 — 当前独立契约层仍服务解耦与 SDK</li>
+      </ul>
+    </div>
+
+    <h2>推荐开工顺序（一张表）</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;margin-top:8px">
+      <thead>
+        <tr style="background:#1a1a24;color:var(--muted)">
+          <th style="border:1px solid var(--border);padding:8px 10px;text-align:left">周次/迭代</th>
+          <th style="border:1px solid var(--border);padding:8px 10px;text-align:left">聚焦</th>
+          <th style="border:1px solid var(--border);padding:8px 10px;text-align:left">交付物</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border:1px solid var(--border);padding:8px 10px">迭代 1</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">Scope × tools/prompt + loop 走 agent.ctx</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">多 agent 不串工具；单测</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--border);padding:8px 10px">迭代 2</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">App 会话列表 + 恢复</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">关进程仍能续聊</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--border);padding:8px 10px">迭代 3</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">流式 UI + 错误展示</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">日常可用聊天体验</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--border);padding:8px 10px">迭代 4</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">schema 校验 + 文档同步</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">少踩静默坑；文档不骗人</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid var(--border);padding:8px 10px">按需</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">GUI 插件管理 · plugin-sdk</td>
+          <td style="border:1px solid var(--border);padding:8px 10px">开发效率 / 对外生态</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer>
+      wizard-harness · docs/product-maturity.html（下一步路线图）· 2026-08-23
+    </footer>
+  </div>
+</body>
+</html>

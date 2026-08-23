@@ -205,7 +205,7 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
-  plugins/session:
+  plugins/prompt-context:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^
@@ -214,7 +214,7 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
-  plugins/system-prompt:
+  plugins/session:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^

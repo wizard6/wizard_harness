@@ -550,7 +550,7 @@ ipcMain.handle('wh:scan-plugins', async () => {
 /** 观测台试跑白名单（与 obs:api DEFAULT_EXPOSE 对齐，不含 console/tools.call） */
 const CALL_ALLOW = {
   agent: ['list', 'stop'],
-  systemPrompt: ['set', 'get', 'apply'],
+  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona'],
   agentLoop: ['run', 'cancel'],
 };
 

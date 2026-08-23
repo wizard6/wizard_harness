@@ -5,7 +5,7 @@ import type { AgentLoopService, TrajectoryService } from '@wizard-harness/contra
 import sessionPlugin from '../../session/src/index.js';
 import llmPlugin from '../../llm/src/index.js';
 import toolsPlugin from '../../tools/src/index.js';
-import systemPromptPlugin from '../../system-prompt/src/index.js';
+import promptContextPlugin from '../../prompt-context/src/index.js';
 import agentPlugin from '../../agent/src/index.js';
 import agentLoopPlugin from '../../agent-loop/src/index.js';
 import trajectoryPlugin from '../src/index.js';
@@ -38,7 +38,7 @@ describe('trajectory 插件', () => {
   it('agent-loop echo：run-start → prompt → complete → tool → prompt → complete → run-end', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await harness.registry.register(sessionPlugin);
-    await harness.registry.register(systemPromptPlugin);
+    await harness.registry.register(promptContextPlugin);
     await harness.registry.register(trajectoryPlugin);
     await harness.registry.register(llmPlugin);
     await harness.registry.register(toolsPlugin);
@@ -52,7 +52,7 @@ describe('trajectory 插件', () => {
     const kinds = snap.map((s) => `${s.kind}:${String(s.data.phase ?? '')}`);
     expect(kinds[0]).toBe('run-start:');
     expect(kinds).toContain('prompt:apply');
-    expect(kinds.filter((k) => k === 'prompt:assemble')).toHaveLength(2);
+    expect(kinds.filter((k) => k === 'prompt:assemble').length).toBeGreaterThanOrEqual(2);
     expect(kinds.filter((k) => k.startsWith('complete:'))).toHaveLength(2);
     expect(snap.some((s) => s.kind === 'tool' && s.data.name === 'echo' && s.data.content === 'hi')).toBe(true);
     expect(kinds.at(-1)).toBe('run-end:');

@@ -28,7 +28,7 @@ import type { ExposeMap } from './expose.js';
  *   WH_ENABLE_EXPERIMENTAL 逗号分隔的显式启用 experimental 插件 id
  *   WH_PROFILE  profile 名或路径（默认 profiles/default；off 关闭组合、退回目录发现）
  *   WH_HOME     机级 home（默认 ~/.wizard-harness），可读 wizard.patch.json
- *   WH_EXPOSE   服务白名单 JSON。未设置时默认暴露 agent/list|stop、systemPrompt/set|get|apply、agentLoop/run|cancel。
+ *   WH_EXPOSE   服务白名单 JSON。未设置时默认暴露 agent/list|stop、promptContext/assemble|apply|setPersona|getPersona、agentLoop/run|cancel。
  *               `off` 或 `{}` 关闭全部。
  *   PORT        监听端口（默认 8787）
  */

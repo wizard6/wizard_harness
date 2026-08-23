@@ -1,6 +1,6 @@
 {
-  "name": "@wizard-harness/plugin-system-prompt",
-  "version": "0.1.0",
+  "name": "@wizard-harness/plugin-prompt-context",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

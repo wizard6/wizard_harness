@@ -3,7 +3,7 @@ export type ExposeMap = Record<string, true | string[]>;
 
 export const DEFAULT_EXPOSE: ExposeMap = {
   agent: ['list', 'stop'],
-  systemPrompt: ['set', 'get', 'apply'],
+  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona'],
   agentLoop: ['run', 'cancel'],
 };
 

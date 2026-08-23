@@ -7,7 +7,7 @@ import type { LlmService } from './llm.js';
 import type { ToolsService } from './tools.js';
 import type { AgentService } from './agent.js';
 import type { AgentLoopService } from './agent-loop.js';
-import type { SystemPromptService } from './system-prompt.js';
+import type { PromptContextService } from './prompt-context.js';
 import type { AppUiService } from './app-ui.js';
 import type { AppChatService } from './app-chat.js';
 import type { TrajectoryService } from './trajectory.js';
@@ -35,8 +35,18 @@ export { AGENT_SERVICE } from './agent.js';
 export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 export { AGENT_LOOP_SERVICE } from './agent-loop.js';
 export type { AgentLoopResult, AgentLoopRunOpts, AgentLoopService } from './agent-loop.js';
-export { SYSTEM_PROMPT_SERVICE } from './system-prompt.js';
-export type { SystemPromptService } from './system-prompt.js';
+export { PROMPT_CONTEXT_SERVICE } from './prompt-context.js';
+export type {
+  AssembleContext,
+  AssembledContextEntry,
+  AssembledSection,
+  PromptAssembly,
+  PromptContextBinding,
+  PromptContextEntry,
+  PromptContextService,
+  PromptSection,
+  ScopeRef,
+} from './prompt-context.js';
 export { APP_UI_SERVICE } from './app-ui.js';
 export type { AppUiService } from './app-ui.js';
 export { APP_CHAT_SERVICE } from './app-chat.js';
@@ -70,7 +80,7 @@ declare module '@wizard-harness/core' {
     readonly tools?: ToolsService;
     readonly agent?: AgentService;
     readonly agentLoop?: AgentLoopService;
-    readonly systemPrompt?: SystemPromptService;
+    readonly promptContext?: PromptContextService;
     readonly appUi?: AppUiService;
     readonly appChat?: AppChatService;
     readonly trajectory?: TrajectoryService;

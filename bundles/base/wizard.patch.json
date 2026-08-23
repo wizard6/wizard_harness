@@ -6,7 +6,7 @@
       { "id": "console", "name": "console" },
       { "id": "hello", "name": "hello" },
       { "id": "session", "name": "session" },
-      { "id": "system-prompt", "name": "system-prompt" },
+      { "id": "prompt-context", "name": "prompt-context" },
       { "id": "trajectory", "name": "trajectory" },
       { "id": "llm", "name": "llm" },
       { "id": "tools", "name": "tools" },

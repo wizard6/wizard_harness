@@ -1,57 +1,30 @@
 import type { PluginContext } from '@wizard-harness/core';
+import { scopeOf } from '@wizard-harness/core';
 import type {
   AgentLoopResult,
   AgentLoopRunOpts,
   AgentLoopService,
   AgentService,
   LlmService,
-  LlmToolCall,
+  PromptContextService,
   SessionService,
-  SystemPromptService,
   ToolsService,
   TrajectoryService,
 } from '@wizard-harness/contracts';
+import { intentsFromThink, isTaskDone, parseToolCall } from './intents.js';
+import { act, observe, think } from './ota.js';
 
-export interface ToolIntent {
-  name: string;
-  args: Record<string, unknown>;
-  id?: string;
-}
-
-function stripMock(text: string): string {
-  return text.replace(/^\[mock\]\s+/i, '').trim();
-}
-
-/** 文本协议回退：`echo <text>` / `tool <name> {json}` */
-export function parseToolCall(text: string): ToolIntent | undefined {
-  const body = stripMock(text.trim());
-  const named = /^tool\s+([A-Za-z0-9_-]+)\s+(\{[\s\S]*\})\s*$/.exec(body);
-  if (named) {
-    try {
-      const args = JSON.parse(named[2]!) as unknown;
-      if (args && typeof args === 'object' && !Array.isArray(args)) {
-        return { name: named[1]!, args: args as Record<string, unknown> };
-      }
-    } catch {
-      return undefined;
-    }
-  }
-  const echo = /^echo\s+([\s\S]+)$/i.exec(body);
-  if (echo) return { name: 'echo', args: { input: echo[1]!.trimEnd() } };
-  return undefined;
-}
+export { parseToolCall } from './intents.js';
 
 function need<T>(v: T | undefined, name: string): T {
   if (v === undefined) throw new Error(`agent-loop 需要 ${name} 服务`);
   return v;
 }
 
-function intentsOf(text: string, toolCalls?: LlmToolCall[]): ToolIntent[] {
-  if (toolCalls?.length) return toolCalls.map((c) => ({ id: c.id, name: c.name, args: c.args }));
-  const one = parseToolCall(text);
-  return one ? [one] : [];
-}
-
+/**
+ * Observe → Think → Act 循环：
+ * - 每轮先观察（组装上下文），再思考（complete），若有意图则行动（tools），直到模型不再提出意图或达到上限。
+ */
 export function createAgentLoop(ctx: PluginContext): AgentLoopService {
   const running = new Map<string, AbortController>();
 
@@ -64,9 +37,9 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
     },
     async run(opts: AgentLoopRunOpts = {}): Promise<AgentLoopResult> {
       const agents = need(ctx.agent ?? ctx.get<AgentService>('agent'), 'agent');
-      const prompts = ctx.systemPrompt ?? ctx.get<SystemPromptService>('systemPrompt');
+      const prompts = ctx.promptContext ?? ctx.get<PromptContextService>('promptContext');
       const traj = ctx.trajectory ?? ctx.get<TrajectoryService>('trajectory');
-      const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 8));
+      const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 12));
       let id = opts.agentId?.trim();
       if (!id) id = agents.spawn({ title: 'agent-loop' }).id;
       const handle = agents.get(id);
@@ -75,55 +48,86 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
       const tools = need(handle.ctx.tools ?? handle.ctx.get<ToolsService>('tools'), 'tools');
       const session = handle.ctx.session ?? handle.ctx.get<SessionService>('session');
       const sessionId = handle.sessionId;
+      const scope = scopeOf(handle.ctx);
       const useTools = opts.useTools !== false;
+      const persona = opts.persona ?? opts.systemPrompt;
+      if (persona) prompts?.setPersona(sessionId, persona);
+
       const trace = traj?.start({ agentId: id, sessionId });
-      trace?.append('run-start', { maxSteps, useTools });
-      if (opts.systemPrompt) prompts?.set(sessionId, opts.systemPrompt);
-      prompts?.apply(sessionId);
+      trace?.append('run-start', { maxSteps, useTools, paradigm: 'ota' });
 
       const ac = new AbortController();
       running.set(id, ac);
-      const listed = useTools
-        ? tools.list().map((t) => ({ name: t.name, description: t.description }))
-        : [];
       const keep = Number(ctx.config.compactKeep ?? 0);
       const maybeCompact = () => {
         if (keep > 0) session?.compact(sessionId, { keep });
       };
 
-      ctx.emit({ action: 'agent-loop/start', target: id, payload: { sessionId, maxSteps, useTools } });
+      const deps = {
+        ctx,
+        agentId: id,
+        sessionId,
+        scope,
+        llm,
+        tools,
+        session,
+        prompts,
+        useTools,
+        signal: ac.signal,
+        trace,
+      };
+
+      ctx.emit({
+        action: 'agent-loop/start',
+        target: id,
+        payload: { sessionId, maxSteps, useTools, paradigm: 'observe-think-act' },
+      });
+
+      let cycles = 0;
+      let result;
+      let doneReason: 'no-intents' | 'max-cycles' = 'no-intents';
+
       try {
-        let result = await llm.complete({
-          sessionId,
-          prompt: opts.prompt,
-          tools: listed.length ? listed : undefined,
-          signal: ac.signal,
-        });
-        let steps = 1;
-        maybeCompact();
-        ctx.emit({ action: 'agent-loop/step', target: id, payload: { steps, phase: 'complete' } });
-        while (steps < maxSteps) {
+        for (let cycle = 1; cycle <= maxSteps; cycle += 1) {
           if (ac.signal.aborted) throw new Error('agent-loop 已取消');
-          const intents = useTools ? intentsOf(result.text, result.toolCalls) : [];
-          if (!intents.length) break;
-          for (const intent of intents) {
-            await tools.call(intent.name, intent.args, { sessionId, callId: intent.id });
-            ctx.emit({
-              action: 'agent-loop/step',
-              target: id,
-              payload: { steps, phase: 'tool', name: intent.name },
-            });
-          }
-          result = await llm.complete({ sessionId, tools: listed, signal: ac.signal });
-          steps += 1;
+
+          const { listed } = observe(deps, cycle);
+          result = await think(deps, cycle, listed, cycle === 1 ? opts.prompt : undefined);
+          cycles = cycle;
           maybeCompact();
-          ctx.emit({ action: 'agent-loop/step', target: id, payload: { steps, phase: 'complete' } });
+
+          const intents = intentsFromThink(result.text, result.toolCalls, useTools);
+          if (isTaskDone(intents)) {
+            doneReason = 'no-intents';
+            ctx.emit({
+              action: 'agent-loop/done',
+              target: id,
+              payload: { cycle, reason: doneReason, steps: cycles },
+            });
+            break;
+          }
+
+          await act(deps, cycle, intents);
+          maybeCompact();
+
+          if (cycle >= maxSteps) {
+            doneReason = 'max-cycles';
+            ctx.emit({
+              action: 'agent-loop/done',
+              target: id,
+              payload: { cycle, reason: doneReason, steps: cycles },
+            });
+            break;
+          }
         }
-        ctx.emit({ action: 'agent-loop/end', target: id, payload: { steps } });
-        trace?.append('run-end', { steps, text: result.text, provider: result.provider });
-        return { agentId: id, sessionId, text: result.text, steps, provider: result.provider };
+
+        if (!result) throw new Error('agent-loop 未产生模型输出');
+
+        ctx.emit({ action: 'agent-loop/end', target: id, payload: { steps: cycles, reason: doneReason } });
+        trace?.append('run-end', { steps: cycles, text: result.text, provider: result.provider, reason: doneReason });
+        return { agentId: id, sessionId, text: result.text, steps: cycles, provider: result.provider };
       } catch (err) {
-        trace?.append('run-end', { error: String(err) });
+        trace?.append('run-end', { error: String(err), steps: cycles });
         throw err;
       } finally {
         running.delete(id);
