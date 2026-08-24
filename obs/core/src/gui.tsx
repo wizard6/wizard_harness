@@ -15,6 +15,8 @@ export interface RegistryPanelProps {
   onReload?: (id: string) => Promise<unknown> | void;
   /** 卸载该插件 */
   onUnregister?: (id: string) => Promise<unknown> | void;
+  /** 启用 / 禁用（写 home patch + 运行时 unregister / scan） */
+  onSetEnabled?: (id: string, enabled: boolean) => Promise<{ ok?: boolean; error?: string; enabled?: boolean } | void> | { ok?: boolean; error?: string; enabled?: boolean } | void;
   /** 再扫描插件目录，装入尚未注册的插件 */
   onScan?: () => Promise<ScanFeedback | void> | ScanFeedback | void;
   /** 清空事件账本（内存 + 落盘） */
@@ -155,6 +157,7 @@ export function RegistryPanel({
   onOpenPlugin,
   onReload,
   onUnregister,
+  onSetEnabled,
   onScan,
   onClearEvents,
   trailing,
@@ -246,6 +249,35 @@ export function RegistryPanel({
         return next;
       });
     });
+  };
+
+  const runSetEnabled = async (id: string, enabled: boolean, name: string) => {
+    if (!onSetEnabled || busy) return;
+    const verb = enabled ? '启用' : '禁用';
+    if (!enabled && !window.confirm(`禁用「${name}」？将卸载运行时实例并写入 home patch。`)) return;
+    setBusy(true);
+    try {
+      const raw = await onSetEnabled(id, enabled);
+      const r = (raw ?? {}) as { ok?: boolean; error?: string };
+      if (r.ok === false) {
+        setNotice({ kind: 'err', text: r.error || `${verb}失败` });
+        return;
+      }
+      setNotice({ kind: enabled ? 'ok' : 'warn', text: enabled ? `已启用 ${id}` : `已禁用 ${id}` });
+      if (enabled) {
+        setFresh((prev) => new Set(prev).add(id));
+      } else {
+        setFresh((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    } catch (err) {
+      setNotice({ kind: 'err', text: String(err) });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -391,7 +423,7 @@ export function RegistryPanel({
                       {s}
                     </span>
                   ))}
-                  {(p.ui && onOpenPlugin) || onReload || onUnregister ? (
+                  {(p.ui && onOpenPlugin) || onReload || onSetEnabled || onUnregister ? (
                     <span className="rp-actions">
                       {p.ui && onOpenPlugin && (
                         <button type="button" className="rp-btn" onClick={() => onOpenPlugin(p.manifest.id)}>
@@ -406,6 +438,16 @@ export function RegistryPanel({
                           onClick={() => void onReload(p.manifest.id)}
                         >
                           重载
+                        </button>
+                      )}
+                      {onSetEnabled && (
+                        <button
+                          type="button"
+                          className="rp-btn danger"
+                          title="禁用并写入 $WH_HOME/wizard.patch.json"
+                          onClick={() => void runSetEnabled(p.manifest.id, false, p.manifest.name || p.manifest.id)}
+                        >
+                          禁用
                         </button>
                       )}
                       {onUnregister && (
@@ -483,6 +525,16 @@ export function RegistryPanel({
                       {e.name}
                       {e.disabled ? ' · disabled' : ''}
                       {e.config ? ` · ${JSON.stringify(e.config)}` : ''}
+                      {e.disabled && onSetEnabled ? (
+                        <button
+                          type="button"
+                          className="rp-btn"
+                          style={{ marginLeft: 8 }}
+                          onClick={() => void runSetEnabled(e.id, true, e.name)}
+                        >
+                          启用
+                        </button>
+                      ) : null}
                     </span>
                   </div>
                 ))}

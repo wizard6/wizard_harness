@@ -26,7 +26,7 @@ export interface SystemContext {
   registry: Registrar;
   /** 服务目录（系统提供/管理能力） */
   services: ServiceRegistry;
-  /** 系统级配置（按插件 id 分片注入） */
+  /** 系统级配置（按插件 id 分片注入；运行时策略如 disabledPlugins 可热更新） */
   config: Readonly<Record<string, unknown>>;
   /** 系统级事件出口 */
   emit(event: PluginEvent): void;
@@ -36,6 +36,8 @@ export interface SystemContext {
   pluginContext(pluginId: string): PluginContext | undefined;
   /** 配置热更新：按插件 id 合并补丁，触发该插件 ctx.onConfig 通知（发 config-update 事件） */
   updateConfig(pluginId: string, patch: Record<string, unknown>): void;
+  /** 运行时更新 disabledPlugins（观测台禁/启用插件；reload/boot 过滤与此一致） */
+  setDisabledPlugins(ids: string[]): void;
   /** 热重载：显式传新插件，或（配置了 pluginsDir 时）重新扫描加载；发 reload 事件 */
   reload(pluginId: string, next?: Plugin): Promise<ReloadResult>;
   /**
@@ -55,10 +57,11 @@ export interface CreateHarnessOptions {
 
 /** 创建 harness 程序主体：注册表 + 服务目录 + 配置，统一对外呈现 */
 export function createHarness(opts: CreateHarnessOptions): SystemContext {
-  const { bus, config = {}, name = 'wizard-harness', pluginsDir } = opts;
+  const { bus, config: initialConfig = {}, name = 'wizard-harness', pluginsDir } = opts;
+  const runtimeConfig: Record<string, unknown> = { ...initialConfig };
   const id = randomUUID();
   const startedAt = Date.now();
-  const registrar = createRegistrar({ bus, config });
+  const registrar = createRegistrar({ bus, config: runtimeConfig });
 
   /** 热重载：优先用显式新插件；否则重新扫描 pluginsDir（ESM 缓存失效，且遵守壳策略过滤） */
   async function reload(pluginId: string, next?: Plugin): Promise<ReloadResult> {
@@ -67,10 +70,9 @@ export function createHarness(opts: CreateHarnessOptions): SystemContext {
       throw new Error('harness 未配置 pluginsDir，无法自动重新扫描（请显式传新插件或设置 pluginsDir）');
     }
     const { plugins } = await discoverPlugins(pluginsDir, { cacheBust: true });
-    // 与壳装配一致的策略过滤（disabledPlugins / enableExperimental），防止绕过
-    const disabled = new Set<string>((config.disabledPlugins as string[] | undefined) ?? []);
+    const disabled = new Set<string>((runtimeConfig.disabledPlugins as string[] | undefined) ?? []);
     const enableExperimental = new Set<string>(
-      (config.enableExperimental as string[] | undefined) ?? [],
+      (runtimeConfig.enableExperimental as string[] | undefined) ?? [],
     );
     const fresh = plugins.find(
       (p) =>
@@ -88,7 +90,9 @@ export function createHarness(opts: CreateHarnessOptions): SystemContext {
     startedAt,
     registry: registrar,
     services: registrar.services,
-    config: Object.freeze({ ...config }),
+    get config() {
+      return runtimeConfig;
+    },
     emit: (event) => bus.emit(event),
     status() {
       return {
@@ -103,6 +107,9 @@ export function createHarness(opts: CreateHarnessOptions): SystemContext {
     pluginContext: (pluginId) => registrar.contextOf(pluginId),
     boot: (plugins) => bootPlugins(registrar, plugins),
     updateConfig: (pluginId, patch) => registrar.updateConfig(pluginId, patch),
+    setDisabledPlugins(ids) {
+      runtimeConfig.disabledPlugins = [...new Set(ids)];
+    },
     reload,
   };
 }

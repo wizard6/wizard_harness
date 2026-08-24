@@ -352,6 +352,13 @@ describe('createHarness', () => {
     expect(seen).toHaveLength(1);
   });
 
+  it('setDisabledPlugins 更新运行时过滤列表', () => {
+    const harness = createHarness({ bus: createEventBus(), config: { disabledPlugins: ['a'] } });
+    expect(harness.config.disabledPlugins).toEqual(['a']);
+    harness.setDisabledPlugins(['b', 'c']);
+    expect(harness.config.disabledPlugins).toEqual(['b', 'c']);
+  });
+
   it('基于事件的服务调用：call 成功并全程可观测（service-call/service-result）', async () => {
     const bus = createEventBus();
     const events: unknown[] = [];

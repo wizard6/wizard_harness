@@ -39,6 +39,7 @@ export {
   resolveHomeDir,
   resolveProfileDir,
 } from './profile/index.js';
+export { readHomePatch, upsertHomePatch } from './profile/save.js';
 export type {
   ApplyPatchesResult,
   CompositionSnapshot,

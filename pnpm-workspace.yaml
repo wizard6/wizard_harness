@@ -1,5 +1,8 @@
 packages:
   - "core"
   - "contracts"
+  - "plugin-sdk"
+  - "plugin-testing"
+  - "examples/*"
   - "plugins/*"
   - "obs/*"

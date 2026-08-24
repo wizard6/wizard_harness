@@ -1,0 +1,23 @@
+{
+  "name": "@wizard-harness/plugin-testing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "插件单测辅助：最小 harness 启动",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@wizard-harness/core": "workspace:^",
+    "@wizard-harness/plugin-sdk": "workspace:^"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

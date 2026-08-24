@@ -29,6 +29,16 @@ importers:
 
   core: {}
 
+  examples/minimal-plugin:
+    dependencies:
+      '@wizard-harness/plugin-sdk':
+        specifier: workspace:^
+        version: link:../../plugin-sdk
+    devDependencies:
+      '@wizard-harness/plugin-testing':
+        specifier: workspace:^
+        version: link:../../plugin-testing
+
   obs/api:
     dependencies:
       '@wizard-harness/core':
@@ -123,6 +133,24 @@ importers:
       '@types/react':
         specifier: ^18.3.0
         version: 18.3.31
+
+  plugin-sdk:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../core
+
+  plugin-testing:
+    dependencies:
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../core
+      '@wizard-harness/plugin-sdk':
+        specifier: workspace:^
+        version: link:../plugin-sdk
 
   plugins/agent:
     dependencies:

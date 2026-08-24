@@ -1,0 +1,27 @@
+{
+  "name": "@wizard-harness/example-minimal-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@wizard-harness/plugin-sdk": "workspace:^"
+  },
+  "devDependencies": {
+    "@wizard-harness/plugin-testing": "workspace:^"
+  },
+  "wizardHarness": {
+    "plugin": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

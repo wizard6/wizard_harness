@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('wh', {
   openPlugin: (id) => ipcRenderer.invoke('wh:open-plugin', id),
   reloadPlugin: (id) => ipcRenderer.invoke('wh:reload-plugin', id),
   unregisterPlugin: (id) => ipcRenderer.invoke('wh:unregister-plugin', id),
+  setPluginEnabled: (id, enabled) => ipcRenderer.invoke('wh:set-plugin-enabled', { id, enabled }),
   scanPlugins: () => ipcRenderer.invoke('wh:scan-plugins'),
   clearEvents: () => ipcRenderer.invoke('wh:events-clear'),
   callService: (service, method, args) => ipcRenderer.invoke('wh:call-service', { service, method, args }),

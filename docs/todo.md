@@ -32,7 +32,15 @@
 | 19 | app-error-visible | 鉴权/超时/tool 失败可读文案 + trajectory 详情 | 已落地 | 路线图 P1 |
 | 20 | manifest-validate | boot 校验 manifest / inject / ui.rpc 形状 | 已落地 | 路线图 P1；插件多了 fail-loud |
 
-**下一步：** 见 [`docs/product-maturity.html`](./product-maturity.html) P2 项（文档同步、GUI 插件管理、plugin-sdk 等）。
+---
+
+## 第三阶段 · P2（已完成）
+
+| # | id | 项 | 状态 | 说明 |
+|---|-----|-----|------|------|
+| 21 | docs-health | 项目体检 + 排错短链 | 已落地 | `docs/项目体检.md` · `docs/troubleshooting.html` |
+| 22 | gui-plugin-toggle | 观测台禁/启用 + home patch | 已落地 | Registry 禁用按钮 · `setDisabledPlugins` · `upsertHomePatch` |
+| 23 | plugin-sdk | plugin-sdk + plugin-testing + 示例 | 已落地 | `@wizard-harness/plugin-sdk` · `examples/minimal-plugin` |
 
 ---
 

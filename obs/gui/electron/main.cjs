@@ -539,6 +539,63 @@ ipcMain.handle('wh:unregister-plugin', async (_evt, id) => {
     return { ok: false, error: String(err) };
   }
 });
+
+async function setPluginEnabled(id, enabled) {
+  if (!harness || !core) return { ok: false, error: 'harness 未就绪' };
+  const pluginId = String(id);
+  const homeDir = runtimeDirs.homeDir || core.resolveHomeDir();
+  try {
+    core.upsertHomePatch(homeDir, { id: pluginId, disabled: !enabled });
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+  const prev = new Set((harness.config.disabledPlugins ?? []).map(String));
+  if (enabled) prev.delete(pluginId);
+  else prev.add(pluginId);
+  harness.setDisabledPlugins([...prev]);
+  if (!enabled) {
+    if (harness.registry.has(pluginId)) {
+      await harness.registry.unregister(pluginId);
+    }
+    bus.emit({
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      actor: 'shell',
+      action: 'plugin-disabled',
+      target: pluginId,
+      payload: {},
+    });
+    return { ok: true, enabled: false };
+  }
+  const scan = await scanPlugins();
+  if (!harness.registry.has(pluginId)) {
+    return {
+      ok: false,
+      error: `未能启用 ${pluginId}（可能 pending、不在 profile 或仍被过滤）`,
+      scan,
+    };
+  }
+  bus.emit({
+    id: crypto.randomUUID(),
+    ts: Date.now(),
+    actor: 'shell',
+    action: 'plugin-enabled',
+    target: pluginId,
+    payload: {},
+  });
+  return { ok: true, enabled: true };
+}
+
+ipcMain.handle('wh:set-plugin-enabled', async (_evt, payload) => {
+  const id = payload?.id;
+  const enabled = Boolean(payload?.enabled);
+  if (!id) return { ok: false, error: '缺少 id' };
+  try {
+    return await setPluginEnabled(id, enabled);
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
 ipcMain.handle('wh:scan-plugins', async () => {
   try {
     return await scanPlugins();

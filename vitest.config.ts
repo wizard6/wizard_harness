@@ -7,6 +7,7 @@ export default defineConfig({
       'contracts/test/**/*.spec.ts',
       'obs/**/*.spec.ts',
       'plugins/*/test/**/*.spec.ts',
+      'examples/*/test/**/*.spec.ts',
     ],
   },
 });

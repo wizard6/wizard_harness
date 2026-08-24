@@ -33,6 +33,7 @@ declare global {
       openPlugin(id: string): Promise<void>;
       reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
       unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
+      setPluginEnabled(id: string, enabled: boolean): Promise<{ ok: boolean; error?: string; enabled?: boolean }>;
       scanPlugins(): Promise<{
         ok: boolean;
         loaded?: string[];
@@ -98,6 +99,11 @@ function RegistryApp(): React.ReactElement | null {
       }}
       onUnregister={async (id) => {
         const r = await window.wh.unregisterPlugin(id);
+        await refresh();
+        return r;
+      }}
+      onSetEnabled={async (id, enabled) => {
+        const r = await window.wh.setPluginEnabled(id, enabled);
         await refresh();
         return r;
       }}

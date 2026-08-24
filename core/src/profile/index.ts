@@ -16,3 +16,4 @@ export {
   resolveHomeDir,
   resolveProfileDir,
 } from './load.js';
+export { readHomePatch, upsertHomePatch } from './save.js';
