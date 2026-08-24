@@ -16,7 +16,7 @@ const PERSONA_SECTION = 'app-chat:persona';
 
 /**
  * app-chat：产品对话适配。包装 agentLoop，默认提示词 / 步数住在本插件。
- * 默认人设登记在 prompt-context（register 时一次 section），不经 loop.run 旁路。
+ * 人设由 persona → prompt-context 出门；无 persona 时本插件登记 app-chat:persona section。
  * 说明文档：docs/plugins/app-chat.html
  */
 let ctx: PluginContext | undefined;
@@ -118,6 +118,7 @@ const api: AppChatService = {
       prompt,
       useTools,
       maxSteps: useTools ? cfg.maxStepsWithTools : cfg.maxStepsNoTools,
+      workspace: agentId || opts.sessionId ? undefined : opts.workspace,
     });
     return {
       agentId: out.agentId,
@@ -125,6 +126,7 @@ const api: AppChatService = {
       text: out.text,
       steps: out.steps,
       provider: out.provider,
+      workspace: out.workspace,
     };
   },
   cancel(agentId: string) {
@@ -153,11 +155,9 @@ const appChatPlugin: Plugin = {
     id: 'app-chat',
     version: '0.1.0',
     name: 'App 对话',
-    description: '产品对话适配：包装 agentLoop.send，不拥有窗口。',
+    description: '产品对话适配：包装 agentLoop.send，不拥有窗口。人设不在这里。',
     provides: [APP_CHAT_SERVICE],
     config: {
-      persona:
-        '你是能自主完成任务的助手。收到问题后按「观察-思考-行动」循环：先理解上下文，再决定是否需要调用工具，逐步执行直到可以给出最终答复。',
       maxStepsWithTools: 12,
       maxStepsNoTools: 1,
     },

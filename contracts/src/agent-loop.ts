@@ -15,6 +15,8 @@ export interface AgentLoopRunOpts {
   onDelta?: (chunk: string) => void;
   /** 默认 true。false 时不把工具表交给模型，也不解析文本协议 */
   useTools?: boolean;
+  /** 无 agentId 时转交 agent.spawn → session.start */
+  workspace?: string;
 }
 
 export interface AgentLoopResult {
@@ -24,6 +26,7 @@ export interface AgentLoopResult {
   /** 完成的 OTA 循环次数 */
   steps: number;
   provider?: string;
+  workspace?: string;
 }
 
 export interface AgentLoopService {

@@ -1,7 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import type { Session, SessionEntry, SessionKind, SessionService } from '@wizard-harness/contracts';
+import { isAbsolute, join, resolve } from 'node:path';
+import type {
+  Session,
+  SessionEntry,
+  SessionInfo,
+  SessionInspect,
+  SessionKind,
+  SessionPatch,
+  SessionPeek,
+  SessionService,
+  SessionStartOpts,
+} from '@wizard-harness/contracts';
 
 const KINDS = new Set<SessionKind>(['turn', 'message', 'tool-result']);
 
@@ -17,10 +27,23 @@ function asData(data: Record<string, unknown> | undefined): Record<string, unkno
   }
 }
 
+export function asWorkspace(raw: unknown): string | undefined {
+  let s = String(raw ?? '').trim().replace(/^['"]|['"]$/g, '');
+  if (!s) return undefined;
+  const abs = isAbsolute(s) ? s : resolve(s);
+  return abs.replace(/[\\/]+$/, '') || abs;
+}
+
+function asTitle(raw: unknown): string | undefined {
+  const s = String(raw ?? '').trim();
+  return s || undefined;
+}
+
 interface SessionState {
   id: string;
   startedAt: number;
   title?: string;
+  workspace?: string;
   entries: SessionEntry[];
 }
 
@@ -30,6 +53,18 @@ export interface SessionStoreOptions {
 
 function fileOf(dir: string, id: string): string {
   return join(dir, `${id.replace(/[^A-Za-z0-9._-]/g, '_')}.json`);
+}
+
+function infoOf(state: SessionState): SessionInfo {
+  const last = state.entries[state.entries.length - 1];
+  return {
+    id: state.id,
+    startedAt: state.startedAt,
+    title: state.title,
+    workspace: state.workspace,
+    entries: state.entries.length,
+    updatedAt: last?.time ?? state.startedAt,
+  };
 }
 
 export function createSessionStore(
@@ -51,7 +86,15 @@ export function createSessionStore(
       if (!name.endsWith('.json')) continue;
       try {
         const raw = JSON.parse(readFileSync(join(persistDir, name), 'utf8')) as SessionState;
-        if (raw?.id && Array.isArray(raw.entries)) states.set(raw.id, raw);
+        if (raw?.id && Array.isArray(raw.entries)) {
+          states.set(raw.id, {
+            id: raw.id,
+            startedAt: Number(raw.startedAt) || Date.now(),
+            title: asTitle(raw.title),
+            workspace: asWorkspace(raw.workspace),
+            entries: raw.entries,
+          });
+        }
       } catch {
         /* 坏文件跳过 */
       }
@@ -62,7 +105,12 @@ export function createSessionStore(
     const session: Session = {
       id: state.id,
       startedAt: state.startedAt,
-      title: state.title,
+      get title() {
+        return state.title;
+      },
+      get workspace() {
+        return state.workspace;
+      },
       append(kind, data) {
         if (!KINDS.has(kind)) throw new Error(`未知 session kind：${String(kind)}`);
         const entry: SessionEntry = Object.freeze({
@@ -83,16 +131,28 @@ export function createSessionStore(
     return session;
   }
 
-  return {
-    start(opts = {}) {
+  const api: SessionService = {
+    start(opts: SessionStartOpts = {}) {
       const id = opts.id?.trim() || randomUUID();
       if (states.has(id)) throw new Error(`session 已存在：${id}`);
-      const state: SessionState = { id, startedAt: Date.now(), title: opts.title, entries: [] };
+      const state: SessionState = {
+        id,
+        startedAt: Date.now(),
+        title: asTitle(opts.title),
+        workspace: asWorkspace(opts.workspace),
+        entries: [],
+      };
       states.set(id, state);
       currentId = id;
       persist(state);
-      emit('session/start', id, { title: opts.title });
+      emit('session/start', id, { title: state.title, workspace: state.workspace });
       return handle(state);
+    },
+    open(opts) {
+      const s = api.start(opts);
+      const state = states.get(s.id);
+      if (!state) throw new Error(`session 不存在：${s.id}`);
+      return infoOf(state);
     },
     get(id) {
       const state = states.get(id);
@@ -103,6 +163,30 @@ export function createSessionStore(
     },
     current() {
       return currentId ? this.get(currentId) : undefined;
+    },
+    patch(id, patch: SessionPatch) {
+      const state = states.get(id);
+      if (!state) throw new Error(`session 不存在：${id}`);
+      if (patch.title !== undefined) state.title = asTitle(patch.title);
+      if (patch.workspace !== undefined) state.workspace = asWorkspace(patch.workspace);
+      persist(state);
+      emit('session/patch', id, { title: state.title, workspace: state.workspace });
+      return infoOf(state);
+    },
+    inspect(): SessionInspect {
+      const sessions = [...states.values()].map(infoOf).sort((a, b) => b.startedAt - a.startedAt);
+      return { persistDir: persistDir || undefined, currentId, sessions };
+    },
+    peek(id): SessionPeek {
+      const state = states.get(id);
+      if (!state) throw new Error(`session 不存在：${id}`);
+      return {
+        id: state.id,
+        startedAt: state.startedAt,
+        title: state.title,
+        workspace: state.workspace,
+        entries: state.entries,
+      };
     },
     deriveMessages(sessionId) {
       return (states.get(sessionId)?.entries ?? []).filter((e) => e.kind === 'message');
@@ -131,4 +215,5 @@ export function createSessionStore(
       return drop;
     },
   };
+  return api;
 }

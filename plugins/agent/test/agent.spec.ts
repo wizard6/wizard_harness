@@ -30,6 +30,8 @@ describe('agent 插件', () => {
 
     expect(a.sessionId).toBeTruthy();
     expect(session.get(a.sessionId)).toBeDefined();
+    const withWs = agent.spawn({ id: 'w', workspace: '.' });
+    expect(session.get(withWs.sessionId)?.workspace).toBeTruthy();
     expect(a.ctx.get(AGENT_LIVE)).toEqual({ id: 'a', sessionId: a.sessionId });
     expect(b.ctx.get(AGENT_LIVE)).toEqual({ id: 'b', sessionId: b.sessionId });
     expect(a.ctx.get(AGENT_LIVE)).not.toEqual(b.ctx.get(AGENT_LIVE));
@@ -37,6 +39,7 @@ describe('agent 插件', () => {
     expect(agent.list()).toEqual([
       { id: 'a', sessionId: a.sessionId },
       { id: 'b', sessionId: b.sessionId },
+      { id: 'w', sessionId: withWs.sessionId },
     ]);
     expect(seen.some((e) => e.action === 'agent/spawn' && e.target === 'a')).toBe(true);
 

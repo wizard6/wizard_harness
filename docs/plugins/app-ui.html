@@ -58,7 +58,7 @@
       <p style="margin:0"><b>一句话：</b>产品窗口是插件，不是观测台硬编码页面。壳只负责 <code>openPlugin('app-ui')</code>。</p>
     </div>
     <ul class="tight">
-      <li>管：窗口布局、气泡、左侧历史会话、顶栏 agentId、New Session、缺 prompt-context 提示、流式 delta、取消、错误文案、右栏本轮轨迹、顶栏沙箱 root、<code>ui.rpc</code> 白名单</li>
+      <li>管：窗口布局、气泡（助手 Markdown）、左侧历史会话、顶栏 agentId、当前渲染格式列表、本会话工作区路径、New Session、缺 prompt-context 提示、流式 delta、取消、错误文案、右栏本轮轨迹、顶栏沙箱 root、<code>ui.rpc</code> 白名单</li>
       <li>不管：agentLoop、默认提示词、模型、会话落盘、观测台注册表、轨迹写入</li>
     </ul>
 
@@ -82,7 +82,8 @@ bundles/app      → insert sandbox, workflow, workflow-nodes, app-workflow, app
     <div class="card ai">
       <ul class="tight">
         <li>新 App 面 = 新插件 + bundle insert，不要写回 <code>obs/gui</code></li>
-        <li>对话协议改 <code>app-chat</code>；窗口外观改 <code>app-ui/src/page.ts</code></li>
+        <li>对话协议改 <code>app-chat</code>；窗口外观改 <code>app-ui/src/page.ts</code>。助手气泡 Markdown 在 <code>src/markdown.ts</code>；顶栏 <code>#formats</code> 列出当前格式。新格式先加 <code>SUPPORTED_RENDER_FORMATS</code> 再写画法，不要为此拆插件。</li>
+        <li>工作区在首次 <code>send</code>（无 agentId）时写入 session；New Session 只忘掉 agent，路径框可再改。会话目录在观测台「会话」插件。</li>
         <li>右栏轨迹只读 <code>trajectory.latest</code>；沙箱顶栏只读 <code>sandbox.info</code>，不要在 app-ui 里写文件</li>
         <li>不要把聊天拆成输入框/气泡两个插件</li>
         <li>缺 prompt-context 时开页即提示并禁用发送（boot 层 fail-closed 仍是主防护）</li>
@@ -95,9 +96,10 @@ bundles/app      → insert sandbox, workflow, workflow-nodes, app-workflow, app
     <div class="card issue">
       <ul class="tight">
         <li>UI 是插件弹窗 HTML，不是 React；流式经 <code>eventsHistory</code> 轮询 delta（非 SSE 专用通道）</li>
+        <li>助手气泡 Markdown 是子集（标题 / 列表 / 围栏 / 加粗 / 行内代码 / http(s) 链接），无表格、无原文 HTML</li>
         <li>窗口无外层滚动条；对话区与轨迹区可滚但不画滚动条</li>
         <li>时间线脚本与 trajectory 插件各一份（<code>traj-view.ts</code>），改展示时两边一起改</li>
-        <li>沙箱是共享一份 root，New Session 不会换目录</li>
+        <li>沙箱是共享一份 root，与 session.workspace 不是一回事；New Session 不会换沙箱目录</li>
       </ul>
     </div>
   </div>

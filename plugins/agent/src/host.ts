@@ -38,7 +38,7 @@ export function createAgentHost(ctx: PluginContext): AgentService {
       const sessions = sessionOf(ctx);
       const sess = opts.sessionId
         ? sessions.get(opts.sessionId)
-        : sessions.start({ title: opts.title ?? `agent:${id}` });
+        : sessions.start({ title: opts.title ?? `agent:${id}`, workspace: opts.workspace });
       if (!sess) throw new Error(`session 不存在：${opts.sessionId}`);
       const scope = createScope(ctx, { agent: id });
       scope.ctx.provide(AGENT_LIVE, { id, sessionId: sess.id });

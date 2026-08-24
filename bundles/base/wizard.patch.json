@@ -10,6 +10,7 @@
       { "id": "hello", "name": "hello" },
       { "id": "session", "name": "session" },
       { "id": "prompt-context", "name": "prompt-context" },
+      { "id": "persona", "name": "persona" },
       { "id": "trajectory", "name": "trajectory" },
       { "id": "llm", "name": "llm" },
       { "id": "tools", "name": "tools" },

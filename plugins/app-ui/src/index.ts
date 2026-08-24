@@ -14,7 +14,7 @@ const appUiPlugin: Plugin = {
     id: 'app-ui',
     version: '0.1.0',
     name: 'App demo',
-    description: '产品聊天窗口。经 appChat.send 发消息，右栏只读本轮轨迹；顶栏显示沙箱 root。',
+    description: '产品聊天窗口。经 appChat.send 发消息；新建会话可带 workspace。右栏只读本轮轨迹；顶栏显示沙箱 root。',
     provides: [APP_UI_SERVICE],
     config: {},
     tier: 'standard',

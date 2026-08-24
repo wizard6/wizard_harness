@@ -23,6 +23,8 @@ export interface AgentSpawnOpts {
   /** 不传则 start 一条新 session */
   sessionId?: string;
   title?: string;
+  /** 仅新建 session 时写入 session.workspace */
+  workspace?: string;
 }
 
 export interface AgentService {

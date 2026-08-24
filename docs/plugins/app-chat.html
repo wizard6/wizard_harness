@@ -35,7 +35,7 @@
     <header>
       <div class="kicker">wizard-harness · product plugin</div>
       <h1>app-chat — 产品对话适配</h1>
-      <p class="lede">夹在窗口和 agent-loop 之间。默认提示词 / 步数住在这里。没有自己的弹窗。</p>
+      <p class="lede">夹在窗口和 agent-loop 之间。步数住在这里。人设不在这里。</p>
       <div class="badges">
         <span class="badge ok">id: app-chat</span>
         <span class="badge ok">provides: appChat</span>
@@ -54,7 +54,7 @@
       <p style="margin:0"><b>一句话：</b>App 面不要直接调 <code>agentLoop</code>。换模型循环时只改本插件。</p>
     </div>
     <ul class="tight">
-      <li>管：<code>send</code> / <code>cancel</code> / <code>listSessions</code> / <code>resumeSession</code>、默认 persona（register 时登记 prompt-context section）、有无工具时的 maxSteps、session 与 agent 绑定</li>
+      <li>管：<code>send</code> / <code>cancel</code> / <code>listSessions</code> / <code>resumeSession</code>、有无工具时的 maxSteps、session 与 agent 绑定；无 agentId 时把 <code>workspace</code> 转交 loop</li>
       <li>不管：窗口 HTML、气泡、session / llm 实现</li>
     </ul>
 
@@ -63,7 +63,7 @@
     <table>
       <thead><tr><th>方法</th><th>作用</th></tr></thead>
       <tbody>
-        <tr><td class="mono">send({ prompt, agentId?, sessionId?, useTools? })</td><td>转 <code>agentLoop.run</code>；返回含 <code>agentId</code> / <code>sessionId</code> / <code>steps</code>；人设已在 register 时登记 prompt-context</td></tr>
+        <tr><td class="mono">send({ prompt, agentId?, sessionId?, useTools?, workspace? })</td><td>转 <code>agentLoop.run</code>；返回含 <code>agentId</code> / <code>sessionId</code> / <code>steps</code>；不传默认 persona；workspace 仅新建 agent 时生效</td></tr>
         <tr><td class="mono">cancel(agentId)</td><td>转 <code>agentLoop.cancel</code></td></tr>
         <tr><td class="mono">listSessions()</td><td>列出持久化 session 摘要（id、title、updated、preview）</td></tr>
         <tr><td class="mono">resumeSession(sessionId)</td><td>绑定 agent 并加载历史消息，供 UI 恢复继续聊</td></tr>
@@ -75,7 +75,7 @@
       <ul class="tight">
         <li>不要再拆「输入框插件 / 气泡插件」</li>
         <li>窗口只调 <code>appChat.send</code>，<code>ui.rpc</code> 不要写 agentLoop</li>
-        <li>默认人设只登记在 prompt-context（<code>app-chat:persona</code> section）；不要经 loop.run 旁路</li>
+        <li>默认人设由 <a href="./persona.html">persona</a> 经 prompt-context 出门。不要在 send 里再传 <code>loop.persona</code></li>
       </ul>
     </div>
   </div>

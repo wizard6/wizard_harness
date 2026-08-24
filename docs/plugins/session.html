@@ -77,12 +77,14 @@
       <div class="card">
         <h3 style="margin-top:0">管什么</h3>
         <ul class="tight">
-          <li>开会话 <code>start</code></li>
+          <li>开会话 <code>start</code>（可选 title / workspace）</li>
           <li>追加 <code>turn</code> / <code>message</code> / <code>tool-result</code></li>
-          <li>只读 <code>replay</code> / <code>deriveMessages</code></li>
+          <li>只读 <code>replay</code> / <code>deriveMessages</code> / <code>inspect</code> / <code>peek</code></li>
+          <li>改元数据 <code>patch</code>（title / workspace）</li>
           <li><code>compact</code>（丢掉最老条目）</li>
+          <li>观测台弹窗：列表 + 改 title/workspace（<code>ui.rpc</code>：inspect / peek / patch / open）</li>
           <li>可选落盘：<code>config.persistDir</code> 或 <code>WH_SESSIONS_DIR</code></li>
-          <li>广播 <code>session/start</code>、<code>session/append</code>、<code>session/compact</code></li>
+          <li>广播 <code>session/start</code>、<code>session/append</code>、<code>session/patch</code>、<code>session/compact</code></li>
         </ul>
       </div>
       <div class="card">
@@ -91,7 +93,7 @@
           <li>scope / isolate（可见性在 <code>core/src/scope</code>）</li>
           <li>模型调用、工具执行、agent 循环</li>
           <li>fork/resume、SQLite、从 events.jsonl 重建</li>
-          <li>通用 UI 桥（弹窗只是说明页）</li>
+          <li>通用 UI 桥（弹窗经 <code>ui.rpc</code> 看列表和元数据，不浏览工作区文件）</li>
         </ul>
       </div>
     </div>
@@ -108,10 +110,14 @@
     <table>
       <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
       <tbody>
-        <tr><td class="mono">start({ id?, title? })</td><td>新建会话，成为 current</td><td>id 重复抛错</td></tr>
+        <tr><td class="mono">start({ id?, title?, workspace? })</td><td>新建会话，成为 current；workspace 为本会话编程根。返回带 append/replay 的句柄（进程内用）</td><td>id 重复抛错</td></tr>
+        <tr><td class="mono">open({ id?, title?, workspace? })</td><td>同 start，只返回 SessionInfo（弹窗 RPC 用，不能回传函数）</td><td>id 重复抛错</td></tr>
         <tr><td class="mono">append(kind, data?)</td><td>追加一条冻结条目，seq+1</td><td>未知 kind / data 非 JSON 对象</td></tr>
         <tr><td class="mono">replay()</td><td>只读返回该会话全部条目（保序）</td><td>—</td></tr>
         <tr><td class="mono">get(id) / list() / current()</td><td>查找 / 列举 / 最近 start 的会话</td><td>无则 undefined</td></tr>
+        <tr><td class="mono">inspect()</td><td>元数据列表（id / title / workspace / 条数）+ persistDir</td><td>—</td></tr>
+        <tr><td class="mono">peek(id)</td><td>元数据 + 全量 entries（给弹窗）</td><td>未知 id 抛错</td></tr>
+        <tr><td class="mono">patch(id, { title?, workspace? })</td><td>改标题或工作区；workspace 空字符串则清掉。返回 SessionInfo</td><td>未知 id 抛错</td></tr>
         <tr><td class="mono">deriveMessages(id)</td><td>投影 kind===message 的条目（给 llm）</td><td>未知 id 返回 []</td></tr>
         <tr><td class="mono">compact(id, { keep? })</td><td>丢掉最老条目，保留 keep（默认 40），写一条 compact turn</td><td>未知 id 抛错</td></tr>
       </tbody>
@@ -131,8 +137,9 @@
       <tbody>
         <tr><td class="mono">contracts/src/session.ts</td><td>契约：服务名 + 接口。不属于本插件</td><td>SESSION_SERVICE, SessionService, Session.append</td></tr>
         <tr><td class="mono">plugins/session/src/store.ts</td><td>内存追加日志</td><td>createSessionStore, asData, handle.append / replay</td></tr>
-        <tr><td class="mono">plugins/session/src/index.ts</td><td>插件壳：挂 api、emit、可选 logger、说明弹窗</td><td>register, createSessionStore(emit)</td></tr>
-        <tr><td class="mono">plugins/session/test/session.spec.ts</td><td>start/append/replay/事件/冻结</td><td>—</td></tr>
+        <tr><td class="mono">plugins/session/src/index.ts</td><td>插件壳：挂 api、emit、可选 logger、会话弹窗</td><td>register, createSessionStore(emit), ui.rpc</td></tr>
+        <tr><td class="mono">plugins/session/src/page.ts</td><td>观测台弹窗：会话列表 + 改 title/workspace + 最近 20 条日志</td><td>SESSION_HTML</td></tr>
+        <tr><td class="mono">plugins/session/test/session.spec.ts</td><td>start/open/patch/inspect/replay/事件/冻结</td><td>—</td></tr>
       </tbody>
     </table>
     <div class="card">
@@ -159,8 +166,9 @@
     <table>
       <thead><tr><th>action</th><th>target</th><th>payload</th></tr></thead>
       <tbody>
-        <tr><td class="mono">session/start</td><td>session id</td><td class="mono">{ title? }</td></tr>
+        <tr><td class="mono">session/start</td><td>session id</td><td class="mono">{ title?, workspace? }</td></tr>
         <tr><td class="mono">session/append</td><td>session id</td><td class="mono">{ entry }</td></tr>
+        <tr><td class="mono">session/patch</td><td>session id</td><td class="mono">{ title?, workspace? }</td></tr>
         <tr><td class="mono">session/compact</td><td>session id</td><td class="mono">{ dropped, keep }</td></tr>
       </tbody>
     </table>
@@ -170,6 +178,7 @@
     <div class="card ai">
       <ul class="tight">
         <li>不要在 llm/tools/agent 里再造一份 messages[] 当真相源；只 append / replay 本服务。</li>
+        <li>工作区路径是会话元数据，不是日志条目。不要把 cwd 写进 message。</li>
         <li>不要把 scope 标签写进 session 条目来「模拟隔离」；可见性走 <code>createScope</code>。</li>
         <li>不要在本插件加模型、工具、HTTP、SQLite，除非单独确认。</li>
         <li>扩展事件类型（如 <code>tool/call</code>）应先改 <code>contracts/src/session.ts</code> 的 <code>SessionKind</code>，再改 store 白名单。</li>
@@ -181,7 +190,7 @@
     <div class="card issue">
       <h3 style="margin-top:0">已知问题</h3>
       <ul class="tight">
-        <li><b>落盘可选：</b>GUI/API 默认 <code>~/.wizard-harness/sessions/{id}.json</code>。测试环境（vitest）忽略 <code>WH_SESSIONS_DIR</code>，除非 config.persistDir。重启后 <code>current()</code> 为空，用 <code>list()/get</code>。</li>
+        <li><b>落盘可选：</b>GUI/API 默认 <code>~/.wizard-harness/sessions/{id}.json</code>。vitest worker（<code>VITEST_WORKER_ID</code>）忽略 <code>WH_SESSIONS_DIR</code>，除非 config.persistDir。重启后 <code>current()</code> 为空，用 <code>list()/get</code>。</li>
         <li><b>compact 会改写 seq：</b>不是纯追加；只保留尾部 + 一条 turn。agent-loop 的 <code>compactKeep</code> 默认 0（不自动压）。</li>
         <li><b>无 flush / 崩溃 WAL：</b>每次 append 整文件重写；与 DSH <code>ctx.sessions.flush</code> 不对齐。</li>
         <li><b>模块级 ctx：</b>emit 闭包读插件模块变量；单进程单实例没问题，测并行或多实例会串。</li>
@@ -195,7 +204,7 @@
       <ul class="tight">
         <li>YAML/DSH 全量 SessionEvent 目录、surface replace</li>
         <li>SQLite / 从 events.jsonl 重建会话</li>
-        <li>通用弹窗 RPC（当前 ui 是静态说明页）</li>
+        <li>原生文件夹对话框（弹窗用路径文本；App demo 同）</li>
       </ul>
     </div>
 

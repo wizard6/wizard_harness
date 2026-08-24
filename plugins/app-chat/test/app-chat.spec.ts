@@ -115,4 +115,27 @@ describe('app-chat 插件', () => {
     const again = await chat.resumeSession(sess.id);
     expect(again.agentId).toBe(resumed.agentId);
   });
+
+  it('无 agentId / sessionId 时把 workspace 转交 loop.run', async () => {
+    const seen: unknown[] = [];
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(agentPlugin);
+    await harness.registry.register(fakePromptContext());
+    await harness.registry.register(
+      fakeLoop(async (opts) => {
+        seen.push(opts);
+        return { agentId: 'a1', sessionId: 's', text: 'ok', steps: 1, workspace: opts?.workspace };
+      }),
+    );
+    await harness.registry.register(appChatPlugin);
+    const chat = harness.services.get<AppChatService>('appChat')!;
+    const out = await chat.send({ prompt: 'hi', workspace: '.' });
+    expect(seen[0]).toMatchObject({ prompt: 'hi', workspace: '.' });
+    expect(out.workspace).toBeTruthy();
+
+    const again = await chat.send({ prompt: '二', agentId: out.agentId, workspace: '/tmp/ignored' });
+    expect(again.agentId).toBe('a1');
+    expect((seen[1] as { workspace?: string }).workspace).toBeUndefined();
+  });
 });

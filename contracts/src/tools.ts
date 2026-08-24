@@ -11,8 +11,13 @@ export const TOOLS_SERVICE = 'tools';
 /** 与 core ScopeKey 同构的不透明引用 */
 export type ScopeRef = object;
 
+export interface ToolCallContext {
+  sessionId: string;
+  callId: string;
+}
+
 export interface ToolHandler {
-  (args: Record<string, unknown>): Promise<unknown> | unknown;
+  (args: Record<string, unknown>, call?: ToolCallContext): Promise<unknown> | unknown;
 }
 
 export interface ToolSpec {

@@ -70,7 +70,7 @@ export function createToolRegistry(
     let ok = true;
     let content: string;
     try {
-      content = asContent(await spec.handler(args));
+      content = asContent(await spec.handler(args, { sessionId: sess.id, callId }));
     } catch (err) {
       ok = false;
       content = String(err);

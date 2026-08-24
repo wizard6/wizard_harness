@@ -6,6 +6,8 @@ export interface AppChatSendOpts {
   agentId?: string;
   sessionId?: string;
   useTools?: boolean;
+  /** 无 agentId 时写入新 session.workspace */
+  workspace?: string;
 }
 
 export interface AppChatMessagePreview {
@@ -27,6 +29,7 @@ export interface AppChatSendResult {
   text: string;
   steps?: number;
   provider?: string;
+  workspace?: string;
 }
 
 export interface AppChatResumeResult {

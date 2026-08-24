@@ -1,5 +1,6 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
 import type { PromptContextService, SessionService, ToolCallResult, ToolInfo, ToolSpec, ToolsService, TrajectoryService } from '@wizard-harness/contracts';
+import { TOOLS_HTML } from './page.js';
 import { createToolRegistry } from './registry.js';
 
 /**
@@ -67,28 +68,10 @@ const toolsPlugin: Plugin = {
   api,
   ui: {
     title: '工具注册表',
-    width: 480,
-    height: 360,
-    content: [
-      '<!doctype html><html lang="zh"><head><meta charset="utf-8"><style>',
-      'body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#16161e;color:#e6e6ef}',
-      '.card{padding:22px}',
-      'h1{font-size:16px;margin:0 0 6px}',
-      '.desc{margin:0 0 14px;font-size:13px;color:#a8a8bd;line-height:1.6}',
-      '.row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #262634}',
-      '.k{color:#a8a8bd}.v{color:#ffa657;font-family:ui-monospace,Consolas,monospace}',
-      '.badge{display:inline-block;font-size:11px;padding:2px 10px;border-radius:12px;background:rgba(255,166,87,.12);color:#ffa657;margin-bottom:12px}',
-      '</style></head><body><div class="card">',
-      '<span class="badge">● tools 服务</span>',
-      '<h1>工具注册表</h1>',
-      '<p class="desc">ctx.tools.register / call。调用写入 session，不另存执行记录。内置 echo。agent 只应走本服务调工具。</p>',
-      '<div class="row"><span class="k">服务名</span><span class="v">tools</span></div>',
-      '<div class="row"><span class="k">依赖</span><span class="v">session · promptContext（必选）</span></div>',
-      '<div class="row"><span class="k">内置</span><span class="v">echo</span></div>',
-      '<div class="row"><span class="k">观测</span><span class="v">tools/register · tools/call · tools/result</span></div>',
-      '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/tools.html</span></div>',
-      '</div></body></html>',
-    ].join(''),
+    width: 560,
+    height: 560,
+    rpc: { tools: ['list'] },
+    content: TOOLS_HTML,
   },
   register(c) {
     ctx = c;

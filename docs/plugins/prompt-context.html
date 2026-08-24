@@ -62,7 +62,7 @@ ctx.promptContext.inspect()  // 素材 + 最近成品</pre>
     </table>
 
     <h2>观测</h2>
-    <p>弹窗左右对照：<b>可获取素材</b>与 <b>拼接成品</b>。<code>inspect()</code> 只读登记表。「试拼」才 assemble。</p>
+    <p>弹窗左右对照：<b>可获取素材</b>与 <b>拼接成品</b>。<code>inspect()</code> 只读登记表。「试拼」才 assemble。默认人设由 <a href="./persona.html">persona</a> 登记 <code>persona:core</code> / <code>persona:memory</code>（live 函数）。</p>
     <p><b>依赖：</b>agent-loop 对本服务为必选 inject；缺 prompt-context 时 agent-loop 在 boot 阶段挂起。</p>
     <p><span class="mono">prompt-context/assemble</span> · <span class="mono">prompt-context/apply</span> · <span class="mono">prompt-context/persona</span></p>
     <p><code>ui.rpc</code>：<code>inspect</code> / <code>assemble</code>。</p>

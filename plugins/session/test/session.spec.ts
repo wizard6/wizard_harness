@@ -13,6 +13,7 @@ describe('session 插件', () => {
   it('服务名契约绑定', () => {
     expect(SESSION_SERVICE).toBe('session');
     expect(sessionPlugin.manifest.provides).toEqual(['session']);
+    expect(sessionPlugin.ui?.rpc).toEqual({ session: ['inspect', 'peek', 'patch', 'open'] });
   });
 
   it('start / append 三类条目 / replay 保序；观测 session/start 与 session/append', async () => {
@@ -37,6 +38,27 @@ describe('session 插件', () => {
     expect(svc!.current()?.id).toBe('s1');
     expect(seen.some((e) => e.action === 'session/start' && e.target === 's1')).toBe(true);
     expect(seen.filter((e) => e.action === 'session/append')).toHaveLength(4);
+  });
+
+  it('workspace 写入 start；patch 可改 title/workspace；inspect 列出元数据', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    const svc = harness.services.get<SessionService>('session')!;
+    const s = svc.start({ id: 'w1', title: '甲', workspace: '.' });
+    expect(s.workspace).toBeTruthy();
+    expect(s.workspace).toBe(svc.peek('w1').workspace);
+    const patched = svc.patch('w1', { title: '乙', workspace: '' });
+    expect(patched).toMatchObject({ id: 'w1', title: '乙' });
+    expect(patched.workspace).toBeUndefined();
+    expect(svc.get('w1')?.title).toBe('乙');
+    expect(svc.get('w1')?.workspace).toBeUndefined();
+    const opened = svc.open({ id: 'w2', title: '丙' });
+    expect(opened).toMatchObject({ id: 'w2', title: '丙', entries: 0 });
+    expect(svc.current()?.id).toBe('w2');
+    const snap = svc.inspect();
+    expect(snap.currentId).toBe('w2');
+    expect(snap.persistDir).toBeUndefined();
+    expect(snap.sessions.map((x) => x.id).sort()).toEqual(['w1', 'w2']);
   });
 
   it('未知 kind / 重复 id 失败；条目 data 冻结', async () => {
@@ -71,10 +93,11 @@ describe('session 持久化', () => {
     const dir = mkdtempSync(join(tmpdir(), 'wh-sess-'));
     try {
       const a = createSessionStore(() => {}, { persistDir: dir });
-      a.start({ id: 'p' }).append('message', { role: 'user', content: 'hi' });
+      a.start({ id: 'p', workspace: dir }).append('message', { role: 'user', content: 'hi' });
       const b = createSessionStore(() => {}, { persistDir: dir });
       expect(b.get('p')?.replay()).toHaveLength(1);
       expect(b.get('p')?.replay()[0]?.data.content).toBe('hi');
+      expect(b.get('p')?.workspace).toBeTruthy();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

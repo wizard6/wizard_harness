@@ -41,7 +41,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
       const traj = ctx.trajectory ?? ctx.get<TrajectoryService>('trajectory');
       const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 12));
       let id = opts.agentId?.trim();
-      if (!id) id = agents.spawn({ title: 'agent-loop' }).id;
+      if (!id) id = agents.spawn({ title: 'agent-loop', workspace: opts.workspace }).id;
       const handle = agents.get(id);
       if (!handle) throw new Error(`agent 不存在：${id}`);
       const llm = need(handle.ctx.llm ?? handle.ctx.get<LlmService>('llm'), 'llm');
@@ -125,7 +125,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
 
         ctx.emit({ action: 'agent-loop/end', target: id, payload: { steps: cycles, reason: doneReason } });
         trace?.append('run-end', { steps: cycles, text: result.text, provider: result.provider, reason: doneReason });
-        return { agentId: id, sessionId, text: result.text, steps: cycles, provider: result.provider };
+        return { agentId: id, sessionId, text: result.text, steps: cycles, provider: result.provider, workspace: session?.get(sessionId)?.workspace };
       } catch (err) {
         trace?.append('run-end', { error: String(err), steps: cycles });
         throw err;

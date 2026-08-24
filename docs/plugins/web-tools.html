@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>web-tools 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>web-tools — 网页工具套件</h1>
+      <p class="lede">搜索 + 阅读。对齐常见 agent 的渐进披露：先大纲（~标题树），再按节读取。默认不把整页灌进上下文。</p>
+      <div class="badges">
+        <span class="badge ok">id: web-tools</span>
+        <span class="badge ok">provides: webTools</span>
+        <span class="badge">inject: tools</span>
+        <span class="badge">bundle: app</span>
+      </div>
+    </header>
+
+    <h2>1. 推荐用法</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b><code>web_search</code> → <code>web_outline</code> → <code>web_read heading=…</code>。要结构用 <code>mode=markdown</code>，只要正文用 <code>mode=text</code>。</p>
+    </div>
+    <ol>
+      <li>搜索只要 title / url / snippet</li>
+      <li>outline 只返回标题树和每节体积</li>
+      <li>read 指定 heading 只拿那一节；长页未指定 heading 时返回预览 + 大纲，拒绝倾倒</li>
+      <li>页内关键词用 web_find，再回头 read 那一节</li>
+    </ol>
+
+    <h2>2. 登记到 tools</h2>
+    <table>
+      <thead><tr><th>名字</th><th>args</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">web_search</td><td class="mono">query, count?</td><td>默认 DuckDuckGo HTML；有 <code>WH_BRAVE_API_KEY</code> 走 Brave；有 <code>WH_SEARX_URL</code> 走 SearXNG</td></tr>
+        <tr><td class="mono">web_outline</td><td class="mono">url</td><td>标题树 + chars / approxTokens</td></tr>
+        <tr><td class="mono">web_read</td><td class="mono">url, heading?, mode?, offset?, max_chars?</td><td>markdown 保留标题/列表/链接；text 去掉。默认 max 6000 字符</td></tr>
+        <tr><td class="mono">web_find</td><td class="mono">url, query</td><td>页内短摘录 + 所属章节</td></tr>
+      </tbody>
+    </table>
+    <p>同 URL 内存缓存 10 分钟，outline 后再 read 不重复抓取。拒绝 localhost / 私网（防 SSRF）。弹窗只暴露 <code>info</code>。</p>
+
+    <h2>3. 给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在 loop 里直接 fetch。出口只有 <code>ctx.tools.call</code>。</li>
+        <li>不要默认返回全文 HTML。结构用 markdown，纯文本用 text，长页走 outline。</li>
+        <li>不要在弹窗声明 search/read 的 rpc。</li>
+        <li>无无头浏览器 / 无 PDF。JS 渲染站可能是空壳。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/web-tools/</span> · 契约 <span class="mono">contracts/src/web-tools.ts</span></p>
+  </div>
+</body>
+</html>

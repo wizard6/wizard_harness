@@ -7,12 +7,16 @@ import sessionPlugin from '../../session/src/index.js';
 import agentPlugin from '../../agent/src/index.js';
 import promptContextPlugin from '../../prompt-context/src/index.js';
 import toolsPlugin from '../src/index.js';
+import { TOOLS_HTML } from '../src/page.js';
 
 describe('tools 插件', () => {
   it('服务名契约绑定 + 必选 inject session · promptContext', () => {
     expect(TOOLS_SERVICE).toBe('tools');
     expect(toolsPlugin.manifest.provides).toEqual(['tools']);
     expect(toolsPlugin.inject).toEqual({ session: true, promptContext: true, logger: false, trajectory: false });
+    expect(toolsPlugin.ui?.rpc).toEqual({ tools: ['list'] });
+    expect(TOOLS_HTML).toContain('wh.call("tools","list"');
+    expect(TOOLS_HTML).toContain('persona_');
   });
 
   it('缺 promptContext 时 boot 挂起 tools', async () => {

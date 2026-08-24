@@ -1,0 +1,4 @@
+# 忽略 temp 目录下所有内容（除 .gitignore 与 README.md 外）
+*
+!.gitignore
+!README.md

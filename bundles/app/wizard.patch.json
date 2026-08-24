@@ -3,6 +3,8 @@
     "after": "agent-loop",
     "insert": [
       { "id": "sandbox", "name": "sandbox" },
+      { "id": "dev-tools", "name": "dev-tools" },
+      { "id": "web-tools", "name": "web-tools" },
       { "id": "workflow", "name": "workflow" },
       { "id": "workflow-nodes", "name": "workflow-nodes" },
       { "id": "app-workflow", "name": "app-workflow" },

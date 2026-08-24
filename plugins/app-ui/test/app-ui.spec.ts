@@ -47,7 +47,12 @@ describe('app-ui 插件', () => {
     expect(APP_UI_HTML).toContain('pullPromptContext');
     expect(APP_UI_HTML).toContain('setAgentChip');
     expect(APP_UI_HTML).toContain('prompt-context');
+    expect(APP_UI_HTML).toContain('id="ws"');
+    expect(APP_UI_HTML).toContain('workspace');
     expect(APP_UI_HTML).toContain('renderTrajectory');
+    expect(APP_UI_HTML).toMatch(/<ul class="formats"[^>]*>\s*<li>markdown<\/li>\s*<\/ul>/);
+    expect(APP_UI_HTML).toContain('function renderMarkdown');
+    expect(APP_UI_HTML).toContain('function mdHtml');
   });
 
   it('有 appChat 即可注册，并提供 appUi 服务', async () => {

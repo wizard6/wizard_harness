@@ -15,6 +15,9 @@ import type { SandboxService } from './sandbox.js';
 import type { FileManagerService } from './file-manager.js';
 import type { CodeBrowserService } from './code-browser.js';
 import type { CodeEditorService } from './code-editor.js';
+import type { DevToolsService } from './dev-tools.js';
+import type { WebToolsService } from './web-tools.js';
+import type { PersonaService } from './persona.js';
 import type { WorkflowService } from './workflow.js';
 import type { WorkflowNodesService } from './workflow-nodes.js';
 import type { AppWorkflowService } from './app-workflow.js';
@@ -26,7 +29,17 @@ export type { EventsService } from './events.js';
 export { CONSOLE_SERVICE } from './console.js';
 export type { ConsoleService, ExecResult } from './console.js';
 export { SESSION_SERVICE } from './session.js';
-export type { Session, SessionEntry, SessionKind, SessionService } from './session.js';
+export type {
+  Session,
+  SessionEntry,
+  SessionInfo,
+  SessionInspect,
+  SessionKind,
+  SessionPatch,
+  SessionPeek,
+  SessionService,
+  SessionStartOpts,
+} from './session.js';
 export { LLM_SERVICE } from './llm.js';
 export type {
   LlmCompleteInput,
@@ -37,7 +50,16 @@ export type {
   LlmToolSpec,
 } from './llm.js';
 export { TOOLS_SERVICE } from './tools.js';
-export type { ToolCallResult, ToolHandler, ToolInfo, ToolSpec, ToolsService, ToolsView, ScopeRef } from './tools.js';
+export type {
+  ToolCallContext,
+  ToolCallResult,
+  ToolHandler,
+  ToolInfo,
+  ToolSpec,
+  ToolsService,
+  ToolsView,
+  ScopeRef,
+} from './tools.js';
 export { AGENT_SERVICE } from './agent.js';
 export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 export { AGENT_LOOP_SERVICE } from './agent-loop.js';
@@ -78,6 +100,21 @@ export { CODE_BROWSER_SERVICE } from './code-browser.js';
 export type { CodeBrowserInfo, CodeBrowserReadResult, CodeBrowserService } from './code-browser.js';
 export { CODE_EDITOR_SERVICE } from './code-editor.js';
 export type { CodeEditorInfo, CodeEditorReadResult, CodeEditorService } from './code-editor.js';
+export { DEV_TOOLS_SERVICE } from './dev-tools.js';
+export type { DevToolsInfo, DevToolsService } from './dev-tools.js';
+export { WEB_TOOLS_SERVICE } from './web-tools.js';
+export type { WebToolsInfo, WebToolsService } from './web-tools.js';
+export { PERSONA_SERVICE } from './persona.js';
+export type {
+  PersonaAgentRef,
+  PersonaMemory,
+  PersonaPreview,
+  PersonaProfile,
+  PersonaRememberInput,
+  PersonaSavePatch,
+  PersonaService,
+  PersonaSnapshot,
+} from './persona.js';
 export { WORKFLOW_SERVICE, workflowToolName } from './workflow.js';
 export type {
   WorkflowExecOpts,
@@ -128,6 +165,9 @@ declare module '@wizard-harness/core' {
     readonly fileManager?: FileManagerService;
     readonly codeBrowser?: CodeBrowserService;
     readonly codeEditor?: CodeEditorService;
+    readonly devTools?: DevToolsService;
+    readonly webTools?: WebToolsService;
+    readonly persona?: PersonaService;
     readonly workflow?: WorkflowService;
     readonly workflowNodes?: WorkflowNodesService;
     readonly appWorkflow?: AppWorkflowService;

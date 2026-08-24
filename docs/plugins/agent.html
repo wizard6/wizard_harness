@@ -76,7 +76,7 @@
     <table>
       <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
       <tbody>
-        <tr><td class="mono">spawn({ id?, sessionId?, title? })</td><td>开 scope；无 sessionId 则 start 新会话；overlay provide agent.live</td><td>id 重复 / session 不存在抛错</td></tr>
+        <tr><td class="mono">spawn({ id?, sessionId?, title?, workspace? })</td><td>开 scope；无 sessionId 则 start 新会话（可带 workspace）；overlay provide agent.live</td><td>id 重复 / session 不存在抛错</td></tr>
         <tr><td class="mono">get(id)</td><td>活实例句柄（含 scoped ctx）</td><td>无则 undefined</td></tr>
         <tr><td class="mono">list()</td><td>id + sessionId，不含 ctx</td><td>—</td></tr>
         <tr><td class="mono">stop(id)</td><td>dispose scope，撕 overlay</td><td>未知 id 抛错</td></tr>
