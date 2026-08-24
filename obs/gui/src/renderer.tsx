@@ -53,6 +53,8 @@ declare global {
       qualityData(): Promise<QualityData>;
       rerunCheck(): Promise<QualityData & { error?: string }>;
       openFile(rel: string): Promise<{ ok: boolean; error?: string }>;
+      openCodeEditor(rel: string): Promise<{ ok: boolean; error?: string }>;
+      openCodeBrowser(rel: string): Promise<{ ok: boolean; error?: string }>;
     };
   }
 }
@@ -171,8 +173,8 @@ function QualityApp(): React.ReactElement {
       onRefresh={() => void load('manual')}
       onRuleScan={() => void runRuleScan()}
       onOpenFile={(rel) => {
-        void window.wh.openFile(rel).then((r) => {
-          if (!r.ok) setError(r.error ?? '无法打开文件');
+        void window.wh.openCodeBrowser(rel).then((r) => {
+          if (!r.ok) setError(r.error ?? '无法打开代码浏览器');
         });
       }}
     />

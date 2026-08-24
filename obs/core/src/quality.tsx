@@ -48,7 +48,7 @@ export interface QualityPanelProps {
   onRefresh?: () => void;
   /** 基线扫描回调（跑 quality-check 并更新基线） */
   onRuleScan?: () => void;
-  /** 在编辑器中打开源文件 */
+  /** 在代码浏览器独立窗口中打开 */
   onOpenFile?: (rel: string) => void;
 }
 
@@ -180,7 +180,15 @@ function buildFolderTree(all: QualityRow[], counted: QualityRow[]): FolderNode {
 }
 
 /** 质量检测面板：一次只看一个维度，基线扫描与智能评审互不混用 */
-export function QualityPanel({ data, error, loading, scanning, onRefresh, onRuleScan, onOpenFile }: QualityPanelProps): React.ReactElement {
+export function QualityPanel({
+  data,
+  error,
+  loading,
+  scanning,
+  onRefresh,
+  onRuleScan,
+  onOpenFile,
+}: QualityPanelProps): React.ReactElement {
   const [dim, setDim] = useState<Dim>('base');
   const [baseFilter, setBaseFilter] = useState<Filter>('all');
   const [smartFilter, setSmartFilter] = useState<Filter>('all');
@@ -357,7 +365,7 @@ export function QualityPanel({ data, error, loading, scanning, onRefresh, onRule
         <button
           type="button"
           className="qp-name"
-          title={onOpenFile ? '在编辑器中打开' : name}
+          title={onOpenFile ? '在代码浏览器窗口打开' : name}
           onClick={() => onOpenFile?.(r.rel)}
         >
           {name}

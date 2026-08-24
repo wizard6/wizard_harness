@@ -13,5 +13,7 @@ contextBridge.exposeInMainWorld('wh', {
   qualityData: () => ipcRenderer.invoke('wh:quality-data'),
   rerunCheck: () => ipcRenderer.invoke('wh:rerun-check'),
   openFile: (rel) => ipcRenderer.invoke('wh:open-file', rel),
+  openCodeEditor: (rel) => ipcRenderer.invoke('wh:open-code-editor', rel),
+  openCodeBrowser: (rel) => ipcRenderer.invoke('wh:open-code-browser', rel),
   windowControl: (action) => ipcRenderer.send('wh:window-control', action),
 });

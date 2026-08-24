@@ -12,6 +12,9 @@ import type { AppUiService } from './app-ui.js';
 import type { AppChatService } from './app-chat.js';
 import type { TrajectoryService } from './trajectory.js';
 import type { SandboxService } from './sandbox.js';
+import type { FileManagerService } from './file-manager.js';
+import type { CodeBrowserService } from './code-browser.js';
+import type { CodeEditorService } from './code-editor.js';
 import type { WorkflowService } from './workflow.js';
 import type { WorkflowNodesService } from './workflow-nodes.js';
 import type { AppWorkflowService } from './app-workflow.js';
@@ -53,7 +56,6 @@ export type {
   PromptSection,
   PromptSource,
   PromptSourceKind,
-  ScopeRef,
 } from './prompt-context.js';
 export { APP_UI_SERVICE } from './app-ui.js';
 export type { AppUiService } from './app-ui.js';
@@ -70,6 +72,12 @@ export type {
 } from './trajectory.js';
 export { SANDBOX_SERVICE } from './sandbox.js';
 export type { SandboxEntry, SandboxInfo, SandboxList, SandboxService } from './sandbox.js';
+export { FILE_MANAGER_SERVICE } from './file-manager.js';
+export type { FileManagerEntry, FileManagerInfo, FileManagerList, FileManagerService } from './file-manager.js';
+export { CODE_BROWSER_SERVICE } from './code-browser.js';
+export type { CodeBrowserInfo, CodeBrowserReadResult, CodeBrowserService } from './code-browser.js';
+export { CODE_EDITOR_SERVICE } from './code-editor.js';
+export type { CodeEditorInfo, CodeEditorReadResult, CodeEditorService } from './code-editor.js';
 export { WORKFLOW_SERVICE, workflowToolName } from './workflow.js';
 export type {
   WorkflowExecOpts,
@@ -117,6 +125,9 @@ declare module '@wizard-harness/core' {
     readonly appChat?: AppChatService;
     readonly trajectory?: TrajectoryService;
     readonly sandbox?: SandboxService;
+    readonly fileManager?: FileManagerService;
+    readonly codeBrowser?: CodeBrowserService;
+    readonly codeEditor?: CodeEditorService;
     readonly workflow?: WorkflowService;
     readonly workflowNodes?: WorkflowNodesService;
     readonly appWorkflow?: AppWorkflowService;

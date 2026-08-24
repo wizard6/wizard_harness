@@ -197,6 +197,24 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/code-browser:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/code-editor:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/console:
     dependencies:
       '@wizard-harness/contracts':
@@ -207,6 +225,15 @@ importers:
         version: link:../../core
 
   plugins/events:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/file-manager:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^

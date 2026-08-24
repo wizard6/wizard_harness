@@ -250,6 +250,10 @@ async function init() {
   }
   bus.subscribe(core.createFileSink(file));
 
+  if (!process.env.WH_WORKSPACE_ROOT) {
+    process.env.WH_WORKSPACE_ROOT = REPO_ROOT;
+  }
+
   // 壳配置：不想启动的插件 id 写进 disabledPlugins
   const config = { disabledPlugins: [] };
   const pluginsDir = path.resolve(__dirname, '..', '..', '..', 'plugins');
@@ -609,6 +613,9 @@ const CALL_ALLOW = {
   agent: ['list', 'stop'],
   promptContext: ['assemble', 'apply', 'setPersona', 'getPersona', 'inspect'],
   agentLoop: ['run', 'cancel'],
+  codeEditor: ['info', 'read', 'write', 'queueOpen'],
+  codeBrowser: ['info', 'read', 'queueOpen'],
+  fileManager: ['info', 'list'],
 };
 
 async function invokeService(service, method, args) {
@@ -711,6 +718,55 @@ function spawnEditor(cmd, abs) {
     });
   });
 }
+
+function navigatePluginWindow(id, rel, globalFn) {
+  const existing = pluginWindows.get(id);
+  const safe = String(rel).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  if (existing && !existing.isDestroyed()) {
+    existing.focus();
+    void existing.webContents.executeJavaScript(
+      `typeof ${globalFn}==="function"&&${globalFn}("${safe}")`,
+    );
+    return true;
+  }
+  return false;
+}
+
+function openCodeEditorWindow(rel) {
+  const svc = harness?.services.get('codeEditor');
+  if (svc && typeof svc.queueOpen === 'function') svc.queueOpen(String(rel));
+  if (navigatePluginWindow('code-editor', rel, 'window.__whOpenFile')) return;
+  openPluginWindow('code-editor');
+}
+
+function openCodeBrowserWindow(rel) {
+  const svc = harness?.services.get('codeBrowser');
+  if (svc && typeof svc.queueOpen === 'function') svc.queueOpen(String(rel));
+  if (navigatePluginWindow('code-browser', rel, 'window.__whOpenFile')) return;
+  openPluginWindow('code-browser');
+}
+
+ipcMain.handle('wh:open-code-editor', async (_evt, rel) => {
+  if (!harness) return { ok: false, error: 'harness 未就绪' };
+  if (!rel || typeof rel !== 'string') return { ok: false, error: '缺少路径' };
+  try {
+    openCodeEditorWindow(rel);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('wh:open-code-browser', async (_evt, rel) => {
+  if (!harness) return { ok: false, error: 'harness 未就绪' };
+  if (!rel || typeof rel !== 'string') return { ok: false, error: '缺少路径' };
+  try {
+    openCodeBrowserWindow(rel);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
 
 ipcMain.handle('wh:open-file', async (_evt, rel) => {
   const abs = resolveRepoFile(rel);
