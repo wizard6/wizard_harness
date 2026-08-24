@@ -54,7 +54,7 @@
       <p style="margin:0"><b>一句话：</b>App 面不要直接调 <code>agentLoop</code>。换模型循环时只改本插件。</p>
     </div>
     <ul class="tight">
-      <li>管：<code>send</code> / <code>cancel</code>、默认 systemPrompt、有无工具时的 maxSteps</li>
+      <li>管：<code>send</code> / <code>cancel</code>、默认 persona（经 loop 转交 setPersona）、有无工具时的 maxSteps</li>
       <li>不管：窗口 HTML、气泡、session / llm 实现</li>
     </ul>
 
@@ -73,6 +73,7 @@
       <ul class="tight">
         <li>不要再拆「输入框插件 / 气泡插件」</li>
         <li>窗口只调 <code>appChat.send</code>，<code>ui.rpc</code> 不要写 agentLoop</li>
+        <li>默认人设最终应只登记在 prompt-context（结构改造 #2）；现在仍经 send→loop.persona 转交</li>
       </ul>
     </div>
   </div>

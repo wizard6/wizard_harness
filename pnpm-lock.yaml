@@ -160,6 +160,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/app-workflow:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/console:
     dependencies:
       '@wizard-harness/contracts':
@@ -214,6 +223,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/sandbox:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/session:
     dependencies:
       '@wizard-harness/contracts':
@@ -233,6 +251,24 @@ importers:
         version: link:../../core
 
   plugins/trajectory:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/workflow:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/workflow-nodes:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^

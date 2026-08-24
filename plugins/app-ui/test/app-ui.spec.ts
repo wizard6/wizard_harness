@@ -21,12 +21,17 @@ describe('app-ui 插件', () => {
   it('薄壳：inject appChat，不直接绑 agentLoop', () => {
     expect(APP_UI_SERVICE).toBe('appUi');
     expect(appUiPlugin.manifest.provides).toEqual(['appUi']);
-    expect(appUiPlugin.inject).toEqual({ appChat: true, trajectory: false, logger: false });
+    expect(appUiPlugin.inject).toEqual({ appChat: true, trajectory: false, sandbox: false, logger: false });
     expect(appUiPlugin.ui?.rpc).toEqual({
       appChat: ['send', 'cancel'],
       trajectory: ['latest', 'list', 'snapshot'],
+      sandbox: ['info', 'list'],
     });
+    expect(APP_UI_HTML).not.toContain('Run workflow');
+    expect(APP_UI_HTML).not.toContain('workflow');
     expect(APP_UI_HTML).toContain('本轮轨迹');
+    expect(APP_UI_HTML).toContain('New Session');
+    expect(APP_UI_HTML).toContain('pullSandbox');
     expect(APP_UI_HTML).toContain('renderTrajectory');
   });
 

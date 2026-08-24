@@ -2,6 +2,10 @@
   {
     "after": "agent-loop",
     "insert": [
+      { "id": "sandbox", "name": "sandbox" },
+      { "id": "workflow", "name": "workflow" },
+      { "id": "workflow-nodes", "name": "workflow-nodes" },
+      { "id": "app-workflow", "name": "app-workflow" },
       { "id": "app-chat", "name": "app-chat" },
       { "id": "app-ui", "name": "app-ui" }
     ]

@@ -11,6 +11,10 @@ import type { PromptContextService } from './prompt-context.js';
 import type { AppUiService } from './app-ui.js';
 import type { AppChatService } from './app-chat.js';
 import type { TrajectoryService } from './trajectory.js';
+import type { SandboxService } from './sandbox.js';
+import type { WorkflowService } from './workflow.js';
+import type { WorkflowNodesService } from './workflow-nodes.js';
+import type { AppWorkflowService } from './app-workflow.js';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -40,11 +44,15 @@ export type {
   AssembleContext,
   AssembledContextEntry,
   AssembledSection,
+  PromptApplied,
   PromptAssembly,
   PromptContextBinding,
   PromptContextEntry,
   PromptContextService,
+  PromptInspect,
   PromptSection,
+  PromptSource,
+  PromptSourceKind,
   ScopeRef,
 } from './prompt-context.js';
 export { APP_UI_SERVICE } from './app-ui.js';
@@ -60,6 +68,30 @@ export type {
   TrajectorySpan,
   TrajectorySummary,
 } from './trajectory.js';
+export { SANDBOX_SERVICE } from './sandbox.js';
+export type { SandboxEntry, SandboxInfo, SandboxList, SandboxService } from './sandbox.js';
+export { WORKFLOW_SERVICE, workflowToolName } from './workflow.js';
+export type {
+  WorkflowExecOpts,
+  WorkflowGraph,
+  WorkflowListedKind,
+  WorkflowNode,
+  WorkflowNodeAsTool,
+  WorkflowNodeContext,
+  WorkflowNodeHandler,
+  WorkflowNodePorts,
+  WorkflowNodeRecord,
+  WorkflowRun,
+  WorkflowRunOpts,
+  WorkflowService,
+  WorkflowWire,
+} from './workflow.js';
+export { WORKFLOW_AGENT_KIND, WORKFLOW_AGENT_PORTS } from './workflow-agent.js';
+export type { WorkflowAgentNodeOutput } from './workflow-agent.js';
+export { WORKFLOW_NODES_SERVICE } from './workflow-nodes.js';
+export type { WorkflowNodeKindInfo, WorkflowNodesService } from './workflow-nodes.js';
+export { APP_WORKFLOW_SERVICE } from './app-workflow.js';
+export type { AppWorkflowService } from './app-workflow.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
@@ -84,5 +116,9 @@ declare module '@wizard-harness/core' {
     readonly appUi?: AppUiService;
     readonly appChat?: AppChatService;
     readonly trajectory?: TrajectoryService;
+    readonly sandbox?: SandboxService;
+    readonly workflow?: WorkflowService;
+    readonly workflowNodes?: WorkflowNodesService;
+    readonly appWorkflow?: AppWorkflowService;
   }
 }

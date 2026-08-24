@@ -550,7 +550,7 @@ ipcMain.handle('wh:scan-plugins', async () => {
 /** 观测台试跑白名单（与 obs:api DEFAULT_EXPOSE 对齐，不含 console/tools.call） */
 const CALL_ALLOW = {
   agent: ['list', 'stop'],
-  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona'],
+  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona', 'inspect'],
   agentLoop: ['run', 'cancel'],
 };
 
@@ -751,8 +751,12 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
-/** 系统托盘：常驻后台 + 快捷菜单（观测台 / 质量检测 / 退出） */
+/** 系统托盘：常驻后台 + 快捷菜单（观测台 / App demo / 质量检测 / Restart / 退出） */
 let tray = null;
+function restartApp() {
+  app.relaunch();
+  app.exit(0);
+}
 function setupTray() {
   const icon = trayIcon && !trayIcon.isEmpty() ? trayIcon : nativeImage.createFromPath(process.execPath);
   tray = new Tray(icon);
@@ -761,8 +765,10 @@ function setupTray() {
     Menu.buildFromTemplate([
       { label: '显示观测台', click: () => openRegistryWindow() },
       { label: '打开 App demo', click: () => openPluginWindow('app-ui') },
+      { label: '打开 Workflow demo', click: () => openPluginWindow('app-workflow') },
       { label: '打开质量检测', click: () => openQualityWindow() },
       { type: 'separator' },
+      { label: 'Restart', click: () => restartApp() },
       { label: '退出', click: () => app.quit() },
     ]),
   );

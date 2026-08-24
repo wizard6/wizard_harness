@@ -18,11 +18,13 @@
 | 9 | ui-bridge | 弹窗白名单 RPC | 已落地 | 插件 `ui.rpc` 声明才放行，不是任意方法桥 |
 | 10 | app-ui-plugin | App demo 收成插件 + profile 复合 | 已落地 | 产品面也是插件，不要写死在观测台 |
 
+结构债（卸掉 prompt-context App 仍能聊等）：逐项清单 [`docs/agent-结构改造.md`](./agent-结构改造.md)，不要把插件焊回一个大 Agent。
+
 ## 实现结果
 
 ### 1. 观测台 RPC + 试跑
 
-- **obs:api**：未设 `WH_EXPOSE` 时默认暴露 `agent.list|stop`、`systemPrompt.set|get|apply`、`agentLoop.run|cancel`。`off` 或 `{}` 关闭。不含 `console.exec` / `tools.call`。
+- **obs:api**：未设 `WH_EXPOSE` 时默认暴露 `agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`。`off` 或 `{}` 关闭。不含 `console.exec` / `tools.call`。
 - **观测台**：独立窗口 **App demo**（标题栏 / 托盘进入），经 IPC `wh:call-service` 调同一白名单。`agent.spawn` 不暴露（句柄带 ctx，不能 JSON）。
 - 文档：`README.md` 环境变量；本页。
 
@@ -70,6 +72,7 @@
 ### 10. App demo 是插件
 
 - `app-chat`：包装 `agentLoop`（默认提示词 / 步数），无窗口。
-- `app-ui`：薄壳窗口，`inject: appChat`（轨迹可选），`ui.rpc` 放行 `appChat.send|cancel` 与 `trajectory.latest|list|snapshot`。右栏展示本轮时间线。
-- 组合：`bundles/app` insert `app-chat` 再 `app-ui`。观测台只 `openPlugin('app-ui')`。
-- 文档：`docs/plugins/app-chat.html`、`docs/plugins/app-ui.html`。
+- `app-ui`：薄壳聊天窗口，`inject: appChat`（轨迹 / 沙箱可选），`ui.rpc` 放行 `appChat.send|cancel`、`trajectory.latest|list|snapshot`、`sandbox.info|list`。右栏展示本轮时间线，顶栏显示沙箱 root。
+- `workflow` / `workflow-nodes` / `app-workflow`：调度、两个节点、独立 Demo 窗口。
+- 组合：`bundles/app` insert `sandbox`、`workflow`、`workflow-nodes`、`app-workflow` 再 `app-chat` 再 `app-ui`。观测台只 `openPlugin('app-ui')`；托盘另有 Workflow demo。
+- 文档：`docs/plugins/app-chat.html`、`docs/plugins/app-ui.html`、`docs/plugins/sandbox.html`、`docs/plugins/workflow.html`、`docs/plugins/workflow-nodes.html`、`docs/plugins/app-workflow.html`。

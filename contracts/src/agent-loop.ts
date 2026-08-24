@@ -3,6 +3,7 @@
  *
  * Observe → Think → Act 循环编排。Think 无待执行意图时视为任务完成并退出。
  * persona / systemPrompt 字段只转交给 prompt-context.setPersona，本服务不存副本。
+ * systemPrompt 是弃用别名，不是独立服务；不要再引入 system-prompt 插件。
  */
 export const AGENT_LOOP_SERVICE = 'agentLoop';
 

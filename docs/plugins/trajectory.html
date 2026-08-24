@@ -40,7 +40,7 @@
       <div class="badges">
         <span class="badge ok">id: trajectory</span>
         <span class="badge ok">provides: trajectory</span>
-        <span class="badge">可选 inject：llm / tools / loop / system-prompt</span>
+        <span class="badge">写者可选 inject：llm / tools / agent-loop / prompt-context</span>
       </div>
       <nav>
         <a href="#why">用途</a>
@@ -59,7 +59,7 @@
       <li>不管：对话气泡、模型循环、HTTP 实际发送（由 llm adapter 回调写入）</li>
     </ul>
     <pre>run-start
-  prompt { phase: apply }          ← system-prompt.apply
+  prompt { phase: assemble|apply } ← prompt-context
   prompt { phase: assemble, wire } ← llm 拼好的消息
   http { url, status, request }    ← 真请求才有（mock 没有）
   complete { text, toolCalls }
@@ -73,7 +73,7 @@ run-end</pre>
       <thead><tr><th>kind</th><th>谁写入</th><th>data</th></tr></thead>
       <tbody>
         <tr><td class="mono">run-start / run-end</td><td>agent-loop</td><td>maxSteps / steps / text / error</td></tr>
-        <tr><td class="mono">prompt</td><td>system-prompt、llm</td><td>apply 的文本；assemble 的 messages + wire</td></tr>
+        <tr><td class="mono">prompt</td><td>prompt-context、llm</td><td>assemble/apply 的文本；llm 的 messages + wire</td></tr>
         <tr><td class="mono">http</td><td>llm adapter</td><td>url、model、status、request.messages（无密钥）</td></tr>
         <tr><td class="mono">tool</td><td>tools</td><td>name、args、callId、ok、content</td></tr>
         <tr><td class="mono">complete</td><td>llm</td><td>provider、text、toolCalls</td></tr>
@@ -100,6 +100,7 @@ run-end</pre>
         <li>新的执行步骤：在发生处 <code>ctx.trajectory?.record</code>，inject <code>trajectory: false</code></li>
         <li>HTTP 回调不要带 authorization</li>
         <li>时间线 CSS/脚本在 <code>plugins/trajectory/src/view.ts</code>；app-ui 有一份同步副本 <code>traj-view.ts</code></li>
+        <li>prompt 步骤的写入方是 prompt-context，不是 system-prompt</li>
       </ul>
     </div>
   </div>

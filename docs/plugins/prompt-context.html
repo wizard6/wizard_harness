@@ -22,7 +22,7 @@
   <main>
     <header>
       <h1>prompt-context — 模型可见上下文组装</h1>
-      <p class="lede">组装 sections（→ system）、contexts（→ user 快照）、tools（→ 工具表）、variables（<code>{{name}}</code> 插值）。<code>assemble</code> 产出 <code>PromptAssembly</code>；<code>apply</code> 写入 session。对齐 DSH system-prompt 的「名窄实宽」职责。</p>
+      <p class="lede">组装 sections（→ system）、contexts（→ user 快照）、tools（→ 工具表）、variables（<code>{{name}}</code> 插值）。<code>assemble</code> 产出 <code>PromptAssembly</code>；<code>apply</code> 写入 session。本仓库<strong>没有</strong> system-prompt 插件；DSH 里那块职责就是本插件。</p>
       <p>
         <span class="badge ok">id: prompt-context</span>
         <span class="badge ok">provides: promptContext</span>
@@ -31,7 +31,7 @@
     </header>
 
     <section>
-      <p style="margin:0"><b>一句话：</b>唯一负责「这一步模型该怎么被引导」的组装；agent-loop 每步 <code>assemble + apply</code>。</p>
+      <p style="margin:0"><b>一句话：</b>唯一负责「这一步模型该怎么被引导」的组装。loop 有本服务时每步 <code>assemble + apply</code>；当前仍是可选 inject（债）。</p>
     </section>
 
     <h2>API</h2>
@@ -42,7 +42,8 @@ ctx.promptContext.tools((ctx) => tools.list())
 ctx.promptContext.bind(agent.ctx).section({ ... })  // scoped 层
 const asm = ctx.promptContext.assemble({ sessionId, scope })
 ctx.promptContext.apply(sessionId, asm)
-ctx.promptContext.setPersona(sessionId, '你是简洁助手')</pre>
+ctx.promptContext.setPersona(sessionId, '你是简洁助手')
+ctx.promptContext.inspect()  // 素材 + 最近成品</pre>
 
     <h2>落盘规则</h2>
     <table>
@@ -56,11 +57,18 @@ ctx.promptContext.setPersona(sessionId, '你是简洁助手')</pre>
     <table>
       <tr><td class="mono">contracts/src/prompt-context.ts</td><td>契约</td></tr>
       <tr><td class="mono">plugins/prompt-context/src/registry.ts</td><td>ScopedLayers + assemble/apply</td></tr>
+      <tr><td class="mono">plugins/prompt-context/src/page.ts</td><td>弹窗：左素材 / 右成品</td></tr>
       <tr><td class="mono">plugins/prompt-context/src/render.ts</td><td>插值与拼接</td></tr>
     </table>
 
     <h2>观测</h2>
+    <p>弹窗左右对照：<b>可获取素材</b>与 <b>拼接成品</b>。<code>inspect()</code> 只读登记表。「试拼」才 assemble。</p>
+    <p><b>现状债：</b>agent-loop 对本服务是可选 inject，卸掉后 App 仍能聊。目标见 <a href="../agent-结构改造.md">agent-结构改造.md</a> 第 1 项。不要为此倒退回 system-prompt 插件。</p>
     <p><span class="mono">prompt-context/assemble</span> · <span class="mono">prompt-context/apply</span> · <span class="mono">prompt-context/persona</span></p>
+    <p><code>ui.rpc</code>：<code>inspect</code> / <code>assemble</code>。</p>
+
+    <h2>给后续 AI</h2>
+    <p>不要再造 <code>system-prompt</code> 插件或名为 <code>systemPrompt</code> 的服务。用量面板另插件。loop 对本服务仍是可选 inject（债，<a href="../agent-结构改造.md">结构改造</a> #1），不要把静默降级写成设计。</p>
 
     <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/prompt-context/</span></p>
   </main>

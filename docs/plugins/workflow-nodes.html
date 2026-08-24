@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>workflow-nodes 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>workflow-nodes — 两个示例节点</h1>
+      <p class="lede">向 <code>workflow.registerNode</code> 登记 <code>echo</code> / <code>upper</code>。提供 <code>kinds()</code> 与 <code>demoGraph()</code>。不拥有调度，没有窗口。</p>
+      <p><span class="badge ok">id: workflow-nodes</span><span class="badge ok">provides: workflowNodes</span><span class="badge">inject: workflow</span><span class="badge">无 ui</span></p>
+    </header>
+    <h2>边界</h2>
+    <div class="card"><b>一句话：</b>节点种类住在这里。调度器不认识 echo / upper。</div>
+    <ul class="tight">
+      <li>管：两种 handler、<code>kinds</code>（端口表）、<code>demoGraph</code>（echo ← <code>input.text</code> → upper）</li>
+      <li>不管：顺序调度、run 状态、产品窗口、tools / sandbox</li>
+    </ul>
+    <h2>端口</h2>
+    <pre>echo.in.text  ← input.text     → echo.out.text
+upper.in.text ← echo.out.text  → upper.out.text（大写）</pre>
+    <h2>文件</h2>
+    <table>
+      <tr><td class="mono">contracts/src/workflow-nodes.ts</td><td>workflowNodes.demoGraph / kinds</td></tr>
+      <tr><td class="mono">plugins/workflow-nodes/src/handlers.ts</td><td>echo / upper / kinds / 示例图</td></tr>
+      <tr><td class="mono">plugins/workflow-nodes/src/index.ts</td><td>registerNode + 卸载撤销</td></tr>
+    </table>
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>再加一种节点：本插件加 handler 并 registerNode，或另开节点插件</li>
+        <li>不要把 handler 搬回 workflow</li>
+        <li>Demo 窗口改 <a href="./app-workflow.html">app-workflow</a></li>
+      </ul>
+    </div>
+    <p style="color:var(--muted);font-size:12px">源码 plugins/workflow-nodes/</p>
+  </div>
+</body>
+</html>

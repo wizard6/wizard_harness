@@ -11,6 +11,7 @@ describe('prompt-context 插件', () => {
     expect(PROMPT_CONTEXT_SERVICE).toBe('promptContext');
     expect(promptContextPlugin.manifest.provides).toEqual(['promptContext']);
     expect(promptContextPlugin.inject).toEqual({ session: true, logger: false, trajectory: false });
+    expect(promptContextPlugin.ui?.rpc).toEqual({ promptContext: ['inspect', 'assemble'] });
   });
 
   it('assemble：sections + contexts + tools + variables；apply 写入 session', async () => {
@@ -51,6 +52,49 @@ describe('prompt-context 插件', () => {
     expect(sess.replay()).toHaveLength(4);
     expect(seen.some((e) => e.action === 'prompt-context/assemble')).toBe(true);
     expect(seen.some((e) => e.action === 'prompt-context/apply')).toBe(true);
+  });
+
+  it('inspect：素材清单 + 最近成品；scoped 层可区分', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(promptContextPlugin);
+    const pc = harness.services.get<PromptContextService>('promptContext')!;
+    const session = harness.services.get<SessionService>('session')!;
+    const sess = session.start({ title: 'inspect' });
+
+    pc.section({ name: 'base', order: 0, text: 'You are {{role}}.' });
+    pc.variable('role', () => 'tester');
+    pc.context({ name: 'cwd', order: 0, text: 'cwd: /tmp' });
+    pc.tools(() => [{ name: 'echo', description: 'echo back' }]);
+    pc.setPersona(sess.id, 'be terse');
+
+    const before = pc.inspect();
+    expect(before.assembly).toBeUndefined();
+    expect(before.sources.map((s) => `${s.kind}:${s.name}`).sort()).toEqual([
+      'context:cwd',
+      'persona:' + sess.id,
+      'section:base',
+      'tools:echo',
+      'variable:role',
+    ].sort());
+    expect(before.sources.find((s) => s.name === 'base')?.live).toBe(false);
+    expect(before.sources.find((s) => s.name === 'role')?.live).toBe(true);
+
+    const hostCtx = harness.pluginContext('prompt-context');
+    if (!hostCtx) throw new Error('缺少 prompt-context 上下文');
+    const scope = createScope(hostCtx, { agent: 'a1' });
+    scope.ctx.promptContext?.bind(scope.ctx).section({ name: 'extra', order: 1, text: 'scoped' });
+    const withScope = pc.inspect();
+    const extra = withScope.sources.find((s) => s.name === 'extra');
+    expect(extra?.layer).toContain('a1');
+    expect(extra?.layer).not.toBe('global');
+
+    pc.apply(sess.id, pc.assemble({ sessionId: sess.id }));
+    const after = pc.inspect();
+    expect(after.assembly?.systemText).toContain('You are tester.');
+    expect(after.assembly?.contextText).toContain('cwd: /tmp');
+    expect(after.applied?.sessionId).toBe(sess.id);
+    expect(after.applied?.systemText).toContain('be terse');
   });
 
   it('scoped section shadow 全局同名', async () => {

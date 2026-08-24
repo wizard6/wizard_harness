@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>workflow 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>workflow — 固定调度</h1>
+      <p class="lede">按图走节点。调度在 <code>schedule.ts</code>。节点种类由其它插件 <code>registerNode</code>。run 状态在本插件，不借用 session。没有 Demo 窗口。</p>
+      <p><span class="badge ok">id: workflow</span><span class="badge ok">provides: workflow</span><span class="badge">无内置节点</span><span class="badge">无 ui</span></p>
+    </header>
+    <h2>边界</h2>
+    <div class="card"><b>一句话：</b>图决定下一步。不要写进 agent / agent-loop。业务节点写到节点插件，Demo 窗口写到 <code>app-workflow</code>。</div>
+    <ul class="tight">
+      <li>管：<code>registerNode</code> / <code>listNodes</code> / <code>exec</code> / <code>run</code> / <code>cancel</code> / <code>get</code> / <code>latest</code>、端口接线、顺序调度、本次 run 的节点状态</li>
+      <li>不管：对话 session、具体 kind、<code>tools.register</code>、kind=agent 的实现、图编辑器、产品窗口</li>
+    </ul>
+    <h2>与 agent 的交汇（原语已落地，封装未做）</h2>
+    <pre>节点 → 工具：handler.asTool + workflow.exec(kind)
+             工具名约定 wf.&lt;kind&gt;。后续插件再 tools.register。
+工具 → 节点：agent 调 tools.call('wf.echo') → 封装方转 exec。
+
+图节点 → agent：node.agentId + ctx.agentLoop
+             kind 常量 WORKFLOW_AGENT_KIND = 'agent'
+             后续插件 registerNode，不要写进本调度器 / agent-loop。</pre>
+    <p><code>exec</code> 不写入 <code>latest()</code>。节点 ctx 可选注入 <code>tools</code> / <code>agent</code> / <code>agentLoop</code>。</p>
+    <h2>节点 I/O</h2>
+    <p>接线 <code>WorkflowWire</code>：<code>input</code> / <code>node</code> / <code>value</code>。新种类实现 <code>WorkflowNodeHandler</code> 并 <code>registerNode</code>。</p>
+    <h2>文件</h2>
+    <table>
+      <tr><td class="mono">contracts/src/workflow.ts</td><td>图 / 端口 / handler / exec / asTool</td></tr>
+      <tr><td class="mono">contracts/src/workflow-agent.ts</td><td>kind=agent 的端口约定（无实现）</td></tr>
+      <tr><td class="mono">plugins/workflow/src/schedule.ts</td><td>顺序调度（唯一走图的地方）</td></tr>
+      <tr><td class="mono">plugins/workflow/src/host.ts</td><td>registerNode / exec / run 状态</td></tr>
+    </table>
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>把节点暴露成工具：另开插件扫 <code>listNodes()</code> 里有 <code>asTool</code> 的种类，<code>tools.register</code> 后转 <code>exec</code>。不要在本插件 register 工具</li>
+        <li>kind=agent：另开插件 inject workflow + agentLoop，<code>registerNode</code>。不要改 agent-loop 的 OTA</li>
+        <li>新业务 kind 加 handler，不要在 schedule.ts 写 if (kind===…)</li>
+        <li>不要把 echo/upper 或 Demo 窗口写回本插件</li>
+      </ul>
+    </div>
+    <p style="color:var(--muted);font-size:12px">源码 plugins/workflow/ · 节点 <a href="./workflow-nodes.html">workflow-nodes</a> · Demo <a href="./app-workflow.html">app-workflow</a></p>
+  </div>
+</body>
+</html>

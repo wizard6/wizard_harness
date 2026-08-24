@@ -37,6 +37,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
     },
     async run(opts: AgentLoopRunOpts = {}): Promise<AgentLoopResult> {
       const agents = need(ctx.agent ?? ctx.get<AgentService>('agent'), 'agent');
+      // 债（结构改造 #1）：产品路径应必选；当前缺失则 observe 静默跳过
       const prompts = ctx.promptContext ?? ctx.get<PromptContextService>('promptContext');
       const traj = ctx.trajectory ?? ctx.get<TrajectoryService>('trajectory');
       const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 12));

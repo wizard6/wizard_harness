@@ -5,7 +5,7 @@ import type { LlmToolSpec } from './llm.js';
  * 服务契约层：prompt-context 服务。
  *
  * 模型可见上下文组装：sections → system；contexts → user 快照；tools → 工具表。
- * 对齐 DSH system-prompt 的「名窄实宽」职责，本仓库服务名用 promptContext。
+ * 本仓库没有 system-prompt 插件；DSH 的「名窄实宽」组装职责由 promptContext 承担。
  */
 export const PROMPT_CONTEXT_SERVICE = 'promptContext';
 
@@ -42,6 +42,37 @@ export interface AssembledContextEntry {
   readonly text: string;
 }
 
+export type PromptSourceKind = 'section' | 'context' | 'variable' | 'tools' | 'persona';
+
+/** 一条尚未拼装（或无需拼装）的登记素材 */
+export interface PromptSource {
+  readonly kind: PromptSourceKind;
+  readonly name: string;
+  readonly order?: number;
+  /** global，或 scope 的可序列化标签 */
+  readonly layer: string;
+  /** text/provider 是否为函数 */
+  readonly live: boolean;
+  readonly preview: string;
+}
+
+/** 最近一次写入 session 的成品 */
+export interface PromptApplied {
+  readonly sessionId: string;
+  readonly at: number;
+  readonly systemText: string;
+  readonly contextText: string;
+  readonly tools: readonly LlmToolSpec[];
+}
+
+/** 素材清单 + 最近拼装/落盘成品 */
+export interface PromptInspect {
+  readonly sources: readonly PromptSource[];
+  readonly assembly?: PromptAssembly;
+  readonly assembledAt?: number;
+  readonly applied?: PromptApplied;
+}
+
 export interface PromptAssembly {
   readonly sections: readonly AssembledSection[];
   readonly contexts: readonly AssembledContextEntry[];
@@ -73,4 +104,6 @@ export interface PromptContextService {
   /** 按 session 登记一次性 persona（order 0，shadow 同名 section） */
   setPersona(sessionId: string, content: string): void;
   getPersona(sessionId: string): string | undefined;
+  /** 登记中的素材 + 最近一次 assemble/apply 成品（弹窗追溯用） */
+  inspect(): PromptInspect;
 }

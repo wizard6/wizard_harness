@@ -19,7 +19,7 @@ function cfgOf() {
   return {
     persona: String(
       c.persona ||
-        c.systemPrompt ||
+        c.systemPrompt || // 弃用别名，不是独立服务；结构改造 #2 后只留 persona / prompt-context
         '你是能自主完成任务的助手。收到问题后按「观察-思考-行动」循环：先理解上下文，再决定是否需要调用工具，逐步执行直到可以给出最终答复。',
     ),
     maxStepsWithTools: Math.max(1, Number(c.maxStepsWithTools ?? 12)),

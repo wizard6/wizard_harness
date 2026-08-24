@@ -43,8 +43,10 @@ export function observe(
   if (prompts) {
     assembly = prompts.assemble({ sessionId, scope });
     prompts.apply(sessionId, assembly);
+    // 债（结构改造 #3）：assemble 出空表时不要再 tools.list() 兜底
     listed = useTools ? (assembly.tools.length ? assembly.tools : tools.list()) : [];
   } else {
+    // 债（结构改造 #1）：无组装器不得当完整助手；当前静默降级
     listed = useTools ? tools.list() : [];
   }
   const messageCount = deps.session?.get(sessionId)?.replay().length ?? 0;

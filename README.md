@@ -42,7 +42,7 @@ CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:e
 | `GET /services` | 服务绑定列表（provider/access/lifetime/scoped） |
 | `POST /rpc` | 白名单服务调用：`{ service, method, args }`，未白名单一律 403 |
 
-环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`systemPrompt.set|get|apply`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_EVENTS`、`PORT`。
+环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_SANDBOX_DIR`（工作区沙箱 root，默认 `$WH_HOME/sandbox`）、`WH_EVENTS`、`PORT`。
 
 Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm gui:start` 会先跑 `scripts/ensure-electron.cjs`：缺二进制时补装，必要时用缓存 zip 解压。
 
@@ -58,7 +58,7 @@ obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / system-prompt / llm / tools / agent / agent-loop）
+plugins/              业务插件包（hello / logger / events / console / session / prompt-context / llm / tools / agent / agent-loop / trajectory / sandbox / workflow / workflow-nodes / app-workflow / app-chat / app-ui）
 docs/confirmed/       人类确认意图
 docs/plugins/         插件说明（HTML，给人与后续 AI）
 docs/项目体检.md      源码核对清单（2026-08-19）
@@ -81,11 +81,13 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 1. **session（已落地薄切片）** — 会话日志（领域源：追加 turn / message / tool-result，只读回放；观测 `session/start`、`session/append`）。scope 管「这次运行看得见什么」，session 管「发生过什么」。说明：[docs/plugins/session.html](docs/plugins/session.html)
 2. **llm（已落地薄切片）** — 一个模型适配器，读写都落到 session。默认 mock；`provider=openai` 且配置 baseUrl 才走兼容 HTTP。说明：[docs/plugins/llm.html](docs/plugins/llm.html)
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
-4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管 System Prompt。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
-5. **system-prompt（已落地薄切片）** — 按 session 登记当前 System Prompt；`apply` 才写入 session。说明：[docs/plugins/system-prompt.html](docs/plugins/system-prompt.html)
-6. **agent-loop（已落地薄切片）** — 编排 `llm.complete` + `tools.call`，循环开始时 `systemPrompt.apply`。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管上下文组装。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
+5. **prompt-context（已落地薄切片）** — 组装 sections / contexts / tools / variables；`assemble` + `apply` 写入 session。弹窗可看素材与成品。说明：[docs/plugins/prompt-context.html](docs/plugins/prompt-context.html)
+6. **agent-loop（已落地薄切片）** — Observe → Think → Act；有 prompt-context 时每步 assemble+apply（**当前为可选 inject，缺失则静默跳过拼装**，结构债见 [docs/agent-结构改造.md](docs/agent-结构改造.md)）。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
 7. **trajectory（已落地薄切片）** — 执行轨迹：拼提示词、HTTP、工具进出、complete。不替代 session。说明：[docs/plugins/trajectory.html](docs/plugins/trajectory.html)
-8. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口）；`app-ui` 是薄壳窗口，`ui.rpc` 调 `appChat.send`，右栏只读 `trajectory.latest`。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
+8. **sandbox（已落地薄切片）** — 工作区路径沙箱：读写不出 root；向 tools 登记 `sandbox_ls` / `sandbox_read` / `sandbox_write`。App demo 顶栏显示 root。说明：[docs/plugins/sandbox.html](docs/plugins/sandbox.html)
+9. **workflow + workflow-nodes + app-workflow（已落地薄切片）** — 调度器按图走节点，并提供 `exec` / `listNodes` / 节点 ctx 上的可选 agentLoop（节点当工具、节点选 agent 的原语；封装未做）。`workflow-nodes` 登记 echo / upper；`app-workflow` 是独立 Demo 窗口。说明：[docs/plugins/workflow.html](docs/plugins/workflow.html)
+10. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send`，右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info`。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
 
 ## 许可
 

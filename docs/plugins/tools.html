@@ -111,6 +111,7 @@
         <li>不要把模型 tool-call 解析塞进本插件。那是 agent-loop 切片。</li>
         <li>不要再造一份 toolResults[] 当真相源；只 append / replay session。</li>
         <li>新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
+        <li>交给模型的工具表最终应经 <code>prompt-context.tools()</code> 登记、从 <code>assemble</code> 出门（结构改造 #3）。observe 里 <code>tools.list()</code> 兜底是债，不要当成设计。</li>
       </ul>
     </div>
 
@@ -118,7 +119,7 @@
     <div class="card issue">
       <ul class="tight">
         <li>弹窗仍是说明页。新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
-        <li>无参数 JSON schema、无超时、无按 scope 隔离工具表。不要加 shell/文件工具除非单独确认。</li>
+        <li>无参数 JSON schema、无超时、无按 scope 隔离工具表。任意 shell 不做。文件读写走 sandbox 插件。</li>
         <li>handler 失败不会 throw 给调用方（ok:false）；未知工具才会 throw。</li>
       </ul>
     </div>

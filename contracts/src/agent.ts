@@ -2,7 +2,7 @@
  * 服务契约层：agent 服务。
  *
  * 契约属于系统而非任何插件。live agent = 一个 createScope + 绑定一条 session。
- * 管身份与可见性，不管循环（agent-loop），不管 System Prompt（system-prompt 插件）。
+ * 管身份与可见性，不管循环（agent-loop），不管上下文组装（prompt-context 插件）。
  */
 import type { PluginContext } from '@wizard-harness/core';
 

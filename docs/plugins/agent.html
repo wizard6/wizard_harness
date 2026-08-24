@@ -37,7 +37,7 @@
     <header>
       <div class="kicker">wizard-harness · capability plugin</div>
       <h1>agent — live 实例</h1>
-      <p class="lede">每个 live agent 一个 <code>createScope</code>，绑定一条 session。管「这次运行是谁、看得见什么」。不是 agent-loop，也不是 System Prompt。</p>
+      <p class="lede">每个 live agent 一个 <code>createScope</code>，绑定一条 session。管「这次运行是谁、看得见什么」。不是 agent-loop，也不是 prompt-context。</p>
       <div class="badges">
         <span class="badge ok">id: agent</span>
         <span class="badge ok">provides: agent</span>
@@ -56,18 +56,18 @@
 
     <h2 id="why">1. 用途与边界</h2>
     <div class="card">
-      <p style="margin:0"><b>一句话：</b>agent 是身份与可见性；循环是 agent-loop；System Prompt 是 <code>system-prompt</code> 插件。禁止在本插件里 <code>llm.complete</code> / <code>tools.call</code> / 存 prompt。</p>
+      <p style="margin:0"><b>一句话：</b>agent 是身份与可见性；循环是 agent-loop；上下文组装是 <code>prompt-context</code>。禁止在本插件里 <code>llm.complete</code> / <code>tools.call</code> / 存 prompt。</p>
     </div>
     <ul class="tight">
       <li>管：<code>spawn</code> / <code>get</code> / <code>list</code> / <code>stop</code>、每个实例一个 scope、绑定 session、overlay <code>agent.live</code></li>
-      <li>不管：模型调用、工具执行、System Prompt、maxSteps、流式、调度、多 agent 通信、通用弹窗 RPC</li>
+      <li>不管：模型调用、工具执行、上下文组装（prompt-context）、maxSteps、流式、调度、多 agent 通信、通用弹窗 RPC</li>
     </ul>
     <div class="card">
       <b>分层：</b>
       <span class="mono">scope</span> 看得见什么 →
       <span class="mono">session</span> 发生过什么 →
       <span class="mono">agent</span> 这次运行是谁（本插件）→
-      <span class="mono">system-prompt</span> 当前指令 →
+      <span class="mono">prompt-context</span> 当前指令 →
       <span class="mono">agent-loop</span> 怎么跑
     </div>
 
@@ -85,7 +85,7 @@
     <pre>const h = ctx.agent.spawn({ id: 'demo' })
 h.ctx.get('agent.live')  // { id, sessionId }，兄弟 scope 互不可见
 await ctx.agent.stop(h.id)</pre>
-    <p>句柄上的 <code>ctx</code> 是打标子上下文。agent-loop 应经它调 llm/tools。System Prompt 走 <a href="./system-prompt.html">system-prompt</a> 插件，不要 <code>setSystemPrompt</code>。</p>
+    <p>句柄上的 <code>ctx</code> 是打标子上下文。agent-loop 应经它调 llm/tools。上下文组装走 <a href="./prompt-context.html">prompt-context</a>，不要 <code>setSystemPrompt</code>。</p>
 
     <h2 id="code">3. 代码结构（核心方法）</h2>
     <table>
@@ -108,7 +108,7 @@ await ctx.agent.stop(h.id)</pre>
       <tbody>
         <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
         <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
-        <tr><td>不依赖</td><td class="mono">llm / tools / systemPrompt</td><td>循环与 prompt 是别的插件</td></tr>
+        <tr><td>不依赖</td><td class="mono">llm / tools / promptContext</td><td>循环与拼装是别的插件</td></tr>
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
         <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>拿 handle.ctx + sessionId 做编排</td></tr>
       </tbody>
@@ -120,7 +120,7 @@ await ctx.agent.stop(h.id)</pre>
       <ul class="tight">
         <li>不要在本插件加 <code>step</code> / <code>run</code> / <code>maxSteps</code> 或解析 echo 协议。那是 agent-loop。</li>
         <li>不要 inject llm 或 tools「顺便串起来」。live agent 不需要它们就能 spawn。</li>
-        <li>不要加 <code>setSystemPrompt</code>。那是 <code>system-prompt</code> 插件。</li>
+        <li>不要加 <code>setSystemPrompt</code>。那是 <code>prompt-context</code>（<code>setPersona</code> / <code>section</code>）。不要再造 <code>system-prompt</code> 插件。</li>
         <li>不要再造一份 messages[]；历史只在绑定的 session。</li>
         <li>每个 live agent 必须 <code>createScope</code>；不要只用 Map 假装隔离。</li>
         <li>卸载时 stop 全部活实例，避免 overlay 泄漏。</li>
@@ -130,7 +130,7 @@ await ctx.agent.stop(h.id)</pre>
     <h2 id="issues">6. 已知问题</h2>
     <div class="card issue">
       <ul class="tight">
-        <li>弹窗是说明页，不能从 UI spawn（通用 UI 桥未做）。</li>
+        <li>弹窗是说明页，不能从 UI spawn（通用 UI 桥未做）。结构改造第 4 项：列出 live 实例。</li>
         <li>进程内 Map，不持久化；session 本身也是内存日志。</li>
         <li>list() 不按 scope 分桶（应用层用不同 id 区分）。</li>
       </ul>

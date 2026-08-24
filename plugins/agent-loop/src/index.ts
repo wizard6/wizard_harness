@@ -3,7 +3,8 @@ import type { AgentLoopService } from '@wizard-harness/contracts';
 import { createAgentLoop } from './loop.js';
 
 /**
- * agent-loop 插件：编排 llm.complete + tools.call，读写 agent 绑定的 session。
+ * agent-loop 插件：Observe → Think → Act。
+ * promptContext 当前为可选 inject（缺失则跳过拼装）——这是债，不是设计；见 docs/agent-结构改造.md 第 1 项。
  * 说明文档：docs/plugins/agent-loop.html
  */
 let impl: AgentLoopService | undefined;
@@ -28,6 +29,7 @@ const agentLoopPlugin: Plugin = {
     config: { maxSteps: 12, compactKeep: 0 },
     tier: 'standard',
   },
+  // promptContext: false 是债（结构改造 #1），不要当成产品设计
   inject: { agent: true, llm: true, tools: true, promptContext: false, logger: false, trajectory: false },
   api,
   ui: {

@@ -11,9 +11,12 @@ import type {
   AssembledSection,
   LlmToolSpec,
   PromptAssembly,
+  PromptApplied,
   PromptContextEntry,
   PromptContextService,
+  PromptInspect,
   PromptSection,
+  PromptSource,
   SessionService,
   TrajectoryService,
 } from '@wizard-harness/contracts';
@@ -65,11 +68,30 @@ function sortByOrder<T extends { order: number }>(rows: T[]): T[] {
   return [...rows].sort((a, b) => a.order - b.order || 0);
 }
 
+function clip(text: string, n = 240): string {
+  const s = text.replace(/\s+/g, ' ').trim();
+  return s.length <= n ? s : `${s.slice(0, n)}…`;
+}
+
+function layerLabel(scope: ScopeKey | undefined): string {
+  if (scope === undefined) return 'global';
+  try {
+    const json = JSON.stringify(scope);
+    if (json && json !== '{}') return json;
+  } catch {
+    /* opaque */
+  }
+  return 'scoped';
+}
+
 /** 模型可见上下文组装注册表；ScopedLayers 归档 section/context/variable/tools。 */
 export function createPromptContextRegistry(ctx: PluginContext): PromptContextService {
   const layers = new ScopedLayers(createLayer, () => {});
   const personas = new Map<string, string>();
   const applied = new Map<string, { systemText: string; contextText: string }>();
+  let lastAssembly: PromptAssembly | undefined;
+  let lastAssembledAt: number | undefined;
+  let lastApplied: PromptApplied | undefined;
 
   function resolveVariables(assembleCtx: AssembleContext, scope: ScopeKey | undefined): Record<string, string | undefined> {
     const merged = layers.merge(scope, (layer) => layer.variables);
@@ -129,6 +151,74 @@ export function createPromptContextRegistry(ctx: PluginContext): PromptContextSe
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  function collectSources(): PromptSource[] {
+    const sources: PromptSource[] = [];
+    layers.visit((scope, layer) => {
+      const layerName = layerLabel(scope);
+      for (const [name, section] of layer.sections.entries()) {
+        const live = typeof section.text === 'function';
+        sources.push({
+          kind: 'section',
+          name,
+          order: section.order,
+          layer: layerName,
+          live,
+          preview: live ? '（函数）' : clip(section.text),
+        });
+      }
+      for (const [name, entry] of layer.contexts.entries()) {
+        const live = typeof entry.text === 'function';
+        sources.push({
+          kind: 'context',
+          name,
+          order: entry.order,
+          layer: layerName,
+          live,
+          preview: live ? '（函数）' : clip(entry.text),
+        });
+      }
+      for (const [name] of layer.variables.entries()) {
+        sources.push({ kind: 'variable', name, layer: layerName, live: true, preview: '（函数）' });
+      }
+      let toolIdx = 0;
+      for (const provider of layer.toolProviders.values()) {
+        toolIdx += 1;
+        try {
+          const specs = provider({});
+          const names = specs.map((t) => t.name).filter(Boolean);
+          sources.push({
+            kind: 'tools',
+            name: names.length ? names.join('、') : `provider-${toolIdx}`,
+            layer: layerName,
+            live: true,
+            preview: names.length
+              ? specs.map((t) => clip(`${t.name}${t.description ? ` · ${t.description}` : ''}`, 80)).join('；')
+              : '（空工具表）',
+          });
+        } catch (err) {
+          sources.push({
+            kind: 'tools',
+            name: `provider-${toolIdx}`,
+            layer: layerName,
+            live: true,
+            preview: `（调用失败：${String(err)}）`,
+          });
+        }
+      }
+    });
+    for (const [sessionId, content] of personas) {
+      sources.push({
+        kind: 'persona',
+        name: sessionId,
+        order: PERSONA_ORDER,
+        layer: 'session',
+        live: false,
+        preview: clip(content),
+      });
+    }
+    return sources;
+  }
+
   return {
     bind(owner: PluginContext) {
       return {
@@ -159,13 +249,15 @@ export function createPromptContextRegistry(ctx: PluginContext): PromptContextSe
       const systemText = renderSections(sections, variables);
       const contextText = renderContexts(contexts, variables);
       const assembly: PromptAssembly = { sections, contexts, tools, variables, systemText, contextText };
+      lastAssembly = assembly;
+      lastAssembledAt = Date.now();
       ctx.emit({
         action: 'prompt-context/assemble',
         target: assembleCtx.sessionId ?? 'global',
         payload: {
-          sections: sections.length,
-          contexts: contexts.length,
-          tools: tools.length,
+          sections: sections.map((s) => s.name),
+          contexts: contexts.map((c) => c.name),
+          tools: tools.map((t) => t.name),
           systemBytes: systemText.length,
           contextBytes: contextText.length,
         },
@@ -192,6 +284,13 @@ export function createPromptContextRegistry(ctx: PluginContext): PromptContextSe
       if (built.contextText) sess.append('message', { role: 'user', content: built.contextText });
 
       applied.set(sessionId, { systemText: built.systemText, contextText: built.contextText });
+      lastApplied = {
+        sessionId,
+        at: Date.now(),
+        systemText: built.systemText,
+        contextText: built.contextText,
+        tools: built.tools,
+      };
       ctx.emit({
         action: 'prompt-context/apply',
         target: sessionId,
@@ -216,6 +315,14 @@ export function createPromptContextRegistry(ctx: PluginContext): PromptContextSe
     },
     getPersona(sessionId) {
       return personas.get(sessionId);
+    },
+    inspect(): PromptInspect {
+      return {
+        sources: collectSources(),
+        assembly: lastAssembly,
+        assembledAt: lastAssembledAt,
+        applied: lastApplied,
+      };
     },
   };
 }
