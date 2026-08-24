@@ -6,6 +6,7 @@ import { createEventBus, createHarness } from '@wizard-harness/core';
 import { SANDBOX_SERVICE } from '@wizard-harness/contracts';
 import type { SandboxService, ToolsService } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
+import promptContextPlugin from '../../prompt-context/src/index.js';
 import toolsPlugin from '../../tools/src/index.js';
 import sandboxPlugin from '../src/index.js';
 import { SANDBOX_HTML } from '../src/page.js';
@@ -42,6 +43,7 @@ describe('sandbox 插件', () => {
     writeFileSync(join(root, 'a.txt'), 'A');
     const harness = createHarness({ bus: createEventBus(), config: { sandbox: { root } } });
     await harness.registry.register(sessionPlugin);
+    await harness.registry.register(promptContextPlugin);
     await harness.registry.register(toolsPlugin);
     await harness.registry.register(sandboxPlugin);
     const tools = harness.services.get<ToolsService>('tools')!;

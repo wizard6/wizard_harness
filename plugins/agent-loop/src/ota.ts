@@ -7,6 +7,7 @@ import type {
   PromptContextService,
   SessionService,
   ToolsService,
+  ToolsView,
   Trajectory,
 } from '@wizard-harness/contracts';
 import type { ToolIntent } from './intents.js';
@@ -23,12 +24,13 @@ export interface OtaDeps {
   sessionId: string;
   scope: ScopeKey | undefined;
   llm: LlmService;
-  tools: ToolsService;
+  tools: ToolsView;
   session: SessionService | undefined;
-  prompts: PromptContextService | undefined;
+  prompts: PromptContextService;
   useTools: boolean;
   signal: AbortSignal;
   trace: Trajectory | undefined;
+  onDelta?: (chunk: string) => void;
 }
 
 
@@ -37,18 +39,10 @@ export function observe(
   deps: OtaDeps,
   cycle: number,
 ): ObserveResult {
-  const { ctx, sessionId, scope, useTools, tools, prompts, trace, agentId } = deps;
-  let listed: readonly LlmToolSpec[] = [];
-  let assembly: PromptAssembly | undefined;
-  if (prompts) {
-    assembly = prompts.assemble({ sessionId, scope });
-    prompts.apply(sessionId, assembly);
-    // 债（结构改造 #3）：assemble 出空表时不要再 tools.list() 兜底
-    listed = useTools ? (assembly.tools.length ? assembly.tools : tools.list()) : [];
-  } else {
-    // 债（结构改造 #1）：无组装器不得当完整助手；当前静默降级
-    listed = useTools ? tools.list() : [];
-  }
+  const { ctx, sessionId, scope, useTools, prompts, trace, agentId } = deps;
+  const assembly = prompts.assemble({ sessionId, scope });
+  prompts.apply(sessionId, assembly);
+  const listed = useTools ? assembly.tools : [];
   const messageCount = deps.session?.get(sessionId)?.replay().length ?? 0;
   ctx.emit({
     action: 'agent-loop/observe',
@@ -77,6 +71,7 @@ export async function think(
     prompt: userPrompt,
     tools: listed.length ? listed : undefined,
     signal: deps.signal,
+    onDelta: deps.onDelta,
   });
   deps.ctx.emit({
     action: 'agent-loop/think',

@@ -19,20 +19,24 @@ const appUiPlugin: Plugin = {
     config: {},
     tier: 'standard',
   },
-  inject: { appChat: true, trajectory: false, sandbox: false, logger: false },
+  inject: { appChat: true, promptContext: false, trajectory: false, sandbox: false, logger: false },
   api,
   ui: {
     title: 'App demo',
     width: 1080,
     height: 720,
     rpc: {
-      appChat: ['send', 'cancel'],
+      appChat: ['send', 'cancel', 'listSessions', 'resumeSession'],
+      promptContext: ['inspect'],
       trajectory: ['latest', 'list', 'snapshot'],
       sandbox: ['info', 'list'],
     },
     content: APP_UI_HTML,
   },
   register(c) {
+    if (!c.promptContext && !c.get('promptContext')) {
+      c.logger?.warn?.('app-ui：prompt-context 未装入，App demo 将显示缺口提示');
+    }
     c.logger?.info?.('app-ui 插件就绪（产品薄壳）');
   },
 };

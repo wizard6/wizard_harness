@@ -83,7 +83,7 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
 4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管上下文组装。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
 5. **prompt-context（已落地薄切片）** — 组装 sections / contexts / tools / variables；`assemble` + `apply` 写入 session。弹窗可看素材与成品。说明：[docs/plugins/prompt-context.html](docs/plugins/prompt-context.html)
-6. **agent-loop（已落地薄切片）** — Observe → Think → Act；有 prompt-context 时每步 assemble+apply（**当前为可选 inject，缺失则静默跳过拼装**，结构债见 [docs/agent-结构改造.md](docs/agent-结构改造.md)）。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+6. **agent-loop（已落地薄切片）** — Observe → Think → Act；必选 prompt-context，每步 assemble+apply。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
 7. **trajectory（已落地薄切片）** — 执行轨迹：拼提示词、HTTP、工具进出、complete。不替代 session。说明：[docs/plugins/trajectory.html](docs/plugins/trajectory.html)
 8. **sandbox（已落地薄切片）** — 工作区路径沙箱：读写不出 root；向 tools 登记 `sandbox_ls` / `sandbox_read` / `sandbox_write`。App demo 顶栏显示 root。说明：[docs/plugins/sandbox.html](docs/plugins/sandbox.html)
 9. **workflow + workflow-nodes + app-workflow（已落地薄切片）** — 调度器按图走节点，并提供 `exec` / `listNodes` / 节点 ctx 上的可选 agentLoop（节点当工具、节点选 agent 的原语；封装未做）。`workflow-nodes` 登记 echo / upper；`app-workflow` 是独立 Demo 窗口。说明：[docs/plugins/workflow.html](docs/plugins/workflow.html)

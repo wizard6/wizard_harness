@@ -1,9 +1,8 @@
 # Agent 能力待办
 
-> 来源：薄切片 agent 链已齐，但还不能当产品用。排序按依赖：先能调起来，再协议与真模型，再流式/取消，最后落盘与通用桥。
-> 插件说明：`docs/plugins/*.html`。本页记顺序与实现结果。
+> 插件说明：`docs/plugins/*.html`。路线图体感排序见 [`docs/product-maturity.html`](./product-maturity.html)。
 
-## 顺序
+## 第一阶段（已完成）
 
 | # | id | 项 | 状态 | 为何排这里 |
 |---|-----|-----|------|------------|
@@ -18,9 +17,49 @@
 | 9 | ui-bridge | 弹窗白名单 RPC | 已落地 | 插件 `ui.rpc` 声明才放行，不是任意方法桥 |
 | 10 | app-ui-plugin | App demo 收成插件 + profile 复合 | 已落地 | 产品面也是插件，不要写死在观测台 |
 
-结构债（卸掉 prompt-context App 仍能聊等）：逐项清单 [`docs/agent-结构改造.md`](./agent-结构改造.md)，不要把插件焊回一个大 Agent。
+## 第二阶段（已完成）
 
-## 实现结果
+| # | id | 项 | 状态 | 为何排这里 |
+|---|-----|-----|------|------------|
+| 11 | fail-closed | agent-loop **必选** promptContext；去掉 observe 静默降级 | 已落地 | 卸组装器后 App 不能假装正常聊；结构债 #1 |
+| 12 | persona-one-path | 人设只从 prompt-context 登记；去掉 send/run 旁路 | 已落地 | 单一真源；结构债 #2 |
+| 13 | tools-via-assemble | tools 向 promptContext.tools() 登记；observe 只用 assembly.tools | 已落地 | 工具表只从组装器出门；结构债 #3 |
+| 14 | tools-scope | tools 用 ScopedLayers；多 agent 同名工具互不可见 | 已落地 | 路线图 P0；依赖 #13 更顺 |
+| 15 | agent-thin-visible | App 复用 agentId；Agent 弹窗列 live 实例 | 已落地 | 结构债 #4 |
+| 16 | app-gap-copy | App 缺 prompt-context 时聊天区人话提示 | 已落地 | 结构债 #5；体验层，依赖 #11 |
+| 17 | app-session-list | app-ui 会话列表 + 恢复继续聊 | 已落地 | 路线图 P0；持久化已有、UI 断层 |
+| 18 | app-stream-ui | 流式 delta 进聊天气泡 + 取消联动 | 已落地 | 路线图 P1；后端 onDelta 已有 |
+| 19 | app-error-visible | 鉴权/超时/tool 失败可读文案 + trajectory 详情 | 已落地 | 路线图 P1 |
+| 20 | manifest-validate | boot 校验 manifest / inject / ui.rpc 形状 | 已落地 | 路线图 P1；插件多了 fail-loud |
+
+**下一步：** 见 [`docs/product-maturity.html`](./product-maturity.html) P2 项（文档同步、GUI 插件管理、plugin-sdk 等）。
+
+---
+
+## 第二阶段 · 实现结果
+
+### 17. App 会话列表 + 恢复
+
+- **app-chat**：`inject: agent · session`；`listSessions()` 读 session 列表并带预览；`resumeSession(id)` 绑定已有 agent 或 spawn 新实例，返回历史消息。
+- **app-ui**：左侧「历史会话」栏；`pullSessions` / `loadSession` 经 `ui.rpc` 调 `appChat.listSessions|resumeSession`；恢复后继续发消息复用同一 sessionId / agentId。
+
+### 18. 流式 UI + 取消
+
+- **agent-loop**：`run({ onDelta })` 透传到 `llm.complete`。
+- **llm**：`llm/delta` 事件 payload 含 `{ bytes, chunk }`。
+- **app-ui**：发送时轮询 `wh.eventsHistory()` 收 delta 追加到助手气泡；发送中显示 Cancel → `appChat.cancel(agentId)`。
+
+### 19. 错误可见
+
+- **app-ui**：`humanError()` 映射鉴权/超时/取消/tool 等；`showError()` 在气泡区展示 title + detail + hint；右栏 trajectory 仍可看详情。
+
+### 20. manifest 校验
+
+- **core**：`validatePlugin()` = manifest + inject 布尔 + ui.rpc 字符串数组 + register 函数；`boot` 预检畸形插件进 `failures`；`reload` 同样走 `validatePlugin`。单测覆盖 inject / ui.rpc 非法形状。
+
+---
+
+## 第一阶段 · 实现结果
 
 ### 1. 观测台 RPC + 试跑
 

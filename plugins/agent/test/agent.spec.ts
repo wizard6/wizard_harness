@@ -12,6 +12,7 @@ describe('agent 插件', () => {
     expect(AGENT_SERVICE).toBe('agent');
     expect(agentPlugin.manifest.provides).toEqual(['agent']);
     expect(agentPlugin.inject).toEqual({ session: true, logger: false });
+    expect(agentPlugin.ui?.rpc).toEqual({ agent: ['list'] });
   });
 
   it('spawn 开 session + scope overlay；兄弟互不可见；stop 撕 overlay', async () => {

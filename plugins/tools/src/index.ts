@@ -1,9 +1,10 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
-import type { SessionService, ToolCallResult, ToolInfo, ToolSpec, ToolsService, TrajectoryService } from '@wizard-harness/contracts';
+import type { PromptContextService, SessionService, ToolCallResult, ToolInfo, ToolSpec, ToolsService, TrajectoryService } from '@wizard-harness/contracts';
 import { createToolRegistry } from './registry.js';
 
 /**
  * tools 插件：工具注册表。调用写入 session（tool-result）。
+ * register 时向 prompt-context 登记 tools() 提供者，交给模型的工具表只从 assemble 出门。
  * 说明文档：docs/plugins/tools.html
  */
 let ctx: PluginContext | undefined;
@@ -13,6 +14,20 @@ function sessionOf(): SessionService {
   const s = ctx?.session ?? ctx?.get<SessionService>('session');
   if (!s) throw new Error('tools 需要 session 服务');
   return s;
+}
+
+function promptsOf(c: PluginContext): PromptContextService {
+  const p = c.promptContext ?? c.get<PromptContextService>('promptContext');
+  if (!p) throw new Error('tools 需要 promptContext 服务');
+  return p;
+}
+
+function wireToolAssembly(c: PluginContext) {
+  promptsOf(c).tools((assembleCtx) =>
+    live()
+      .listIn(assembleCtx.scope)
+      .map((t) => ({ name: t.name, description: t.description })),
+  );
 }
 
 function live(): ToolsService {
@@ -30,6 +45,12 @@ const api: ToolsService = {
   call(name: string, args?: Record<string, unknown>, opts?: { sessionId?: string; callId?: string }): Promise<ToolCallResult> {
     return live().call(name, args, opts);
   },
+  bind(owner) {
+    return live().bind(owner);
+  },
+  listIn(scope) {
+    return live().listIn(scope);
+  },
 };
 
 const toolsPlugin: Plugin = {
@@ -42,7 +63,7 @@ const toolsPlugin: Plugin = {
     config: {},
     tier: 'standard',
   },
-  inject: { session: true, logger: false, trajectory: false },
+  inject: { session: true, promptContext: true, logger: false, trajectory: false },
   api,
   ui: {
     title: '工具注册表',
@@ -62,7 +83,7 @@ const toolsPlugin: Plugin = {
       '<h1>工具注册表</h1>',
       '<p class="desc">ctx.tools.register / call。调用写入 session，不另存执行记录。内置 echo。agent 只应走本服务调工具。</p>',
       '<div class="row"><span class="k">服务名</span><span class="v">tools</span></div>',
-      '<div class="row"><span class="k">依赖</span><span class="v">session（必选）</span></div>',
+      '<div class="row"><span class="k">依赖</span><span class="v">session · promptContext（必选）</span></div>',
       '<div class="row"><span class="k">内置</span><span class="v">echo</span></div>',
       '<div class="row"><span class="k">观测</span><span class="v">tools/register · tools/call · tools/result</span></div>',
       '<div class="row"><span class="k">说明</span><span class="v">docs/plugins/tools.html</span></div>',
@@ -72,6 +93,7 @@ const toolsPlugin: Plugin = {
   register(c) {
     ctx = c;
     impl = createToolRegistry(
+      c,
       sessionOf,
       (action, target, payload) => {
         ctx?.emit({ action, target, payload });
@@ -96,6 +118,7 @@ const toolsPlugin: Plugin = {
       description: '把 args.input 转成大写',
       handler: (args) => String(args.input ?? '').toUpperCase(),
     });
+    wireToolAssembly(c);
     c.logger?.info?.('tools 插件就绪（内置 echo / now / upper）');
     c.effect(() => () => {
       impl = undefined;

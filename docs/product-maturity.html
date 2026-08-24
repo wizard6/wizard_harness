@@ -138,13 +138,13 @@
     <p class="subtitle">能力链已齐，问题变成「下一步改什么、先改什么」。按依赖与体感排序，不是成熟度打分。</p>
 
     <div class="banner">
-      <strong>当前：</strong>session → llm → tools → agent → prompt-context → agent-loop → trajectory → app-chat/app-ui 薄切片已落地；
-      <code>docs/todo.md</code> 第一阶段 10 项已完成。链路能跑，App demo 能聊，但架构与产品仍有几处硬缺口。
+      <strong>当前：</strong>session → llm → tools → agent → prompt-context → agent-loop → trajectory → app-chat/app-ui 已落地；
+      <code>docs/todo.md</code> 第一、二阶段 20 项均已完成。链路能跑，App demo 可续聊、可流式、错误可见。
     </div>
 
     <div class="intro">
       <strong>怎么用本文：</strong>从上往下做。每一张卡片 = 一件可交付的事；「完成标志」= 可以勾掉的标准。
-      详细插件说明见 <a href="plugins/session.html">docs/plugins/</a>；待办记录见 <a href="../todo.md">docs/todo.md</a>（可在此页基础上开第二阶段）。
+      详细插件说明见 <a href="plugins/session.html">docs/plugins/</a>；待办登记见 <a href="todo.md">docs/todo.md</a>。
     </div>
 
     <h2>已完成（不必再做）</h2>
@@ -160,13 +160,17 @@
       <span class="done-chip">持久化 / compact</span>
       <span class="done-chip">tool_calls / 流式 / 取消</span>
       <span class="done-chip">ui.rpc 白名单</span>
-      <span class="done-chip">Bundle/Profile</span>
+      <span class="done-chip">Scope × tools</span>
+      <span class="done-chip">App 会话列表</span>
+      <span class="done-chip">App 流式 UI</span>
+      <span class="done-chip">App 错误可见</span>
+      <span class="done-chip">manifest 校验</span>
     </div>
 
     <h2>建议下一步（按顺序）</h2>
 
     <div class="card">
-      <h3><span class="phase-label p0">P0</span> Scope 接到 tools</h3>
+      <h3><span class="phase-label p0">P0</span> Scope 接到 tools <span style="color:var(--green);font-size:13px">✓ 已落地</span></h3>
       <dl>
         <dt>做什么</dt>
         <dd><code>tools</code> 用 <code>ScopedLayers</code> 归档；<code>prompt-context</code> 已支持 scoped 注册（<code>bind(agent.ctx)</code>）与每步 <code>assemble+apply</code>。</dd>
@@ -180,7 +184,7 @@
     </div>
 
     <div class="card">
-      <h3><span class="phase-label p0">P0</span> App：会话列表 + 恢复</h3>
+      <h3><span class="phase-label p0">P0</span> App：会话列表 + 恢复 <span style="color:var(--green);font-size:13px">✓ 已落地</span></h3>
       <dl>
         <dt>做什么</dt>
         <dd><code>app-ui</code> 左侧列历史 session（读 <code>~/.wizard-harness/sessions</code> 或 <code>session.list</code>）；点选加载回放/继续聊。</dd>
@@ -194,7 +198,7 @@
     </div>
 
     <div class="card">
-      <h3><span class="phase-label p1">P1</span> App：流式输出进聊天窗</h3>
+      <h3><span class="phase-label p1">P1</span> App：流式输出进聊天窗 <span style="color:var(--green);font-size:13px">✓ 已落地</span></h3>
       <dl>
         <dt>做什么</dt>
         <dd><code>llm/delta</code> 或 <code>appChat</code> 流式回调接到 <code>app-ui</code> 消息气泡，边生成边显示；保留取消按钮联动 <code>cancel</code>。</dd>
@@ -208,7 +212,7 @@
     </div>
 
     <div class="card">
-      <h3><span class="phase-label p1">P1</span> App：错误与状态可见</h3>
+      <h3><span class="phase-label p1">P1</span> App：错误与状态可见 <span style="color:var(--green);font-size:13px">✓ 已落地</span></h3>
       <dl>
         <dt>做什么</dt>
         <dd>鉴权失败、超时、tool 失败、loop 步数用尽——在聊天区显示可读文案，右栏 trajectory 可展开详情；不要静默失败。</dd>
@@ -222,7 +226,7 @@
     </div>
 
     <div class="card">
-      <h3><span class="phase-label p1">P1</span> manifest / config schema 校验</h3>
+      <h3><span class="phase-label p1">P1</span> manifest / config schema 校验 <span style="color:var(--green);font-size:13px">✓ 已落地</span></h3>
       <dl>
         <dt>做什么</dt>
         <dd>启动时校验 <code>manifest</code> 与 <code>config[pluginId]</code> 形状；畸形 fail-loud，对齐缺口清单 #1。</dd>

@@ -76,7 +76,7 @@ const api: LlmService = {
         tools: input.tools,
         signal: input.signal,
         onDelta: (chunk) => {
-          ctx?.emit({ action: 'llm/delta', target: sess.id, payload: { bytes: chunk.length } });
+          ctx?.emit({ action: 'llm/delta', target: sess.id, payload: { bytes: chunk.length, chunk } });
           input.onDelta?.(chunk);
         },
         onHttp: (http) => {

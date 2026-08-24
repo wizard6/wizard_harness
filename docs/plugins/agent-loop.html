@@ -59,7 +59,7 @@
       <p style="margin:0"><b>一句话：</b>唯一允许把「模型步」和「工具步」串起来的地方。禁止在 agent / llm / tools 里写循环。</p>
     </div>
     <ul class="tight">
-      <li>管：<code>run</code> / <code>cancel</code>、OTA 循环、maxSteps、<code>run.persona</code>（转交 setPersona）、官方 tool_calls + 文本回退、可选 compactKeep</li>
+      <li>管：<code>run</code> / <code>cancel</code>、OTA 循环、maxSteps、官方 tool_calls + 文本回退、可选 compactKeep</li>
       <li>不管：live 身份（agent）、上下文配方存储（prompt-context）、调度器</li>
     </ul>
     <pre>const h = ctx.agent.spawn()
@@ -67,7 +67,7 @@ ctx.promptContext?.setPersona(h.sessionId, 'You are brief.')
 await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
 // observe: assemble+apply → think: complete → act: tools.call</pre>
     <div class="card issue">
-      <p style="margin:0"><b>现状债：</b><code>promptContext</code> 是可选 inject。未装入时 observe 跳过拼装，工具表走 <code>tools.list()</code>，App 仍能聊。这不是目标；见 <a href="../agent-结构改造.md">agent-结构改造.md</a> 第 1、3 项。</p>
+    <p style="margin:0"><b>组装器：</b><code>promptContext</code> 为必选 inject。未装入时 agent-loop 在 boot 阶段挂起（<code>pending</code>），App 不能当完整助手跑。</p>
     </div>
 
     <h2 id="api">2. 提供的服务</h2>
@@ -75,11 +75,11 @@ await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
     <table>
       <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
       <tbody>
-        <tr><td class="mono">run({ agentId?, prompt?, maxSteps?, persona?, systemPrompt? })</td><td>无 agentId 则 spawn；persona/systemPrompt 转交 setPersona；每步 observe→think→act</td><td>缺必选服务 / 未知 agent / 未知工具 / 取消抛错</td></tr>
+        <tr><td class="mono">run({ agentId?, prompt?, maxSteps?, useTools? })</td><td>无 agentId 则 spawn；每步 observe→think→act；人设/工具表由 prompt-context 组装</td><td>缺必选服务 / 未知 agent / 未知工具 / 取消抛错</td></tr>
         <tr><td class="mono">cancel(agentId)</td><td>中止该 agent 正在跑的 run（AbortSignal）</td><td>空闲时无操作</td></tr>
       </tbody>
     </table>
-    <p>经 <code>handle.ctx</code> 取 llm / tools，以便以后 per-agent overlay 生效。历史只在绑定 session。</p>
+    <p>经 <code>handle.ctx</code> 取 llm；tools 用 <code>tools.bind(handle.ctx)</code> 解析 scope overlay。历史只在绑定 session。</p>
     <h3>工具协议</h3>
     <p>优先用 <code>llm.complete</code> 返回的 <code>toolCalls</code>（OpenAI 官方）。没有则回退解析 assistant 文本（去掉 <code>[mock] </code>）：</p>
     <table>
@@ -103,7 +103,7 @@ await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
     </table>
     <div class="card">
       <b>调用链：</b>
-      <span class="mono">run → spawn|get → setPersona? → [observe assemble+apply | tools.list 兜底] → complete → intents → tools.call → …</span>
+      <span class="mono">run → spawn|get → [observe assemble+apply] → complete → intents → tools.call → …</span>
     </div>
 
     <h2 id="deps">4. 依赖 / 期望被依赖</h2>
@@ -111,7 +111,7 @@ await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
       <thead><tr><th>方向</th><th>对象</th><th>强度</th></tr></thead>
       <tbody>
         <tr><td>依赖</td><td class="mono">agent / llm / tools</td><td>必选 inject</td></tr>
-        <tr><td>依赖</td><td class="mono">promptContext</td><td>可选 inject；有则每步 assemble+apply；无则静默跳过（债）</td></tr>
+        <tr><td>依赖</td><td class="mono">promptContext</td><td>必选 inject；每步 observe 走 assemble+apply</td></tr>
         <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
         <tr><td>不拥有</td><td class="mono">session</td><td>经 llm/tools/agent 读写</td></tr>
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
@@ -122,8 +122,8 @@ await ctx.agentLoop.run({ agentId: h.id, prompt: 'echo hi', maxSteps: 4 })
     <h2 id="ai">5. 给后续 AI 的硬约束</h2>
     <div class="card ai">
       <ul class="tight">
-        <li>不要在本插件存 messages[] 或人设；<code>run.persona</code> / <code>systemPrompt</code> 只转交 <code>promptContext.setPersona</code>。不要再引入 system-prompt 插件。</li>
-        <li>不要把「promptContext 可选 + tools.list 兜底」当成设计；目标是必选组装器，见结构改造清单。</li>
+        <li>不要在本插件存 messages[] 或人设；只经 <code>promptContext.assemble + apply</code>。不要再引入 system-prompt 插件。</li>
+        <li>不要绕过 <code>promptContext</code> 直接拼 system 或工具表；工具表只用 <code>assembly.tools</code>。</li>
         <li>不要绕过 <code>ctx.llm.complete</code> / <code>ctx.tools.call</code> 直接 fetch / exec。</li>
         <li>官方 tool_calls 由 llm 解析，循环只消费 <code>result.toolCalls</code>；文本协议留作回退。</li>
         <li>不要在本插件实现 workflow 的 kind=agent；那是后续插件对 <code>workflow.registerNode</code> + <code>agentLoop.run</code>。</li>

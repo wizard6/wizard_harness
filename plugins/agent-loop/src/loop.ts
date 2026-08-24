@@ -37,8 +37,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
     },
     async run(opts: AgentLoopRunOpts = {}): Promise<AgentLoopResult> {
       const agents = need(ctx.agent ?? ctx.get<AgentService>('agent'), 'agent');
-      // 债（结构改造 #1）：产品路径应必选；当前缺失则 observe 静默跳过
-      const prompts = ctx.promptContext ?? ctx.get<PromptContextService>('promptContext');
+      const prompts = need(ctx.promptContext ?? ctx.get<PromptContextService>('promptContext'), 'promptContext');
       const traj = ctx.trajectory ?? ctx.get<TrajectoryService>('trajectory');
       const maxSteps = Math.max(1, opts.maxSteps ?? Number(ctx.config.maxSteps ?? 12));
       let id = opts.agentId?.trim();
@@ -46,13 +45,12 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
       const handle = agents.get(id);
       if (!handle) throw new Error(`agent 不存在：${id}`);
       const llm = need(handle.ctx.llm ?? handle.ctx.get<LlmService>('llm'), 'llm');
-      const tools = need(handle.ctx.tools ?? handle.ctx.get<ToolsService>('tools'), 'tools');
+      const toolsRoot = need(handle.ctx.tools ?? handle.ctx.get<ToolsService>('tools'), 'tools');
+      const tools = toolsRoot.bind(handle.ctx);
       const session = handle.ctx.session ?? handle.ctx.get<SessionService>('session');
       const sessionId = handle.sessionId;
       const scope = scopeOf(handle.ctx);
       const useTools = opts.useTools !== false;
-      const persona = opts.persona ?? opts.systemPrompt;
-      if (persona) prompts?.setPersona(sessionId, persona);
 
       const trace = traj?.start({ agentId: id, sessionId });
       trace?.append('run-start', { maxSteps, useTools, paradigm: 'ota' });
@@ -76,6 +74,7 @@ export function createAgentLoop(ctx: PluginContext): AgentLoopService {
         useTools,
         signal: ac.signal,
         trace,
+        onDelta: opts.onDelta,
       };
 
       ctx.emit({

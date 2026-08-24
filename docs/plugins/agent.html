@@ -93,6 +93,7 @@ await ctx.agent.stop(h.id)</pre>
       <tbody>
         <tr><td class="mono">contracts/src/agent.ts</td><td>AGENT_SERVICE, AgentService, AgentHandle</td></tr>
         <tr><td class="mono">plugins/agent/src/host.ts</td><td>createAgentHost, AGENT_LIVE, spawn / stop</td></tr>
+        <tr><td class="mono">plugins/agent/src/page.ts</td><td>弹窗 live 列表（ui.rpc list）</td></tr>
         <tr><td class="mono">plugins/agent/src/index.ts</td><td>api 转发到本轮 impl；卸载时 stop 全部</td></tr>
       </tbody>
     </table>
@@ -113,7 +114,7 @@ await ctx.agent.stop(h.id)</pre>
         <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>拿 handle.ctx + sessionId 做编排</td></tr>
       </tbody>
     </table>
-    <p>观测：<code>agent/spawn</code>、<code>agent/stop</code>（target = agent id，payload.sessionId）。actor = <code>plugin:agent</code>。</p>
+    <p>弹窗：<code>ui.rpc</code> <code>agent.list</code>，每 1.2s 刷新 id · sessionId。不能从 UI spawn/stop（通用桥未做）。</p>
 
     <h2 id="ai">5. 给后续 AI 的硬约束</h2>
     <div class="card ai">
@@ -130,7 +131,7 @@ await ctx.agent.stop(h.id)</pre>
     <h2 id="issues">6. 已知问题</h2>
     <div class="card issue">
       <ul class="tight">
-        <li>弹窗是说明页，不能从 UI spawn（通用 UI 桥未做）。结构改造第 4 项：列出 live 实例。</li>
+        <li>弹窗只读 list，不能 spawn/stop。App demo 顶栏显示当前 agentId 并在连发时复用。</li>
         <li>进程内 Map，不持久化；session 本身也是内存日志。</li>
         <li>list() 不按 scope 分桶（应用层用不同 id 区分）。</li>
       </ul>

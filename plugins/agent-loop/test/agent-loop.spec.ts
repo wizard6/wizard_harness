@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEventBus, createHarness } from '@wizard-harness/core';
+import { createEventBus, createHarness, scopeOf } from '@wizard-harness/core';
 import type { PluginEvent } from '@wizard-harness/core';
 import { AGENT_LOOP_SERVICE } from '@wizard-harness/contracts';
 import type {
@@ -7,6 +7,7 @@ import type {
   AgentService,
   PromptContextService,
   SessionService,
+  ToolsService,
 } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
 import llmPlugin from '../../llm/src/index.js';
@@ -26,17 +27,33 @@ describe('parseToolCall', () => {
 });
 
 describe('agent-loop 插件', () => {
-  it('服务名契约绑定 + inject agent/llm/tools；promptContext 可选', () => {
+  it('服务名契约绑定 + inject agent/llm/tools/promptContext', () => {
     expect(AGENT_LOOP_SERVICE).toBe('agentLoop');
     expect(agentLoopPlugin.manifest.provides).toEqual(['agentLoop']);
     expect(agentLoopPlugin.inject).toEqual({
       agent: true,
       llm: true,
       tools: true,
-      promptContext: false,
+      promptContext: true,
       logger: false,
       trajectory: false,
     });
+  });
+
+  it('缺 promptContext 时 boot 挂起 agent-loop', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    const result = await harness.boot([
+      sessionPlugin,
+      llmPlugin,
+      toolsPlugin,
+      agentPlugin,
+      agentLoopPlugin,
+    ]);
+    expect(result.pending).toEqual([
+      { plugin: toolsPlugin, missing: ['promptContext'] },
+      { plugin: agentLoopPlugin, missing: ['promptContext'] },
+    ]);
+    expect(harness.services.get<AgentLoopService>('agentLoop')).toBeUndefined();
   });
 
   async function boot() {
@@ -46,8 +63,8 @@ describe('agent-loop 插件', () => {
     const harness = createHarness({ bus });
     await harness.registry.register(sessionPlugin);
     await harness.registry.register(llmPlugin);
-    await harness.registry.register(toolsPlugin);
     await harness.registry.register(promptContextPlugin);
+    await harness.registry.register(toolsPlugin);
     await harness.registry.register(agentPlugin);
     await harness.registry.register(agentLoopPlugin);
     return {
@@ -56,6 +73,7 @@ describe('agent-loop 插件', () => {
       agent: harness.services.get<AgentService>('agent')!,
       session: harness.services.get<SessionService>('session')!,
       prompts: harness.services.get<PromptContextService>('promptContext')!,
+      tools: harness.services.get<ToolsService>('tools')!,
     };
   }
 
@@ -107,10 +125,26 @@ describe('agent-loop 插件', () => {
     expect(session.get(out.sessionId)!.replay().some((e) => e.kind === 'tool-result')).toBe(false);
   });
 
-  it('run.persona / systemPrompt 转交给 prompt-context；cancel 空闲无副作用', async () => {
-    const { loop, session } = await boot();
+  it('cancel 空闲无副作用；人设只经 prompt-context section/apply', async () => {
+    const { loop, session, prompts } = await boot();
     loop.cancel('nobody');
-    const out = await loop.run({ prompt: 'hello', systemPrompt: 'be brief' });
+    prompts.section({ name: 'brief', order: 0, text: 'be brief' });
+    const out = await loop.run({ prompt: 'hello' });
     expect(session.get(out.sessionId)!.replay()[0]?.data.content).toBe('be brief');
+  });
+
+  it('scoped overlay 遮盖全局同名工具', async () => {
+    const { loop, agent, session, tools, prompts } = await boot();
+    const h = agent.spawn({ id: 'shadow' });
+    tools.bind(h.ctx).register({
+      name: 'echo',
+      description: 'scoped echo',
+      handler: () => 'scoped-echo',
+    });
+    const asm = prompts.assemble({ sessionId: h.sessionId, scope: scopeOf(h.ctx) });
+    expect(asm.tools.find((t) => t.name === 'echo')?.description).toBe('scoped echo');
+    const out = await loop.run({ agentId: 'shadow', prompt: 'echo hi', maxSteps: 2 });
+    const tool = session.get(out.sessionId)!.replay().find((e) => e.kind === 'tool-result' && e.data.name === 'echo');
+    expect(tool?.data.content).toBe('scoped-echo');
   });
 });

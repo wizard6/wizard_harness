@@ -18,20 +18,35 @@ const fakeChat: Plugin = {
 };
 
 describe('app-ui 插件', () => {
-  it('薄壳：inject appChat，不直接绑 agentLoop', () => {
+  it('薄壳：inject appChat · 可选 promptContext，不直接绑 agentLoop', () => {
     expect(APP_UI_SERVICE).toBe('appUi');
     expect(appUiPlugin.manifest.provides).toEqual(['appUi']);
-    expect(appUiPlugin.inject).toEqual({ appChat: true, trajectory: false, sandbox: false, logger: false });
+    expect(appUiPlugin.inject).toEqual({
+      appChat: true,
+      promptContext: false,
+      trajectory: false,
+      sandbox: false,
+      logger: false,
+    });
     expect(appUiPlugin.ui?.rpc).toEqual({
-      appChat: ['send', 'cancel'],
+      appChat: ['send', 'cancel', 'listSessions', 'resumeSession'],
+      promptContext: ['inspect'],
       trajectory: ['latest', 'list', 'snapshot'],
       sandbox: ['info', 'list'],
     });
+    expect(APP_UI_HTML).toContain('历史会话');
+    expect(APP_UI_HTML).toContain('pullSessions');
+    expect(APP_UI_HTML).toContain('watchDeltas');
+    expect(APP_UI_HTML).toContain('humanError');
+    expect(APP_UI_HTML).toContain('doCancel');
     expect(APP_UI_HTML).not.toContain('Run workflow');
     expect(APP_UI_HTML).not.toContain('workflow');
     expect(APP_UI_HTML).toContain('本轮轨迹');
     expect(APP_UI_HTML).toContain('New Session');
     expect(APP_UI_HTML).toContain('pullSandbox');
+    expect(APP_UI_HTML).toContain('pullPromptContext');
+    expect(APP_UI_HTML).toContain('setAgentChip');
+    expect(APP_UI_HTML).toContain('prompt-context');
     expect(APP_UI_HTML).toContain('renderTrajectory');
   });
 

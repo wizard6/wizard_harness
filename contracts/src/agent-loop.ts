@@ -2,8 +2,7 @@
  * 服务契约层：agent-loop 服务。
  *
  * Observe → Think → Act 循环编排。Think 无待执行意图时视为任务完成并退出。
- * persona / systemPrompt 字段只转交给 prompt-context.setPersona，本服务不存副本。
- * systemPrompt 是弃用别名，不是独立服务；不要再引入 system-prompt 插件。
+ * 人设与工具表由 prompt-context 组装；本服务不存副本、不经 run 旁路写入。
  */
 export const AGENT_LOOP_SERVICE = 'agentLoop';
 
@@ -12,10 +11,8 @@ export interface AgentLoopRunOpts {
   prompt?: string;
   /** OTA 循环上限（一轮 = Observe + Think + 可选 Act） */
   maxSteps?: number;
-  /** 转交 prompt-context.setPersona */
-  persona?: string;
-  /** @deprecated 使用 persona */
-  systemPrompt?: string;
+  /** 流式 delta（仅 think 阶段；经 llm 转发） */
+  onDelta?: (chunk: string) => void;
   /** 默认 true。false 时不把工具表交给模型，也不解析文本协议 */
   useTools?: boolean;
 }

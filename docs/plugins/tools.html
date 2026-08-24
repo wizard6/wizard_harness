@@ -41,7 +41,7 @@
       <div class="badges">
         <span class="badge ok">id: tools</span>
         <span class="badge ok">provides: tools</span>
-        <span class="badge">inject: session</span>
+        <span class="badge">inject: session · promptContext</span>
         <span class="badge">内置 echo / now / upper</span>
       </div>
       <nav>
@@ -68,8 +68,9 @@
     <table>
       <thead><tr><th>方法</th><th>作用</th><th>失败</th></tr></thead>
       <tbody>
-        <tr><td class="mono">register({ name, description?, handler })</td><td>登记工具</td><td>无名/无 handler/重名抛错</td></tr>
-        <tr><td class="mono">list()</td><td>已登记工具（无 handler）</td><td>—</td></tr>
+        <tr><td class="mono">register({ name, description?, handler })</td><td>登记工具（经 <code>bind(ctx)</code> 写入 scope 层）</td><td>同名/无 handler 抛错</td></tr>
+        <tr><td class="mono">list() / listIn(scope?)</td><td>当前层或指定 scope 合并后的工具表</td><td>—</td></tr>
+        <tr><td class="mono">bind(owner)</td><td>在 owner scope 登记 / 解析工具</td><td>—</td></tr>
         <tr><td class="mono">call(name, args?, { sessionId?, callId? })</td><td>执行并 append tool-result</td><td>未知工具抛错；handler 抛错则 ok:false 仍写入</td></tr>
       </tbody>
     </table>
@@ -82,7 +83,7 @@
       <thead><tr><th>文件</th><th>核心符号</th></tr></thead>
       <tbody>
         <tr><td class="mono">contracts/src/tools.ts</td><td>TOOLS_SERVICE, ToolsService</td></tr>
-        <tr><td class="mono">plugins/tools/src/registry.ts</td><td>createToolRegistry, call, asContent</td></tr>
+        <tr><td class="mono">plugins/tools/src/registry.ts</td><td>createToolRegistry, ScopedLayers, bind, listIn</td></tr>
         <tr><td class="mono">plugins/tools/src/index.ts</td><td>register 内建 echo / now / upper；api 转发到本轮 impl</td></tr>
       </tbody>
     </table>
@@ -95,7 +96,7 @@
     <table>
       <thead><tr><th>方向</th><th>对象</th><th>强度</th></tr></thead>
       <tbody>
-        <tr><td>依赖</td><td class="mono">session</td><td>必选 inject</td></tr>
+        <tr><td>依赖</td><td class="mono">session · promptContext</td><td>必选 inject</td></tr>
         <tr><td>依赖</td><td class="mono">logger</td><td>可选</td></tr>
         <tr><td>装配</td><td class="mono">bundles/base</td><td>默认 profile 挂入</td></tr>
         <tr><td>期望被依赖</td><td class="mono">agent-loop</td><td>循环里只 call 本服务；agent 本身不调 tools</td></tr>
@@ -111,15 +112,16 @@
         <li>不要把模型 tool-call 解析塞进本插件。那是 agent-loop 切片。</li>
         <li>不要再造一份 toolResults[] 当真相源；只 append / replay session。</li>
         <li>新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
-        <li>交给模型的工具表最终应经 <code>prompt-context.tools()</code> 登记、从 <code>assemble</code> 出门（结构改造 #3）。observe 里 <code>tools.list()</code> 兜底是债，不要当成设计。</li>
+        <li>agent 专属工具用 <code>ctx.tools.bind(agent.ctx).register</code>；全局工具直接 <code>ctx.tools.register</code>。</li>
+        <li>register 时向 <code>prompt-context.tools()</code> 登记；交给模型的工具表只从 <code>assemble</code> 出门（按 scope 合并）。</li>
       </ul>
     </div>
 
     <h2 id="issues">6. 已知问题</h2>
     <div class="card issue">
       <ul class="tight">
-        <li>弹窗仍是说明页。新工具用 <code>ctx.tools.register</code>，不要改 registry 内核。</li>
-        <li>无参数 JSON schema、无超时、无按 scope 隔离工具表。任意 shell 不做。文件读写走 sandbox 插件。</li>
+        <li>弹窗仍是说明页。新工具用 <code>ctx.tools.register</code> / <code>bind</code>，不要改 registry 内核。</li>
+        <li>无参数 JSON schema、无超时。任意 shell 不做。文件读写走 sandbox 插件。</li>
         <li>handler 失败不会 throw 给调用方（ok:false）；未知工具才会 throw。</li>
       </ul>
     </div>

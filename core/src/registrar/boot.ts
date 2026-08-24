@@ -1,5 +1,7 @@
 import type { Plugin, RegisteredPlugin, Registrar } from './types.js';
 import { normalizeInject, normalizeProvides } from './types.js';
+import { validatePlugin } from './validate.js';
+import { InvalidPluginError } from './errors.js';
 
 /** boot 结果：已加载 / 因缺 inject 挂起 / 启动失败的插件 */
 export interface BootResult {
@@ -100,11 +102,25 @@ export function missingInjectInBatch(
  */
 export async function bootPlugins(registrar: Registrar, plugins: Plugin[]): Promise<BootResult> {
   const pending: BootResult['pending'] = [];
+  const failures: BootResult['failures'] = [];
+  const valid: Plugin[] = [];
+  for (const p of plugins) {
+    try {
+      validatePlugin(p);
+      valid.push(p);
+    } catch (err) {
+      const id = p?.manifest?.id ?? 'unknown';
+      failures.push({
+        id,
+        error: err instanceof InvalidPluginError ? err.message : String(err),
+      });
+    }
+  }
   const loadable: Plugin[] = [];
   // 运行时已注册服务（含壳预注册的宿主级服务）
   const registered = registrar.services.list();
-  for (const p of plugins) {
-    const missing = missingInjectInBatch(p, plugins, registered);
+  for (const p of valid) {
+    const missing = missingInjectInBatch(p, valid, registered);
     if (missing.length > 0) pending.push({ plugin: p, missing });
     else loadable.push(p);
   }
@@ -115,7 +131,6 @@ export async function bootPlugins(registrar: Registrar, plugins: Plugin[]): Prom
     loaded.push(await registrar.register(p, { deferStart: true }));
   }
   // 阶段二：按拓扑序统一启动（所有服务已就绪）；单个失败隔离（自身已回滚），不中断其余
-  const failures: { id: string; error: string }[] = [];
   for (const r of loaded) {
     try {
       await r.start?.();

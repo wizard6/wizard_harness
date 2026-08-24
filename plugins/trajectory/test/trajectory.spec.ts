@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEventBus, createHarness } from '@wizard-harness/core';
 import { TRAJECTORY_SERVICE } from '@wizard-harness/contracts';
-import type { AgentLoopService, TrajectoryService } from '@wizard-harness/contracts';
+import type { AgentLoopService, PromptContextService, TrajectoryService } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
 import llmPlugin from '../../llm/src/index.js';
 import toolsPlugin from '../../tools/src/index.js';
@@ -46,7 +46,9 @@ describe('trajectory 插件', () => {
     await harness.registry.register(agentLoopPlugin);
     const loop = harness.services.get<AgentLoopService>('agentLoop')!;
     const traj = harness.services.get<TrajectoryService>('trajectory')!;
-    const out = await loop.run({ prompt: 'echo hi', maxSteps: 4, systemPrompt: 'brief' });
+    const prompts = harness.services.get<PromptContextService>('promptContext')!;
+    prompts.section({ name: 'brief', order: 0, text: 'brief' });
+    const out = await loop.run({ prompt: 'echo hi', maxSteps: 4 });
     expect(out.steps).toBe(2);
     const snap = traj.forSession(out.sessionId)!.replay();
     const kinds = snap.map((s) => `${s.kind}:${String(s.data.phase ?? '')}`);

@@ -51,6 +51,28 @@ describe('manifest schema 校验', () => {
     ).rejects.toBeInstanceOf(InvalidPluginError);
   });
 
+  it('inject 含非布尔值抛 InvalidPluginError', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await expect(
+      harness.registry.register({
+        manifest: { id: 'bad-inject', version: '1.0.0' },
+        inject: { logger: 'yes' as never },
+        register() {},
+      }),
+    ).rejects.toBeInstanceOf(InvalidPluginError);
+  });
+
+  it('ui.rpc 非法抛 InvalidPluginError', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await expect(
+      harness.registry.register({
+        manifest: { id: 'bad-rpc', version: '1.0.0' },
+        ui: { content: 'x', rpc: { svc: ['ok', 1 as never] } },
+        register() {},
+      }),
+    ).rejects.toBeInstanceOf(InvalidPluginError);
+  });
+
   it('name 非字符串抛 InvalidPluginError', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await expect(

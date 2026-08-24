@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createEventBus, createHarness } from '@wizard-harness/core';
 import type { Plugin } from '@wizard-harness/core';
 import { APP_CHAT_SERVICE } from '@wizard-harness/contracts';
-import type { AgentLoopService, AppChatService } from '@wizard-harness/contracts';
+import type { AgentLoopService, AppChatService, PromptContextService } from '@wizard-harness/contracts';
+import sessionPlugin from '../../session/src/index.js';
+import agentPlugin from '../../agent/src/index.js';
+import promptContextPlugin from '../../prompt-context/src/index.js';
 import appChatPlugin from '../src/index.js';
 
 function fakeLoop(run: AgentLoopService['run']): Plugin {
@@ -13,36 +16,103 @@ function fakeLoop(run: AgentLoopService['run']): Plugin {
   };
 }
 
+function fakePromptContext(): Plugin {
+  const api: PromptContextService = {
+    section: () => () => {},
+    context: () => () => {},
+    variable: () => () => {},
+    tools: () => () => {},
+    bind: () => ({
+      section: () => () => {},
+      context: () => () => {},
+      variable: () => () => {},
+      tools: () => () => {},
+    }),
+    assemble: () => ({ sections: [], contexts: [], tools: [], variables: {}, systemText: '', contextText: '' }),
+    apply: () => {},
+    setPersona: () => {},
+    getPersona: () => undefined,
+    inspect: () => ({ sources: [] }),
+  };
+  return {
+    manifest: { id: 'prompt-context', version: '0.1.0', provides: ['promptContext'] },
+    api,
+    register() {},
+  };
+}
+
 describe('app-chat 插件', () => {
-  it('服务名契约 + inject agentLoop', () => {
+  it('服务名契约 + inject agentLoop · promptContext · agent · session', () => {
     expect(APP_CHAT_SERVICE).toBe('appChat');
-    expect(appChatPlugin.manifest.provides).toEqual(['appChat']);
-    expect(appChatPlugin.inject).toEqual({ agentLoop: true, logger: false });
-    expect(appChatPlugin.ui).toBeUndefined();
+    expect(appChatPlugin.inject).toEqual({
+      agentLoop: true,
+      promptContext: true,
+      agent: true,
+      session: true,
+      logger: false,
+    });
   });
 
-  it('send 默认开启工具并按 OTA 人设转交 agentLoop', async () => {
+  it('register 登记 persona section；send 不再旁路 loop.persona', async () => {
     const seen: unknown[] = [];
+    const sections: { name: string; text: string }[] = [];
     const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(agentPlugin);
+    await harness.registry.register({
+      ...fakePromptContext(),
+      api: {
+        ...fakePromptContext().api!,
+        section(s) {
+          sections.push({ name: s.name, text: String(s.text) });
+          return () => {};
+        },
+      },
+    });
     await harness.registry.register(
       fakeLoop(async (opts) => {
         seen.push(opts);
-        return { agentId: opts?.agentId ?? 'a1', sessionId: 's', text: `ok:${opts?.prompt}`, steps: 1 };
+        return { agentId: opts?.agentId ?? 'a1', sessionId: 's1', text: `ok:${opts?.prompt}`, steps: 1 };
       }),
     );
     await harness.registry.register(appChatPlugin);
-    const chat = harness.services.get<AppChatService>('appChat');
-    const out = await chat!.send({ prompt: '你好' });
-    expect(out).toEqual({ agentId: 'a1', text: 'ok:你好', provider: undefined });
-    expect(seen[0]).toMatchObject({
-      prompt: '你好',
-      useTools: true,
-      maxSteps: 12,
-    });
-    expect(String((seen[0] as { persona?: string }).persona)).toContain('观察-思考-行动');
-    const again = await chat!.send({ prompt: '二', agentId: out.agentId, useTools: false });
-    expect(again.agentId).toBe('a1');
-    expect(seen[1]).toMatchObject({ agentId: 'a1', useTools: false, maxSteps: 1 });
-    expect((seen[1] as { persona?: string }).persona).toBeUndefined();
+    expect(sections.some((s) => s.name === 'app-chat:persona')).toBe(true);
+
+    const chat = harness.services.get<AppChatService>('appChat')!;
+    const out = await chat.send({ prompt: '你好' });
+    expect(out).toMatchObject({ agentId: 'a1', sessionId: 's1', text: 'ok:你好', steps: 1 });
+    expect((seen[0] as { persona?: string }).persona).toBeUndefined();
+  });
+
+  it('listSessions / resumeSession 复用 agent 与 session', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(agentPlugin);
+    await harness.registry.register(fakePromptContext());
+    await harness.registry.register(
+      fakeLoop(async (opts) => ({
+        agentId: opts?.agentId ?? 'new',
+        sessionId: 's-fixed',
+        text: 'pong',
+        steps: 1,
+      })),
+    );
+    await harness.registry.register(appChatPlugin);
+    const chat = harness.services.get<AppChatService>('appChat')!;
+    const session = harness.services.get('session')!;
+    const sess = session.start({ title: 'old-chat' });
+    sess.append('message', { role: 'user', content: '之前说过 hi' });
+    sess.append('message', { role: 'assistant', content: '你好呀' });
+
+    const listed = await chat.listSessions();
+    expect(listed.some((row) => row.id === sess.id && row.preview?.includes('hi'))).toBe(true);
+
+    const resumed = await chat.resumeSession(sess.id);
+    expect(resumed.agentId).toBeTruthy();
+    expect(resumed.sessionId).toBe(sess.id);
+    expect(resumed.messages.map((m) => m.content)).toEqual(['之前说过 hi', '你好呀']);
+
+    const again = await chat.resumeSession(sess.id);
+    expect(again.agentId).toBe(resumed.agentId);
   });
 });

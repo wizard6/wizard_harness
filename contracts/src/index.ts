@@ -34,7 +34,7 @@ export type {
   LlmToolSpec,
 } from './llm.js';
 export { TOOLS_SERVICE } from './tools.js';
-export type { ToolCallResult, ToolHandler, ToolInfo, ToolSpec, ToolsService } from './tools.js';
+export type { ToolCallResult, ToolHandler, ToolInfo, ToolSpec, ToolsService, ToolsView, ScopeRef } from './tools.js';
 export { AGENT_SERVICE } from './agent.js';
 export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 export { AGENT_LOOP_SERVICE } from './agent-loop.js';
@@ -58,7 +58,7 @@ export type {
 export { APP_UI_SERVICE } from './app-ui.js';
 export type { AppUiService } from './app-ui.js';
 export { APP_CHAT_SERVICE } from './app-chat.js';
-export type { AppChatSendOpts, AppChatSendResult, AppChatService } from './app-chat.js';
+export type { AppChatSendOpts, AppChatSendResult, AppChatService, AppChatMessagePreview, AppChatResumeResult, AppChatSessionSummary } from './app-chat.js';
 export { TRAJECTORY_SERVICE } from './trajectory.js';
 export type {
   Trajectory,

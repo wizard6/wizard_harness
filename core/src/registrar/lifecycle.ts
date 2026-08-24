@@ -1,5 +1,5 @@
 import { DuplicatePluginError, InvalidPluginError, PluginNotFoundError } from './errors.js';
-import { validateManifest } from './validate.js';
+import { validatePlugin } from './validate.js';
 import type { ServiceRegistryBundle } from './service-registry.js';
 import type {
   Plugin,
@@ -66,7 +66,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
 
   async function register(plugin: Plugin, opts: RegisterOptions = {}): Promise<RegisteredPlugin> {
     // 运行时 schema 校验：manifest 畸形尽早抛错
-    validateManifest(plugin);
+    validatePlugin(plugin);
     if (typeof plugin.register !== 'function') {
       throw new InvalidPluginError(`插件缺少 register 函数（${plugin.manifest.id}）`);
     }
@@ -197,7 +197,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       throw new InvalidPluginError(`reload 插件 id 不一致：${next.manifest.id} !== ${id}`);
     }
     // 预检新插件（validate + 必选 inject），尽量在卸载前失败，减少回滚场景
-    validateManifest(next);
+    validatePlugin(next);
     const missingNext = missingRequiredInject(next);
     if (missingNext.length > 0) {
       throw new InvalidPluginError(`reload 新插件 inject 未就绪（${id}）：缺少 ${missingNext.join(', ')}`);

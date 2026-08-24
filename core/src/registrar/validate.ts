@@ -51,12 +51,69 @@ export function validateManifest(plugin: Plugin): void {
       throw new InvalidPluginError(`manifest.provides 必须为数组（${m.id}）`);
     }
     for (const p of m.provides) {
-      const ok = typeof p === 'string';
-      if (!ok) {
-        throw new InvalidPluginError(
-          `manifest.provides 元素必须为字符串（${m.id}）`,
-        );
+      if (typeof p !== 'string' || p.length === 0) {
+        throw new InvalidPluginError(`manifest.provides 元素必须为非空字符串（${m.id}）`);
       }
     }
+  }
+}
+
+function validateInjectSpec(spec: unknown, pluginId: string, label: string): void {
+  if (Array.isArray(spec)) {
+    if (spec.some((x) => typeof x !== 'string' || x.length === 0)) {
+      throw new InvalidPluginError(`${label} 字符串数组元素必须为非空字符串（${pluginId}）`);
+    }
+    return;
+  }
+  if (typeof spec === 'object' && spec !== null && !Array.isArray(spec)) {
+    for (const [key, value] of Object.entries(spec)) {
+      if (typeof key !== 'string' || key.length === 0) {
+        throw new InvalidPluginError(`${label} 键必须为非空字符串（${pluginId}）`);
+      }
+      if (typeof value !== 'boolean') {
+        throw new InvalidPluginError(`${label}.${key} 必须为布尔值（${pluginId}）`);
+      }
+    }
+    return;
+  }
+  throw new InvalidPluginError(`${label} 必须为字符串数组或 Record<string, boolean>（${pluginId}）`);
+}
+
+function validateUiRpc(rpc: unknown, pluginId: string): void {
+  if (typeof rpc !== 'object' || rpc === null || Array.isArray(rpc)) {
+    throw new InvalidPluginError(`ui.rpc 必须为对象（${pluginId}）`);
+  }
+  for (const [service, methods] of Object.entries(rpc)) {
+    if (typeof service !== 'string' || service.length === 0) {
+      throw new InvalidPluginError(`ui.rpc 服务名必须为非空字符串（${pluginId}）`);
+    }
+    if (!Array.isArray(methods) || methods.some((m) => typeof m !== 'string' || m.length === 0)) {
+      throw new InvalidPluginError(`ui.rpc.${service} 必须为非空字符串数组（${pluginId}）`);
+    }
+  }
+}
+
+/** manifest + inject + ui 形状校验（boot / register 共用） */
+export function validatePlugin(plugin: Plugin): void {
+  validateManifest(plugin);
+  const id = plugin.manifest.id;
+  if (plugin.inject !== undefined) validateInjectSpec(plugin.inject, id, 'inject');
+  if (plugin.manifest.inject !== undefined) {
+    validateInjectSpec(plugin.manifest.inject, id, 'manifest.inject');
+  }
+  if (plugin.manifest.services !== undefined) {
+    validateInjectSpec(plugin.manifest.services, id, 'manifest.services');
+  }
+  if (plugin.ui !== undefined) {
+    if (typeof plugin.ui !== 'object' || plugin.ui === null || Array.isArray(plugin.ui)) {
+      throw new InvalidPluginError(`ui 必须为对象（${id}）`);
+    }
+    if (plugin.ui.content !== undefined && typeof plugin.ui.content !== 'string') {
+      throw new InvalidPluginError(`ui.content 必须为字符串（${id}）`);
+    }
+    if (plugin.ui.rpc !== undefined) validateUiRpc(plugin.ui.rpc, id);
+  }
+  if (typeof plugin.register !== 'function') {
+    throw new InvalidPluginError(`register 必须为函数（${id}）`);
   }
 }
