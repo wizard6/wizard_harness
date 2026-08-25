@@ -16,9 +16,9 @@
       "aiIssues": []
     },
     "contracts/src/index.ts": {
-      "hash": "2285cb723b860d6897a9b59b8bdc8dab897b254df684e5c9b677656a1e7882b0",
+      "hash": "67e863201890925702bf855063bdcc90f0345b9b2a3e32930c1e18513fc5aed1",
       "issues": [],
-      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "checkedAt": "2026-08-25T09:08:52.727Z",
       "aiHash": "67ee9a66334fb1fa81825d4266aa63d9a06c80865464c997011ddac6bc7f777b",
       "aiIssues": []
     },
@@ -1024,9 +1024,9 @@
       "aiIssues": []
     },
     "contracts/src/plugin-context.ts": {
-      "hash": "6d5a6ca46cc5c86f7f4aceffbac233b14b251e06d273ca0acf530cd0f1b3f7df",
+      "hash": "1c9c8cff721cd82ad06d8a9bf1dd7fdb223764badb3df38503487ab1efbf1045",
       "issues": [],
-      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "checkedAt": "2026-08-25T09:08:52.727Z",
       "aiHash": "28ee2bdb306ef466f243d9d3cf49ca6d38134ed6420b4b2416139a69d18f409f",
       "aiIssues": []
     },
@@ -1066,9 +1066,9 @@
       "aiIssues": []
     },
     "contracts/src/plugin-service-types.ts": {
-      "hash": "77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52",
+      "hash": "6a89a7969f18ca36551e8c8ebf208c7ed957d08b885f807ab15e0797357b4b78",
       "issues": [],
-      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "checkedAt": "2026-08-25T09:08:52.727Z",
       "aiHash": "77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52",
       "aiIssues": []
     },
@@ -1150,18 +1150,60 @@
       "checkedAt": "2026-08-25T08:52:35.688Z",
       "aiHash": "3127e5735d95f7c29339883caad92d8d36833a2ffc39a96a51e840a10e20d58f",
       "aiIssues": []
+    },
+    "contracts/src/skills.ts": {
+      "hash": "bdcf4f3e84fbe341515350955cde0b1fc1306ec032fa228c2393ef6943e26b9c",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "aiHash": "bdcf4f3e84fbe341515350955cde0b1fc1306ec032fa228c2393ef6943e26b9c",
+      "aiIssues": []
+    },
+    "plugins/skills/src/host.ts": {
+      "hash": "4a5e7113823c78aa06b7040a8c238f0e36e29121007e75cf78676a95f4a707c2",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:09:50.197Z",
+      "aiHash": "4eea56a0d0d4ca40d904a734c719c9b3a56fd533731857ed8138bc3c6531d674",
+      "aiIssues": []
+    },
+    "plugins/skills/src/index.ts": {
+      "hash": "a03d340b7d7f92261c09c1b6a33338bcc51d50cd5f3de853ff326e4ed3fa5e33",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "aiHash": "a03d340b7d7f92261c09c1b6a33338bcc51d50cd5f3de853ff326e4ed3fa5e33",
+      "aiIssues": []
+    },
+    "plugins/skills/src/page.ts": {
+      "hash": "3922b56f3800cf29a5a468bfb91930bc2a7d1c151411b859a2499921d771e622",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "aiHash": "3922b56f3800cf29a5a468bfb91930bc2a7d1c151411b859a2499921d771e622",
+      "aiIssues": []
+    },
+    "plugins/skills/src/parse.ts": {
+      "hash": "954f4f41b4ee2f4d2b938d0a2e0de0e1bc9fd3ea460e2d91045212a4aaecebe0",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "aiHash": "954f4f41b4ee2f4d2b938d0a2e0de0e1bc9fd3ea460e2d91045212a4aaecebe0",
+      "aiIssues": []
+    },
+    "plugins/skills/src/scan.ts": {
+      "hash": "b87cd5f1d4a1221fac7c3810fd8eca3f4dcde6780ce8dc7ed60c85662e6fb853",
+      "issues": [],
+      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "aiHash": "b87cd5f1d4a1221fac7c3810fd8eca3f4dcde6780ce8dc7ed60c85662e6fb853",
+      "aiIssues": []
     }
   },
   "global": {
     "typecheck": {
       "status": "pass",
       "failed": [],
-      "at": "2026-08-25T08:52:35.688Z"
+      "at": "2026-08-25T09:09:50.197Z"
     },
     "test": {
       "status": "pass",
-      "summary": "Test Files 48 passed | Tests 236 passed",
-      "at": "2026-08-25T08:52:35.688Z"
+      "summary": "Test Files 49 passed | Tests 240 passed",
+      "at": "2026-08-25T09:09:50.197Z"
     }
   },
   "rulesVersion": 7

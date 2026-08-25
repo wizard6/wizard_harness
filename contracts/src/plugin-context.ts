@@ -16,6 +16,7 @@ import type {
   PromptContextService,
   SandboxService,
   SessionService,
+  SkillsService,
   ToolboxService,
   TimerService,
   ToolsService,
@@ -48,6 +49,7 @@ declare module '@wizard-harness/core' {
     readonly devTools?: DevToolsService;
     readonly toolbox?: ToolboxService;
     readonly timer?: TimerService;
+    readonly skills?: SkillsService;
     readonly webTools?: WebToolsService;
     readonly persona?: PersonaService;
     readonly workflow?: WorkflowService;

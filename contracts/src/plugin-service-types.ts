@@ -16,6 +16,7 @@ export type { CodeEditorService } from './code-editor.js';
 export type { DevToolsService } from './dev-tools.js';
 export type { ToolboxService } from './toolbox.js';
 export type { TimerService } from './timer.js';
+export type { SkillsService } from './skills.js';
 export type { WebToolsService } from './web-tools.js';
 export type { PersonaService } from './persona.js';
 export type { WorkflowService } from './workflow.js';

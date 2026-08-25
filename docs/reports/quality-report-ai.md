@@ -1,14 +1,14 @@
 # 质量检测报告（AI 版）
 
-- 时间：2026-08-25T08:52:35.688Z
-- 范围：163 个源码文件（core/contracts/plugins/obs）
-- 增量：修改 5，重查 5，复用 158；全局门禁：已重跑
+- 时间：2026-08-25T09:09:50.197Z
+- 范围：169 个源码文件（core/contracts/plugins/obs）
+- 增量：修改 1，重查 1，复用 168；全局门禁：已重跑
 
 ## 全局门禁
 - typecheck：✅ 通过
-- test：✅ 通过（Test Files 48 passed | Tests 236 passed）
+- test：✅ 通过（Test Files 49 passed | Tests 240 passed）
 
-## 文件清单（163 个，含 sha256）
+## 文件清单（169 个，含 sha256）
 - contracts/src/agent-loop.ts（36 行）sha256=1ddf399a55a0865cdd31dfd7846e564a096302d891dcd0f90bded8cccb17059d [未修改]
 - contracts/src/agent.ts（36 行）sha256=6487a4d1e8976172efae934b962f6e45020c8af607b9d05d883b1ac1e245bb2e [未修改]
 - contracts/src/app-chat.ts（47 行）sha256=2753258d1f129d7ef494ad9ae742ebd5d096006a784d980cc9ff8f91ac759d5b [未修改]
@@ -20,15 +20,16 @@
 - contracts/src/dev-tools.ts（17 行）sha256=bfd795cb7a798d303eb91f538d051898c839b92ac98a6b567943b9c63e0425f4 [未修改]
 - contracts/src/events.ts（24 行）sha256=458c1819d8b10d0945415f0d68688795a24c9395e3b1bb57441eb3b8aab09138 [未修改]
 - contracts/src/file-manager.ts（22 行）sha256=ce2c9f2b9e6edd03d7b21c4a9c24f1506ae592a22e6f5be987fd165488c0b3e1 [未修改]
-- contracts/src/index.ts（159 行）sha256=2285cb723b860d6897a9b59b8bdc8dab897b254df684e5c9b677656a1e7882b0 [未修改]
+- contracts/src/index.ts（161 行）sha256=67e863201890925702bf855063bdcc90f0345b9b2a3e32930c1e18513fc5aed1 [未修改]
 - contracts/src/llm.ts（46 行）sha256=bdd345c2cee10c777de2f4630f919509a7eb8b23f2a0138c4f35d5b64b388ece [未修改]
 - contracts/src/logger.ts（24 行）sha256=0e5e38a9bf7196fd4b5b74e589518d1dccec5654d6b41511efee0a37a7bbd04f [未修改]
 - contracts/src/persona.ts（60 行）sha256=29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240 [未修改]
-- contracts/src/plugin-context.ts（60 行）sha256=6d5a6ca46cc5c86f7f4aceffbac233b14b251e06d273ca0acf530cd0f1b3f7df [未修改]
-- contracts/src/plugin-service-types.ts（24 行）sha256=77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52 [未修改]
+- contracts/src/plugin-context.ts（62 行）sha256=1c9c8cff721cd82ad06d8a9bf1dd7fdb223764badb3df38503487ab1efbf1045 [未修改]
+- contracts/src/plugin-service-types.ts（25 行）sha256=6a89a7969f18ca36551e8c8ebf208c7ed957d08b885f807ab15e0797357b4b78 [未修改]
 - contracts/src/prompt-context.ts（154 行）sha256=5d339bf33df29afe627dc2a05c535de9078d125f00424865d6ebf169e4a517ac [未修改]
 - contracts/src/sandbox.ts（29 行）sha256=13303fc445f29e34261884f13b0c875e984ff575b42fb54cb46ecf199063f293 [未修改]
 - contracts/src/session.ts（84 行）sha256=43815eedabe21df2ad360b70292200ddbd6e4c674903e05fbd1c039dd940afd3 [未修改]
+- contracts/src/skills.ts（33 行）sha256=bdcf4f3e84fbe341515350955cde0b1fc1306ec032fa228c2393ef6943e26b9c [未修改]
 - contracts/src/timer.ts（187 行）sha256=c8845f39987bcbbdeb4cd6660909e4ec312b7cb1704f15c14ffd4a38acd0f005 [未修改]
 - contracts/src/toolbox.ts（44 行）sha256=028a047ebc73bb7657517a5c3d3da55f02e93fd354b5a988461afad06150f9b2 [未修改]
 - contracts/src/tools.ts（58 行）sha256=739c24f8ddfd0e94ba2d8be7ac2309d60208b2af9135116d83338666d10d461f [未修改]
@@ -139,17 +140,22 @@
 - plugins/session/src/index.ts（69 行）sha256=0c125e140696cb2faa16b5858ab9c283ee14df19f4d8a728e11a0047d3791e9a [未修改]
 - plugins/session/src/page.ts（108 行）sha256=cc3de07cc7783e3751925e9bd2563294415e9814668f79646f8b8dd374faeffb [未修改]
 - plugins/session/src/store.ts（220 行）sha256=adf6392234d69433b1112671bb34e2a02bcbc980deaba1758e353c52dc6d74a6 [未修改]
+- plugins/skills/src/host.ts（150 行）sha256=4a5e7113823c78aa06b7040a8c238f0e36e29121007e75cf78676a95f4a707c2 [已修改]
+- plugins/skills/src/index.ts（139 行）sha256=a03d340b7d7f92261c09c1b6a33338bcc51d50cd5f3de853ff326e4ed3fa5e33 [未修改]
+- plugins/skills/src/page.ts（39 行）sha256=3922b56f3800cf29a5a468bfb91930bc2a7d1c151411b859a2499921d771e622 [未修改]
+- plugins/skills/src/parse.ts（52 行）sha256=954f4f41b4ee2f4d2b938d0a2e0de0e1bc9fd3ea460e2d91045212a4aaecebe0 [未修改]
+- plugins/skills/src/scan.ts（70 行）sha256=b87cd5f1d4a1221fac7c3810fd8eca3f4dcde6780ce8dc7ed60c85662e6fb853 [未修改]
 - plugins/timer/src/actions.ts（59 行）sha256=ecb9ad4918d794bd36485a2a5218338371a7f1eb62168fd81785562a1a9db52b [未修改]
 - plugins/timer/src/cron.ts（52 行）sha256=4290c9d47d89113efadac34a669cacd0aab7d96287519f23bc8efb125653e949 [未修改]
-- plugins/timer/src/flow-plan.ts（85 行）sha256=cbb7a7d38b022af3706d80d4c333334f3b9c878963725f0ce8a1a7d996e1a56f [已修改]
-- plugins/timer/src/flow-runner.ts（141 行）sha256=f591f15aa1adccee2ebc458e2dfd0bd50f642bd6240b4f7217a4f25ca41ff008 [已修改]
+- plugins/timer/src/flow-plan.ts（85 行）sha256=cbb7a7d38b022af3706d80d4c333334f3b9c878963725f0ce8a1a7d996e1a56f [未修改]
+- plugins/timer/src/flow-runner.ts（141 行）sha256=f591f15aa1adccee2ebc458e2dfd0bd50f642bd6240b4f7217a4f25ca41ff008 [未修改]
 - plugins/timer/src/host.ts（448 行）sha256=a22fe50a5fae31418ef5d84bc5bbab1ec8faa4d35570647cf71ff5ffdc800512 [未修改]
   - 顶层函数 createTimerHost 过大（331 行 > 300），低内聚/职责过多，考虑拆分
 - plugins/timer/src/index.ts（128 行）sha256=7b570d69d2dcdaf9741a9c8668b3eff98b8759c80d4d69599a716fece0dafed4 [未修改]
-- plugins/timer/src/page-tree.ts（29 行）sha256=6577c5ba5938f1ff8f2cb44c05a61aca1ac26bef37afb64e48d8435cbbd7c3f5 [已修改]
-- plugins/timer/src/page.ts（182 行）sha256=af9abb335e20d9d4cadb7a60bf28ff302ef7b548ee06044ad2ec486bbe15d36a [已修改]
+- plugins/timer/src/page-tree.ts（29 行）sha256=6577c5ba5938f1ff8f2cb44c05a61aca1ac26bef37afb64e48d8435cbbd7c3f5 [未修改]
+- plugins/timer/src/page.ts（182 行）sha256=af9abb335e20d9d4cadb7a60bf28ff302ef7b548ee06044ad2ec486bbe15d36a [未修改]
 - plugins/timer/src/scheduler.ts（55 行）sha256=46511bad8cfdb10302f744542c5876934deeea37bc1ec982bbc73045ed6fb156 [未修改]
-- plugins/timer/src/trace.ts（116 行）sha256=48c469d0f6dd5b7d47f1d7d3440f20a2ddbe5f3003c832f408f7ae59bcd2b8b6 [已修改]
+- plugins/timer/src/trace.ts（116 行）sha256=48c469d0f6dd5b7d47f1d7d3440f20a2ddbe5f3003c832f408f7ae59bcd2b8b6 [未修改]
 - plugins/toolbox/src/config.ts（111 行）sha256=4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c [未修改]
 - plugins/toolbox/src/index.ts（189 行）sha256=a45e844628c91f7958d801522fe3e12d3d9bb36884bddf51d2bcaef5b4d5d944 [未修改]
 - plugins/toolbox/src/page.ts（81 行）sha256=38d672ede898ff4b477a841439f2555d4e6af3f0319c92f46d8d86b898e82cd2 [未修改]
