@@ -1,12 +1,12 @@
 # 质量检测报告（AI 版）
 
-- 时间：2026-08-25T08:45:00.248Z
+- 时间：2026-08-25T08:52:35.688Z
 - 范围：163 个源码文件（core/contracts/plugins/obs）
-- 增量：修改 9，重查 9，复用 154；全局门禁：已重跑
+- 增量：修改 5，重查 5，复用 158；全局门禁：已重跑
 
 ## 全局门禁
 - typecheck：✅ 通过
-- test：✅ 通过（Test Files 48 passed | Tests 235 passed）
+- test：✅ 通过（Test Files 48 passed | Tests 236 passed）
 
 ## 文件清单（163 个，含 sha256）
 - contracts/src/agent-loop.ts（36 行）sha256=1ddf399a55a0865cdd31dfd7846e564a096302d891dcd0f90bded8cccb17059d [未修改]
@@ -20,7 +20,7 @@
 - contracts/src/dev-tools.ts（17 行）sha256=bfd795cb7a798d303eb91f538d051898c839b92ac98a6b567943b9c63e0425f4 [未修改]
 - contracts/src/events.ts（24 行）sha256=458c1819d8b10d0945415f0d68688795a24c9395e3b1bb57441eb3b8aab09138 [未修改]
 - contracts/src/file-manager.ts（22 行）sha256=ce2c9f2b9e6edd03d7b21c4a9c24f1506ae592a22e6f5be987fd165488c0b3e1 [未修改]
-- contracts/src/index.ts（159 行）sha256=2285cb723b860d6897a9b59b8bdc8dab897b254df684e5c9b677656a1e7882b0 [已修改]
+- contracts/src/index.ts（159 行）sha256=2285cb723b860d6897a9b59b8bdc8dab897b254df684e5c9b677656a1e7882b0 [未修改]
 - contracts/src/llm.ts（46 行）sha256=bdd345c2cee10c777de2f4630f919509a7eb8b23f2a0138c4f35d5b64b388ece [未修改]
 - contracts/src/logger.ts（24 行）sha256=0e5e38a9bf7196fd4b5b74e589518d1dccec5654d6b41511efee0a37a7bbd04f [未修改]
 - contracts/src/persona.ts（60 行）sha256=29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240 [未修改]
@@ -29,7 +29,7 @@
 - contracts/src/prompt-context.ts（154 行）sha256=5d339bf33df29afe627dc2a05c535de9078d125f00424865d6ebf169e4a517ac [未修改]
 - contracts/src/sandbox.ts（29 行）sha256=13303fc445f29e34261884f13b0c875e984ff575b42fb54cb46ecf199063f293 [未修改]
 - contracts/src/session.ts（84 行）sha256=43815eedabe21df2ad360b70292200ddbd6e4c674903e05fbd1c039dd940afd3 [未修改]
-- contracts/src/timer.ts（187 行）sha256=c8845f39987bcbbdeb4cd6660909e4ec312b7cb1704f15c14ffd4a38acd0f005 [已修改]
+- contracts/src/timer.ts（187 行）sha256=c8845f39987bcbbdeb4cd6660909e4ec312b7cb1704f15c14ffd4a38acd0f005 [未修改]
 - contracts/src/toolbox.ts（44 行）sha256=028a047ebc73bb7657517a5c3d3da55f02e93fd354b5a988461afad06150f9b2 [未修改]
 - contracts/src/tools.ts（58 行）sha256=739c24f8ddfd0e94ba2d8be7ac2309d60208b2af9135116d83338666d10d461f [未修改]
 - contracts/src/trajectory.ts（54 行）sha256=0e3d3409af8be41404025032aaf2caf3eca7f052e6ef56423d197c22b4871e99 [未修改]
@@ -141,15 +141,15 @@
 - plugins/session/src/store.ts（220 行）sha256=adf6392234d69433b1112671bb34e2a02bcbc980deaba1758e353c52dc6d74a6 [未修改]
 - plugins/timer/src/actions.ts（59 行）sha256=ecb9ad4918d794bd36485a2a5218338371a7f1eb62168fd81785562a1a9db52b [未修改]
 - plugins/timer/src/cron.ts（52 行）sha256=4290c9d47d89113efadac34a669cacd0aab7d96287519f23bc8efb125653e949 [未修改]
-- plugins/timer/src/flow-plan.ts（86 行）sha256=3a7a1626f38b8a3730853cd449a8aefa64a1c813faff681b827956966d5dc981 [已修改]
-- plugins/timer/src/flow-runner.ts（138 行）sha256=da506268c8cec0202323d50fcff15177aa8d1f0e45643eac1b56ed363ea1cd1c [已修改]
-- plugins/timer/src/host.ts（448 行）sha256=a22fe50a5fae31418ef5d84bc5bbab1ec8faa4d35570647cf71ff5ffdc800512 [已修改]
+- plugins/timer/src/flow-plan.ts（85 行）sha256=cbb7a7d38b022af3706d80d4c333334f3b9c878963725f0ce8a1a7d996e1a56f [已修改]
+- plugins/timer/src/flow-runner.ts（141 行）sha256=f591f15aa1adccee2ebc458e2dfd0bd50f642bd6240b4f7217a4f25ca41ff008 [已修改]
+- plugins/timer/src/host.ts（448 行）sha256=a22fe50a5fae31418ef5d84bc5bbab1ec8faa4d35570647cf71ff5ffdc800512 [未修改]
   - 顶层函数 createTimerHost 过大（331 行 > 300），低内聚/职责过多，考虑拆分
-- plugins/timer/src/index.ts（128 行）sha256=7b570d69d2dcdaf9741a9c8668b3eff98b8759c80d4d69599a716fece0dafed4 [已修改]
-- plugins/timer/src/page-tree.ts（26 行）sha256=207fc8226b4c4f5dac12749f4f2aec288edca5081a0769a0e52c5662ba9c5817 [已修改]
-- plugins/timer/src/page.ts（174 行）sha256=734c58c0ad72d0651964cf38f7e1fee181dad6b0f0bab8241e19905690118ca8 [已修改]
+- plugins/timer/src/index.ts（128 行）sha256=7b570d69d2dcdaf9741a9c8668b3eff98b8759c80d4d69599a716fece0dafed4 [未修改]
+- plugins/timer/src/page-tree.ts（29 行）sha256=6577c5ba5938f1ff8f2cb44c05a61aca1ac26bef37afb64e48d8435cbbd7c3f5 [已修改]
+- plugins/timer/src/page.ts（182 行）sha256=af9abb335e20d9d4cadb7a60bf28ff302ef7b548ee06044ad2ec486bbe15d36a [已修改]
 - plugins/timer/src/scheduler.ts（55 行）sha256=46511bad8cfdb10302f744542c5876934deeea37bc1ec982bbc73045ed6fb156 [未修改]
-- plugins/timer/src/trace.ts（116 行）sha256=3127e5735d95f7c29339883caad92d8d36833a2ffc39a96a51e840a10e20d58f [已修改]
+- plugins/timer/src/trace.ts（116 行）sha256=48c469d0f6dd5b7d47f1d7d3440f20a2ddbe5f3003c832f408f7ae59bcd2b8b6 [已修改]
 - plugins/toolbox/src/config.ts（111 行）sha256=4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c [未修改]
 - plugins/toolbox/src/index.ts（189 行）sha256=a45e844628c91f7958d801522fe3e12d3d9bb36884bddf51d2bcaef5b4d5d944 [未修改]
 - plugins/toolbox/src/page.ts（81 行）sha256=38d672ede898ff4b477a841439f2555d4e6af3f0319c92f46d8d86b898e82cd2 [未修改]
@@ -175,7 +175,7 @@
 - plugins/workflow/src/wires.ts（38 行）sha256=407857d9f583ecd6f752d2da4ccfe7ed6c40b0301515cf7f13c64e370650a184 [未修改]
 
 ## 结构问题（1 个文件，1 项）
-- plugins/timer/src/host.ts（448 行） [已修改]
+- plugins/timer/src/host.ts（448 行） [未修改]
   - 顶层函数 createTimerHost 过大（331 行 > 300），低内聚/职责过多，考虑拆分
 
 ## 结论

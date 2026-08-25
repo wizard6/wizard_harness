@@ -116,7 +116,10 @@ export async function runFlow(
   ctx: FlowRunCtx,
 ): Promise<{ state: TimerRunState; summary: string }> {
   if (flow.kind === 'chain') {
+    const root = ctx.trace.findByKey(ctx.flowRunId, 'chain-root');
+    if (root) ctx.trace.patch(root.id, { state: 'running', startedAt: Date.now() });
     const state = await runSteps(ctx, flow.steps ?? [], 'chain');
+    if (root) ctx.trace.patch(root.id, { state: state === 'ok' ? 'ok' : state, endedAt: Date.now() });
     return { state, summary: `chain ${state}` };
   }
   const root = ctx.trace.findByKey(ctx.flowRunId, 'tree-root');

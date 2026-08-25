@@ -71,7 +71,7 @@ export class TraceStore {
     for (const id of ids) {
       const n = this.nodes.get(id);
       if (!n || n.parentId !== parentId || n.id === keepId) continue;
-      if (n.state === 'pending' || n.state === 'scheduled') n.state = 'skipped';
+      if (n.state === 'pending' || n.state === 'scheduled') this.skipSubtree(flowRunId, n.id);
     }
   }
 

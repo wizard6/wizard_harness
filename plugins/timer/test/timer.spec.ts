@@ -125,7 +125,36 @@ describe('timer host', () => {
     expect(events).not.toContain('timer/err');
     const tree = host.getTrace(host.flowRuns('tree1')[0]!.id);
     const skipped = tree?.nodes.filter((n) => n.state === 'skipped') ?? [];
+    const pending = tree?.nodes.filter((n) => n.state === 'pending') ?? [];
     expect(skipped.length).toBeGreaterThan(0);
+    expect(pending.length).toBe(0);
+  });
+
+  it('决策树 error 分支走失败路径', async () => {
+    const events: string[] = [];
+    const host = createTimerHost({
+      emit: (action) => events.push(action),
+      console: {
+        exec: async () => ({ code: 1, stdout: '', stderr: 'fail' }),
+      } as never,
+    });
+    host.create({
+      id: 'tree-err',
+      schedule: { kind: 'once', delayMs: 10 },
+      flow: {
+        kind: 'tree',
+        action: { kind: 'shell', command: 'exit 1' },
+        branches: [
+          { when: 'ok', label: '成功', action: { kind: 'event', action: 'timer/ok' } },
+          { when: 'error', label: '失败', action: { kind: 'event', action: 'timer/err' } },
+        ],
+      },
+      autostart: true,
+    });
+    await vi.advanceTimersByTimeAsync(100);
+    await Promise.resolve();
+    expect(events).toContain('timer/err');
+    expect(events).not.toContain('timer/ok');
   });
 });
 
@@ -135,8 +164,9 @@ describe('flow plan & trace', () => {
       kind: 'chain',
       steps: [{ label: 'S1', action: { kind: 'event', action: 'a' } }],
     });
-    expect(nodes.length).toBe(1);
-    expect(nodes[0]!.state).toBe('pending');
+    expect(nodes.length).toBe(2);
+    expect(nodes.find((n) => n.nodeKey === 'chain-root')?.state).toBe('pending');
+    expect(nodes.find((n) => n.nodeKey === 'chain-0')?.parentId).toBe(nodes.find((n) => n.nodeKey === 'chain-root')?.id);
   });
 
   it('runFlow 更新节点状态', async () => {

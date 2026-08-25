@@ -38,14 +38,12 @@ function pushNode(ctx: PlanCtx, nodeKey: string, label: string, parentId?: strin
 
 function planSteps(ctx: PlanCtx, steps: readonly TimerFlowStep[], parentId?: string, prefix = 'step'): string | undefined {
   let lastId: string | undefined;
-  let prevId = parentId;
   for (let i = 0; i < steps.length; i += 1) {
     const s = steps[i]!;
     const key = `${prefix}-${s.id ?? i}`;
     const label = s.label ?? `${prefix} ${i + 1}`;
-    const id = pushNode(ctx, key, label, prevId);
+    const id = pushNode(ctx, key, label, parentId);
     lastId = id;
-    prevId = id;
   }
   return lastId;
 }
@@ -75,7 +73,8 @@ export function materializeFlowPlan(flowRunId: string, flow: TimerFlowDef): Time
   seq = 0;
   const ctx: PlanCtx = { flowRunId, nodes: [], path: 'root' };
   if (flow.kind === 'chain') {
-    planSteps(ctx, flow.steps ?? [], undefined, 'chain');
+    const rootId = pushNode(ctx, 'chain-root', flow.rootLabel ?? '事件链条');
+    planSteps(ctx, flow.steps ?? [], rootId, 'chain');
     return ctx.nodes;
   }
   const rootId = pushNode(ctx, 'tree-root', flow.rootLabel ?? '根节点');

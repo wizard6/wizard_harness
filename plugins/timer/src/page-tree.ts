@@ -21,5 +21,8 @@ export const TREE_PANEL_CSS = [
   '.t-node.error,.t-node.timeout{border-left-color:#ff7b72}',
   '.t-node.cancelled,.t-node.skipped{border-left-color:#484f58;color:#6e7681}',
   '.t-kids{margin:6px 0 0 14px;padding-left:10px;border-left:1px dashed #30363d}',
+  '.t-fork{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0 0;padding:8px 0 0 0}',
+  '.t-fork>.t-node{flex:1;min-width:140px;margin:0}',
+  '.t-seq>.t-node{margin-left:0}',
   '.t-meta{font-size:10px;color:#8b949e;margin-top:2px}',
 ].join('');
