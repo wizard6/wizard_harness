@@ -1,5 +1,5 @@
 {
-  "name": "@wizard-harness/plugin-code-editor",
+  "name": "@wizard-harness/plugin-toolbox",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@wizard-harness/core": "workspace:^",
-    "@wizard-harness/contracts": "workspace:^",
-    "@wizard-harness/plugin-code-browser": "workspace:^"
+    "@wizard-harness/contracts": "workspace:^"
   },
   "wizardHarness": {
     "plugin": true

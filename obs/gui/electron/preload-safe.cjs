@@ -6,6 +6,6 @@ contextBridge.exposeInMainWorld('wh', {
   eventsClear: () => ipcRenderer.invoke('wh:events-clear'),
   windowControl: (action) => ipcRenderer.send('wh:window-control', action),
   call: (service, method, args) => ipcRenderer.invoke('wh:plugin-call', { service, method, args }),
-  openCodeEditor: (rel) => ipcRenderer.invoke('wh:open-code-editor', rel),
+  openCodeEditor: (target) => ipcRenderer.invoke('wh:open-code-editor', target),
   openCodeBrowser: (rel) => ipcRenderer.invoke('wh:open-code-browser', rel),
 });

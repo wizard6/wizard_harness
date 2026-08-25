@@ -16,6 +16,7 @@ import type { FileManagerService } from './file-manager.js';
 import type { CodeBrowserService } from './code-browser.js';
 import type { CodeEditorService } from './code-editor.js';
 import type { DevToolsService } from './dev-tools.js';
+import type { ToolboxService } from './toolbox.js';
 import type { WebToolsService } from './web-tools.js';
 import type { PersonaService } from './persona.js';
 import type { WorkflowService } from './workflow.js';
@@ -99,9 +100,16 @@ export type { FileManagerEntry, FileManagerInfo, FileManagerList, FileManagerSer
 export { CODE_BROWSER_SERVICE } from './code-browser.js';
 export type { CodeBrowserInfo, CodeBrowserReadResult, CodeBrowserService } from './code-browser.js';
 export { CODE_EDITOR_SERVICE } from './code-editor.js';
-export type { CodeEditorInfo, CodeEditorReadResult, CodeEditorService } from './code-editor.js';
+export type {
+  CodeEditorInfo,
+  CodeEditorOpenTarget,
+  CodeEditorReadResult,
+  CodeEditorService,
+} from './code-editor.js';
 export { DEV_TOOLS_SERVICE } from './dev-tools.js';
 export type { DevToolsInfo, DevToolsService } from './dev-tools.js';
+export { TOOLBOX_SERVICE } from './toolbox.js';
+export type { ToolboxInfo, ToolboxParamInfo, ToolboxRunResult, ToolboxScriptInfo, ToolboxScriptKind, ToolboxService } from './toolbox.js';
 export { WEB_TOOLS_SERVICE } from './web-tools.js';
 export type { WebToolsInfo, WebToolsService } from './web-tools.js';
 export { PERSONA_SERVICE } from './persona.js';
@@ -166,6 +174,7 @@ declare module '@wizard-harness/core' {
     readonly codeBrowser?: CodeBrowserService;
     readonly codeEditor?: CodeEditorService;
     readonly devTools?: DevToolsService;
+    readonly toolbox?: ToolboxService;
     readonly webTools?: WebToolsService;
     readonly persona?: PersonaService;
     readonly workflow?: WorkflowService;

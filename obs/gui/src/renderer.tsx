@@ -53,7 +53,9 @@ declare global {
       qualityData(): Promise<QualityData>;
       rerunCheck(): Promise<QualityData & { error?: string }>;
       openFile(rel: string): Promise<{ ok: boolean; error?: string }>;
-      openCodeEditor(rel: string): Promise<{ ok: boolean; error?: string }>;
+      openCodeEditor(
+        target: string | { path: string; startLine?: number; endLine?: number },
+      ): Promise<{ ok: boolean; error?: string }>;
       openCodeBrowser(rel: string): Promise<{ ok: boolean; error?: string }>;
     };
   }

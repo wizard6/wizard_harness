@@ -1,0 +1,49 @@
+[
+  {
+    "id": "toolbox",
+    "config": {
+      "scripts": [
+        {
+          "name": "open_folder",
+          "label": "打开工作区",
+          "description": "在资源管理器中打开当前工作区目录。可选子路径 path。",
+          "kind": "open_path",
+          "path": "{{path}}",
+          "params": [{ "key": "path", "label": "子路径", "placeholder": "留空=工作区根" }]
+        },
+        {
+          "name": "git_push",
+          "label": "推送项目",
+          "description": "git add -A、commit、push。无变更时可能失败。",
+          "kind": "shell",
+          "command": "git add -A && git commit -m \"{{message}}\" && git push",
+          "params": [{ "key": "message", "label": "提交说明", "default": "chore: update" }]
+        },
+        {
+          "name": "start_gui",
+          "label": "启动观测台 GUI",
+          "description": "后台启动本仓库 Electron 观测台（pnpm gui:start）。主要面向 Windows。",
+          "kind": "shell",
+          "command": "start cmd /c \"pnpm gui:start\"",
+          "timeoutMs": 15000
+        },
+        {
+          "name": "build_test",
+          "label": "构建并测试",
+          "description": "pnpm build && pnpm test，用于提交前自检。",
+          "kind": "shell",
+          "command": "pnpm build && pnpm test",
+          "timeoutMs": 300000
+        },
+        {
+          "name": "quality_check",
+          "label": "质量检查",
+          "description": "运行 pnpm quality（启发式质检脚本）。",
+          "kind": "shell",
+          "command": "pnpm quality",
+          "timeoutMs": 120000
+        }
+      ]
+    }
+  }
+]

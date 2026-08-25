@@ -18,4 +18,16 @@ describe('syntax 高亮', () => {
     expect(html).toContain('hl-num');
     expect(html).toContain('hl-cmt');
   });
+
+  it('JSON 与 Python 使用不同主题类路径', () => {
+    const hl = new Function(`${SYNTAX_JS}; return highlightSource;`)() as (
+      code: string,
+      path: string,
+    ) => string;
+    const langOf = new Function(`${SYNTAX_JS}; return langOf;`)() as (path: string) => string;
+    expect(langOf('x.json')).toBe('json');
+    expect(langOf('main.py')).toBe('py');
+    expect(hl('{"a":1}', 'x.json')).toContain('hl-key');
+    expect(hl('def foo():', 'main.py')).toContain('hl-fn');
+  });
 });

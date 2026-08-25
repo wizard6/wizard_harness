@@ -214,6 +214,9 @@ importers:
       '@wizard-harness/core':
         specifier: workspace:^
         version: link:../../core
+      '@wizard-harness/plugin-code-browser':
+        specifier: workspace:^
+        version: link:../code-browser
 
   plugins/console:
     dependencies:
@@ -306,6 +309,15 @@ importers:
         version: link:../../core
 
   plugins/session:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/toolbox:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^

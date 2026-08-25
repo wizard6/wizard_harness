@@ -19,6 +19,7 @@ function tmpRoot() {
 async function boot(root: string) {
   const harness = createHarness({ bus: createEventBus(), config: { 'dev-tools': { root } } });
   await harness.registry.register(sessionPlugin);
+  await harness.registry.register(promptContextPlugin);
   await harness.registry.register(toolsPlugin);
   await harness.registry.register(devToolsPlugin);
   return harness;

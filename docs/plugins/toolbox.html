@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>toolbox 插件 · wizard-harness</title>
+  <style>
+    body { margin: 0; font: 15px/1.6 system-ui, "Microsoft YaHei", sans-serif; background: #101018; color: #e6e6ef; padding: 24px; }
+    code { color: #7ee787; font-family: ui-monospace, Consolas, monospace; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { border-bottom: 1px solid #2c2c3e; padding: 8px; text-align: left; vertical-align: top; }
+  </style>
+</head>
+<body>
+  <h1>toolbox — 配置驱动工具盒子</h1>
+  <p>观测台打开「工具盒子」弹窗，点按卡片上的 <b>运行</b> 即可执行；工作区路径可改并会记住。Agent 仍通过 <code>box.*</code> 工具调用。</p>
+  <h2>脚本类型</h2>
+  <table>
+    <tr><th>kind</th><th>字段</th><th>说明</th></tr>
+    <tr><td><code>shell</code></td><td><code>command</code></td><td>在 session.workspace（或 cwd）执行 shell；支持 <code>{{message}}</code>、<code>{{path}}</code>、<code>{{workspace}}</code> 占位符</td></tr>
+    <tr><td><code>open_path</code></td><td><code>path</code></td><td>在资源管理器中打开工作区内路径</td></tr>
+    <tr><td><code>open_url</code></td><td><code>url</code></td><td>用系统浏览器打开 URL</td></tr>
+  </table>
+  <h2>默认工具</h2>
+  <ul>
+    <li><code>box.open_folder</code> — 打开工作区目录</li>
+    <li><code>box.git_push</code> — git add / commit / push</li>
+  </ul>
+  <h2>配置示例</h2>
+  <pre><code>{
+  "id": "toolbox",
+  "config": {
+    "cwd": "",
+    "scripts": [
+      {
+        "name": "open_folder",
+        "label": "打开文件夹",
+        "kind": "open_path",
+        "path": "{{path}}",
+        "params": [{ "key": "path", "label": "子路径" }]
+      },
+      {
+        "name": "git_push",
+        "kind": "shell",
+        "command": "git add -A &amp;&amp; git commit -m \"{{message}}\" &amp;&amp; git push"
+      }
+    ]
+  }
+}</code></pre>
+</body>
+</html>

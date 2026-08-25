@@ -190,6 +190,24 @@ const PLUGIN_CHROME_CSS = `
     text-align: left; font-size: 12px; opacity: .72; padding-left: 4px;
     -webkit-app-region: drag; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* 插件弹窗全局滚动条：禁止系统默认样式，统一细滚动条 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.2) transparent;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.14);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,.24);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-corner { background: transparent; }
 `;
 
 function injectPluginChrome(win, title) {
@@ -613,8 +631,8 @@ const CALL_ALLOW = {
   agent: ['list', 'stop'],
   promptContext: ['assemble', 'apply', 'setPersona', 'getPersona', 'inspect'],
   agentLoop: ['run', 'cancel'],
-  codeEditor: ['info', 'read', 'write', 'queueOpen'],
-  codeBrowser: ['info', 'read', 'queueOpen'],
+  codeEditor: ['info', 'read', 'write', 'patch', 'takePendingOpen', 'queueOpen'],
+  codeBrowser: ['info', 'read', 'takePendingOpen', 'queueOpen'],
   fileManager: ['info', 'list'],
 };
 
@@ -719,38 +737,50 @@ function spawnEditor(cmd, abs) {
   });
 }
 
-function navigatePluginWindow(id, rel, globalFn) {
+function jsOpenTarget(globalFn, target) {
+  const payload = JSON.stringify(target);
+  return `typeof ${globalFn}==="function"&&${globalFn}(${payload})`;
+}
+
+function navigatePluginWindow(id, target, globalFn) {
   const existing = pluginWindows.get(id);
-  const safe = String(rel).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   if (existing && !existing.isDestroyed()) {
     existing.focus();
-    void existing.webContents.executeJavaScript(
-      `typeof ${globalFn}==="function"&&${globalFn}("${safe}")`,
-    );
+    void existing.webContents.executeJavaScript(jsOpenTarget(globalFn, target));
     return true;
   }
   return false;
 }
 
-function openCodeEditorWindow(rel) {
+function openCodeEditorWindow(target) {
+  const norm =
+    typeof target === 'string'
+      ? target
+      : target && typeof target.path === 'string'
+        ? target
+        : null;
+  if (!norm) throw new Error('无效打开目标');
   const svc = harness?.services.get('codeEditor');
-  if (svc && typeof svc.queueOpen === 'function') svc.queueOpen(String(rel));
-  if (navigatePluginWindow('code-editor', rel, 'window.__whOpenFile')) return;
+  if (svc && typeof svc.queueOpen === 'function') svc.queueOpen(norm);
+  if (navigatePluginWindow('code-editor', norm, 'window.__whOpenTarget')) return;
   openPluginWindow('code-editor');
 }
 
 function openCodeBrowserWindow(rel) {
   const svc = harness?.services.get('codeBrowser');
   if (svc && typeof svc.queueOpen === 'function') svc.queueOpen(String(rel));
-  if (navigatePluginWindow('code-browser', rel, 'window.__whOpenFile')) return;
+  if (navigatePluginWindow('code-browser', String(rel), 'window.__whOpenTarget')) return;
   openPluginWindow('code-browser');
 }
 
-ipcMain.handle('wh:open-code-editor', async (_evt, rel) => {
+ipcMain.handle('wh:open-code-editor', async (_evt, target) => {
   if (!harness) return { ok: false, error: 'harness 未就绪' };
-  if (!rel || typeof rel !== 'string') return { ok: false, error: '缺少路径' };
+  if (target == null) return { ok: false, error: '缺少路径' };
+  if (typeof target !== 'string' && (typeof target !== 'object' || typeof target.path !== 'string')) {
+    return { ok: false, error: '无效参数' };
+  }
   try {
-    openCodeEditorWindow(rel);
+    openCodeEditorWindow(target);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

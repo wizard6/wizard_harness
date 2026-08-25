@@ -9,6 +9,22 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./view-chrome": {
+      "types": "./dist/view-chrome.d.ts",
+      "default": "./dist/view-chrome.js"
+    },
+    "./syntax": {
+      "types": "./dist/syntax.d.ts",
+      "default": "./dist/syntax.js"
+    },
+    "./context-menu": {
+      "types": "./dist/context-menu.d.ts",
+      "default": "./dist/context-menu.js"
+    },
+    "./file-sync": {
+      "types": "./dist/file-sync.d.ts",
+      "default": "./dist/file-sync.js"
     }
   },
   "dependencies": {
