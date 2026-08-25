@@ -1,27 +1,4 @@
-import type { PluginContext, EventQuery } from '@wizard-harness/core';
-import type { LoggerService } from './logger.js';
-import type { EventsService } from './events.js';
-import type { ConsoleService } from './console.js';
-import type { SessionService } from './session.js';
-import type { LlmService } from './llm.js';
-import type { ToolsService } from './tools.js';
-import type { AgentService } from './agent.js';
-import type { AgentLoopService } from './agent-loop.js';
-import type { PromptContextService } from './prompt-context.js';
-import type { AppUiService } from './app-ui.js';
-import type { AppChatService } from './app-chat.js';
-import type { TrajectoryService } from './trajectory.js';
-import type { SandboxService } from './sandbox.js';
-import type { FileManagerService } from './file-manager.js';
-import type { CodeBrowserService } from './code-browser.js';
-import type { CodeEditorService } from './code-editor.js';
-import type { DevToolsService } from './dev-tools.js';
-import type { ToolboxService } from './toolbox.js';
-import type { WebToolsService } from './web-tools.js';
-import type { PersonaService } from './persona.js';
-import type { WorkflowService } from './workflow.js';
-import type { WorkflowNodesService } from './workflow-nodes.js';
-import type { AppWorkflowService } from './app-workflow.js';
+import type { EventQuery } from '@wizard-harness/core';
 
 export { LOGGER_SERVICE } from './logger.js';
 export type { LoggerService } from './logger.js';
@@ -70,6 +47,11 @@ export type {
   AssembleContext,
   AssembledContextEntry,
   AssembledSection,
+  ContextUsageBreakdown,
+  ContextUsageCategory,
+  ContextUsageCategoryId,
+  ContextUsageInput,
+  ContextUsageReport,
   PromptApplied,
   PromptAssembly,
   PromptContextBinding,
@@ -110,6 +92,31 @@ export { DEV_TOOLS_SERVICE } from './dev-tools.js';
 export type { DevToolsInfo, DevToolsService } from './dev-tools.js';
 export { TOOLBOX_SERVICE } from './toolbox.js';
 export type { ToolboxInfo, ToolboxParamInfo, ToolboxRunResult, ToolboxScriptInfo, ToolboxScriptKind, ToolboxService } from './toolbox.js';
+export { TIMER_SERVICE } from './timer.js';
+export type {
+  TimerAction,
+  TimerActionKind,
+  TimerCreateOpts,
+  TimerFlowBranch,
+  TimerFlowDef,
+  TimerFlowRunView,
+  TimerFlowStep,
+  TimerInspect,
+  TimerJobState,
+  TimerJobView,
+  TimerLogEntry,
+  TimerOnError,
+  TimerRunState,
+  TimerRunView,
+  TimerSchedule,
+  TimerScheduleKind,
+  TimerService,
+  TimerTraceNode,
+  TimerTraceState,
+  TimerTraceTree,
+  TimerTraceWhen,
+  TimerUpdatePatch,
+} from './timer.js';
 export { WEB_TOOLS_SERVICE } from './web-tools.js';
 export type { WebToolsInfo, WebToolsService } from './web-tools.js';
 export { PERSONA_SERVICE } from './persona.js';
@@ -148,37 +155,4 @@ export type { AppWorkflowService } from './app-workflow.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 
-/**
- * Cordis 风格属性访问：ctx.logger ≡ ctx.get('logger')（运行时由 Proxy 注入）。
- * 仅对与 PluginContext 内置成员无名字冲突的服务建立映射：
- * - logger / console 名字空闲 → 属性访问
- * - events 与内置 ctx.events（事件观测侧）冲突 → 走 ctx.get<EventsService>('events')
- *
- * 消费方 import 本包（或任何导出）即引入此增强，ctx.logger 获得完整类型。
- */
-declare module '@wizard-harness/core' {
-  interface PluginContext {
-    readonly logger?: LoggerService;
-    readonly console?: ConsoleService;
-    readonly session?: SessionService;
-    readonly llm?: LlmService;
-    readonly tools?: ToolsService;
-    readonly agent?: AgentService;
-    readonly agentLoop?: AgentLoopService;
-    readonly promptContext?: PromptContextService;
-    readonly appUi?: AppUiService;
-    readonly appChat?: AppChatService;
-    readonly trajectory?: TrajectoryService;
-    readonly sandbox?: SandboxService;
-    readonly fileManager?: FileManagerService;
-    readonly codeBrowser?: CodeBrowserService;
-    readonly codeEditor?: CodeEditorService;
-    readonly devTools?: DevToolsService;
-    readonly toolbox?: ToolboxService;
-    readonly webTools?: WebToolsService;
-    readonly persona?: PersonaService;
-    readonly workflow?: WorkflowService;
-    readonly workflowNodes?: WorkflowNodesService;
-    readonly appWorkflow?: AppWorkflowService;
-  }
-}
+import './plugin-context.js';

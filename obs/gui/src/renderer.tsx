@@ -206,7 +206,7 @@ function WinBar(): React.ReactElement {
         {view === 'registry' && (
           <>
             <button className="winbar-quality" title="打开 app-ui 插件" onClick={() => void window.wh.openPlugin('app-ui')}>
-              App demo
+              Agent demo
             </button>
             <button className="winbar-quality" title="打开质量检测窗口" onClick={() => void window.wh.openQuality()}>
               质量检测

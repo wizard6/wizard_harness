@@ -23,13 +23,15 @@ import {
 import { TOOLBOX_HTML } from './page.js';
 import { runScript } from './runner.js';
 
-let impl: ToolboxService | undefined;
-let scriptsByName = new Map<string, ToolboxScriptConfig>();
-let fallbackCwd = resolve(process.cwd());
+const state = {
+  impl: undefined as ToolboxService | undefined,
+  scriptsByName: new Map<string, ToolboxScriptConfig>(),
+  fallbackCwd: resolve(process.cwd()),
+};
 
 function live(): ToolboxService {
-  if (!impl) throw new Error('toolbox 未就绪');
-  return impl;
+  if (!state.impl) throw new Error('toolbox 未就绪');
+  return state.impl;
 }
 
 function defaultCwd(ctx: PluginContext): string {
@@ -148,37 +150,37 @@ const toolboxPlugin: Plugin = {
     content: TOOLBOX_HTML,
   },
   register(c) {
-    fallbackCwd = defaultCwd(c);
+    state.fallbackCwd = defaultCwd(c);
     const scripts = loadScripts(c);
-    scriptsByName = new Map(scripts.map((s) => [s.name, s]));
+    state.scriptsByName = new Map(scripts.map((s) => [s.name, s]));
     const infos = scripts.map(toInfo);
-    impl = {
-      info: () => ({ cwd: fallbackCwd, scripts: infos }),
+    state.impl = {
+      info: () => ({ cwd: state.fallbackCwd, scripts: infos }),
       list: () => infos,
       run: async (name, args = {}, opts = {}) => {
-        const script = scriptsByName.get(String(name).trim());
+        const script = state.scriptsByName.get(String(name).trim());
         if (!script) return { ok: false, error: `未知脚本：${name}` };
         const ws = String(opts.workspace ?? '').trim();
-        const workspace = resolve(ws || fallbackCwd);
+        const workspace = resolve(ws || state.fallbackCwd);
         return executeScript(script, args, workspace);
       },
     };
-    const stopWorkflow = wireToolbox(c, fallbackCwd, scripts);
+    const stopWorkflow = wireToolbox(c, state.fallbackCwd, scripts);
     const prompts = c.promptContext ?? c.get<PromptContextService>('promptContext');
     if (prompts) {
       prompts.section({
         name: 'tool:toolbox',
         order: 70,
         text:
-          `工具盒子（box.*）：在 session.workspace 执行配置脚本。默认 cwd ${fallbackCwd}。` +
+          `工具盒子（box.*）：在 session.workspace 执行配置脚本。默认 cwd ${state.fallbackCwd}。` +
           '人可在「工具盒子」弹窗点按；agent 用 box.open_folder、box.git_push 等。',
       });
     }
-    c.logger?.info?.(`toolbox 就绪（${scripts.length} 个脚本，cwd ${fallbackCwd}）`);
+    c.logger?.info?.(`toolbox 就绪（${scripts.length} 个脚本，cwd ${state.fallbackCwd}）`);
     c.effect(() => () => {
       stopWorkflow();
-      impl = undefined;
-      scriptsByName = new Map();
+      state.impl = undefined;
+      state.scriptsByName = new Map();
     });
   },
 };

@@ -81,63 +81,63 @@ word-break:break-word;max-height:72px;overflow:auto}
   </div>
 </div>
 <script>
-const NODE_W=220, PORT_Y=51, PORT_H=28;
-const vp=document.getElementById("viewport");
-const canvas=document.getElementById("canvas");
-const wiresEl=document.getElementById("wires");
-const status=document.getElementById("status");
-const go=document.getElementById("go");
-const zoomv=document.getElementById("zoomv");
-const kindsEl=document.getElementById("kinds");
-const cam={x:36,y:36,k:1};
-const pos={};
-let kinds=[{kind:"echo",inputs:["text"],outputs:["text"]},{kind:"upper",inputs:["text"],outputs:["text"]}];
-let graph=null,runRec=null,busy=false,selected=null,addN=0;
-let drag=null,pan=null,link=null;
-function applyCam(){
+  const NODE_W=220, PORT_Y=51, PORT_H=28;
+  const vp=document.getElementById("viewport");
+  const canvas=document.getElementById("canvas");
+  const wiresEl=document.getElementById("wires");
+  const status=document.getElementById("status");
+  const go=document.getElementById("go");
+  const zoomv=document.getElementById("zoomv");
+  const kindsEl=document.getElementById("kinds");
+  const cam={x:36,y:36,k:1};
+  const pos={};
+  let kinds=[{kind:"echo",inputs:["text"],outputs:["text"]},{kind:"upper",inputs:["text"],outputs:["text"]}];
+  let graph=null,runRec=null,busy=false,selected=null,addN=0;
+  let drag=null,pan=null,link=null;
+  function applyCam(){
   canvas.style.transform="translate("+cam.x+"px,"+cam.y+"px) scale("+cam.k+")";
   zoomv.textContent=Math.round(cam.k*100)+"%";
-}
-function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
-function dump(v){try{return JSON.stringify(v);}catch(e){return String(v);}}
-function color(kind){
+  }
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+  function dump(v){try{return JSON.stringify(v);}catch(e){return String(v);}}
+  function color(kind){
   if(kind==="input")return "#79c0ff";
   if(kind==="echo")return "#7ee787";
   if(kind==="upper")return "#d2a8ff";
   return "#e3b341";
-}
-function kindInfo(kind){
+  }
+  function kindInfo(kind){
   for(let i=0;i<kinds.length;i++) if(kinds[i].kind===kind) return kinds[i];
   return {kind:kind,inputs:["text"],outputs:["text"]};
-}
-function recOf(id){
+  }
+  function recOf(id){
   const nodes=runRec&&runRec.nodes||[];
   for(let i=0;i<nodes.length;i++) if(nodes[i].nodeId===id) return nodes[i];
-}
-function inPorts(n){
+  }
+  function inPorts(n){
   if(n.kind==="input") return [];
   return kindInfo(n.kind).inputs.slice();
-}
-function outPorts(n){
+  }
+  function outPorts(n){
   if(n.kind==="input") return ["text"];
   const rec=recOf(n.id);
   if(rec&&rec.outputs) return Object.keys(rec.outputs);
   return kindInfo(n.kind).outputs.slice();
-}
-function cloneGraph(g){
+  }
+  function cloneGraph(g){
   return {id:g.id,nodes:(g.nodes||[]).map(function(n){ return {id:n.id,kind:n.kind,in:Object.assign({},n.in||{})}; })};
-}
-function items(){
+  }
+  function items(){
   const list=[{id:"$input",kind:"input",title:"input"}];
   (graph&&graph.nodes||[]).forEach(function(n){ list.push({id:n.id,kind:n.kind,title:n.id,in:n.in}); });
   list.forEach(function(n,i){ if(!pos[n.id]) pos[n.id]={x:48+i*280,y:72}; });
   return list;
-}
-function itemOf(id){
+  }
+  function itemOf(id){
   const list=items();
   for(let i=0;i<list.length;i++) if(list[i].id===id) return list[i];
-}
-function orderNodes(nodes){
+  }
+  function orderNodes(nodes){
   const ids=new Set(nodes.map(function(n){ return n.id; }));
   const indeg={}, adj={};
   nodes.forEach(function(n){ indeg[n.id]=0; adj[n.id]=[]; });
@@ -157,18 +157,18 @@ function orderNodes(nodes){
   }
   nodes.forEach(function(n){ if(!seen[n.id]) out.push(n); });
   return out;
-}
-function mutate(next){
+  }
+  function mutate(next){
   graph=next; runRec=null; render();
-}
-function nextId(kind){
+  }
+  function nextId(kind){
   const used=new Set((graph.nodes||[]).map(function(n){ return n.id; }));
   if(!used.has(kind)) return kind;
   let i=2, id=kind+"-"+i;
   while(used.has(id)){ i++; id=kind+"-"+i; }
   return id;
-}
-function addNode(kind){
+  }
+  function addNode(kind){
   if(!graph) return;
   const id=nextId(kind);
   const node={id:id,kind:kind,in:{}};
@@ -179,8 +179,8 @@ function addNode(kind){
   pos[id]={x:ox,y:oy};
   selected=id;
   mutate({id:graph.id,nodes:orderNodes(graph.nodes.concat([node]))});
-}
-function connect(fromId,fp,toId,tp){
+  }
+  function connect(fromId,fp,toId,tp){
   if(!graph||fromId===toId||toId==="$input") return;
   const wire=fromId==="$input"?{from:"input",key:fp}:{from:"node",node:fromId,key:fp};
   const nodes=graph.nodes.map(function(n){
@@ -190,8 +190,8 @@ function connect(fromId,fp,toId,tp){
     return {id:n.id,kind:n.kind,in:inn};
   });
   mutate({id:graph.id,nodes:orderNodes(nodes)});
-}
-function disconnect(toId,tp){
+  }
+  function disconnect(toId,tp){
   if(!graph||toId==="$input") return;
   const nodes=graph.nodes.map(function(n){
     if(n.id!==toId) return n;
@@ -200,8 +200,8 @@ function disconnect(toId,tp){
     return {id:n.id,kind:n.kind,in:inn};
   });
   mutate({id:graph.id,nodes:nodes});
-}
-function removeNode(id){
+  }
+  function removeNode(id){
   if(!graph||id==="$input") return;
   const nodes=graph.nodes.filter(function(n){ return n.id!==id; }).map(function(n){
     const inn=Object.assign({},n.in||{});
@@ -214,8 +214,8 @@ function removeNode(id){
   delete pos[id];
   if(selected===id) selected=null;
   mutate({id:graph.id,nodes:nodes});
-}
-function wireList(){
+  }
+  function wireList(){
   const out=[];
   (graph&&graph.nodes||[]).forEach(function(n){
     Object.keys(n.in||{}).forEach(function(port){
@@ -226,20 +226,20 @@ function wireList(){
     });
   });
   return out;
-}
-function pinXY(id,side,name){
+  }
+  function pinXY(id,side,name){
   const p=pos[id];
   if(!p) return null;
   const n=itemOf(id);
   const names=side==="in"?inPorts(n):outPorts(n);
   const idx=Math.max(0,names.indexOf(name));
   return {x: side==="in"?p.x:p.x+NODE_W, y:p.y+PORT_Y+idx*PORT_H};
-}
-function bezier(a,b){
+  }
+  function bezier(a,b){
   const dx=Math.max(56,(b.x-a.x)*0.4);
   return "M "+a.x+" "+a.y+" C "+(a.x+dx)+" "+a.y+","+(b.x-dx)+" "+b.y+","+b.x+" "+b.y;
-}
-function drawWires(){
+  }
+  function drawWires(){
   const parts=['<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1 L10 5 L0 9 z" fill="#79c0ff"/></marker></defs>'];
   wireList().forEach(function(w){
     const a=pinXY(w.from,"out",w.fp),b=pinXY(w.to,"in",w.tp);
@@ -251,17 +251,17 @@ function drawWires(){
     if(a) parts.push('<path d="'+bezier(a,{x:link.mx,y:link.my})+'" fill="none" stroke="#79c0ff" stroke-width="1.5" stroke-dasharray="6 4"/>');
   }
   wiresEl.innerHTML=parts.join("");
-}
-function screenToCanvas(cx,cy){
+  }
+  function screenToCanvas(cx,cy){
   const rect=vp.getBoundingClientRect();
   return {x:(cx-rect.left-cam.x)/cam.k,y:(cy-rect.top-cam.y)/cam.k};
-}
-function renderPalette(){
+  }
+  function renderPalette(){
   kindsEl.innerHTML=kinds.map(function(k){
     return '<button type="button" data-kind="'+esc(k.kind)+'"><span class="dot" style="background:'+color(k.kind)+'"></span>'+esc(k.kind)+"</button>";
   }).join("");
-}
-function render(){
+  }
+  function render(){
   const list=items();
   canvas.querySelectorAll(".node").forEach(function(n){ n.remove(); });
   list.forEach(function(n){
@@ -297,16 +297,16 @@ function render(){
     canvas.appendChild(el);
   });
   drawWires();
-}
-function setZoom(k,cx,cy){
+  }
+  function setZoom(k,cx,cy){
   const nk=Math.min(2.2,Math.max(0.4,k));
   const rect=vp.getBoundingClientRect();
   const px=(cx==null?rect.width/2:cx-rect.left);
   const py=(cy==null?rect.height/2:cy-rect.top);
   const wx=(px-cam.x)/cam.k, wy=(py-cam.y)/cam.k;
   cam.k=nk; cam.x=px-wx*cam.k; cam.y=py-wy*cam.k; applyCam();
-}
-function fit(){
+  }
+  function fit(){
   const list=items();
   if(!list.length) return;
   let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -321,16 +321,16 @@ function fit(){
   cam.x=(rect.width-(minX+maxX)*cam.k)/2;
   cam.y=(rect.height-(minY+maxY)*cam.k)/2;
   applyCam();
-}
-kindsEl.onclick=function(e){
+  }
+  kindsEl.onclick=function(e){
   const btn=e.target.closest("button[data-kind]");
   if(btn) addNode(btn.getAttribute("data-kind"));
-};
-vp.addEventListener("wheel",function(e){
+  };
+  vp.addEventListener("wheel",function(e){
   e.preventDefault();
   setZoom(cam.k*(e.deltaY>0?0.9:1.11),e.clientX,e.clientY);
-},{passive:false});
-vp.addEventListener("mousedown",function(e){
+  },{passive:false});
+  vp.addEventListener("mousedown",function(e){
   if(e.target.closest("textarea,button,#bar,#palette")) return;
   const pin=e.target.closest(".pin");
   if(pin){
@@ -356,14 +356,14 @@ vp.addEventListener("mousedown",function(e){
   canvas.querySelectorAll(".node.sel").forEach(function(n){ n.classList.remove("sel"); });
   pan={x:e.clientX,y:e.clientY,ox:cam.x,oy:cam.y};
   vp.classList.add("panning");
-});
-vp.addEventListener("dblclick",function(e){
+  });
+  vp.addEventListener("dblclick",function(e){
   const pin=e.target.closest(".pin.in");
   if(!pin) return;
   const node=pin.closest(".node");
   disconnect(node.dataset.id, pin.getAttribute("data-port"));
-});
-window.addEventListener("mousemove",function(e){
+  });
+  window.addEventListener("mousemove",function(e){
   if(link){
     const c=screenToCanvas(e.clientX,e.clientY);
     link.mx=c.x; link.my=c.y; drawWires();
@@ -379,8 +379,8 @@ window.addEventListener("mousemove",function(e){
     cam.y=pan.oy+(e.clientY-pan.y);
     applyCam();
   }
-});
-window.addEventListener("mouseup",function(e){
+  });
+  window.addEventListener("mouseup",function(e){
   if(link){
     const pin=e.target.closest&&(e.target.closest(".pin.in")||(e.target.closest(".port")&&e.target.closest(".port").querySelector(".pin.in")));
     if(pin){
@@ -398,20 +398,20 @@ window.addEventListener("mouseup",function(e){
     }
   }
   drag=null; pan=null; vp.classList.remove("panning");
-});
-canvas.addEventListener("click",function(e){
+  });
+  canvas.addEventListener("click",function(e){
   const btn=e.target.closest("[data-del]");
   if(!btn) return;
   e.stopPropagation();
   removeNode(btn.closest(".node").dataset.id);
-});
-document.addEventListener("keydown",function(e){
+  });
+  document.addEventListener("keydown",function(e){
   if(e.key==="Enter"&&!e.shiftKey&&e.target.id==="box"){ e.preventDefault(); run(); return; }
   if((e.key==="Delete"||e.key==="Backspace")&&selected&&selected!=="$input"&&e.target.id!=="box"){
     e.preventDefault(); removeNode(selected);
   }
-});
-async function loadGraph(){
+  });
+  async function loadGraph(){
   if(!window.wh||!window.wh.call){ status.textContent="无 RPC"; renderPalette(); return; }
   const kr=await window.wh.call("workflowNodes","kinds",[]);
   if(kr.ok&&kr.result) kinds=kr.result;
@@ -419,8 +419,8 @@ async function loadGraph(){
   const r=await window.wh.call("workflowNodes","demoGraph",[]);
   if(!r.ok){ status.textContent=r.error||"节点插件未装入"; return; }
   graph=cloneGraph(r.result); status.textContent="idle"; render();
-}
-async function run(){
+  }
+  async function run(){
   const box=document.getElementById("box");
   const text=box?box.value:"";
   if(busy||!window.wh||!window.wh.call||!graph) return;
@@ -433,12 +433,12 @@ async function run(){
     render();
   }catch(err){ status.textContent="error"; }
   busy=false; go.disabled=false;
-}
-go.onclick=run;
-document.getElementById("fit").onclick=fit;
-document.getElementById("zin").onclick=function(){ setZoom(cam.k*1.15); };
-document.getElementById("zout").onclick=function(){ setZoom(cam.k/1.15); };
-applyCam();
-renderPalette();
-loadGraph();
+  }
+  go.onclick=run;
+  document.getElementById("fit").onclick=fit;
+  document.getElementById("zin").onclick=function(){ setZoom(cam.k*1.15); };
+  document.getElementById("zout").onclick=function(){ setZoom(cam.k/1.15); };
+  applyCam();
+  renderPalette();
+  loadGraph();
 </script></body></html>`;

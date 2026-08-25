@@ -1,6 +1,6 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
 import type { LlmMessage, LlmService, SessionService, TrajectoryService } from '@wizard-harness/contracts';
-import { runModel, toWireMessages } from './adapter.js';
+import { runModel, toWireMessages, buildToolWireMaps } from './adapter.js';
 
 /**
  * llm 插件：一个模型适配器，读写都落到 session。
@@ -62,7 +62,8 @@ const api: LlmService = {
 
     const cfg = cfgOf();
     const messages = asMessages(sess.replay());
-    const wire = toWireMessages(messages);
+    const { realToWire } = buildToolWireMaps(input.tools);
+    const wire = toWireMessages(messages, realToWire);
     ctx?.emit({ action: 'llm/request', target: sess.id, payload: { provider: cfg.provider, n: messages.length } });
     trajOf()?.record(sess.id, 'prompt', {
       phase: 'assemble',

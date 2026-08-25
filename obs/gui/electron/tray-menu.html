@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tray</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: transparent;
+      overflow: hidden;
+      font: 13px/1.35 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .panel {
+      width: 248px;
+      background: #16161e;
+      border: 1px solid #2c2c3e;
+      border-radius: 10px;
+      padding: 4px 0;
+      color: #e6e6ef;
+      overflow: hidden;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      cursor: default;
+      border: none;
+      background: transparent;
+      color: inherit;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+    }
+    .item:hover, .item:focus-visible {
+      background: rgba(121, 192, 255, 0.12);
+      outline: none;
+    }
+    .item.danger:hover { background: rgba(255, 123, 114, 0.12); color: #ff9b93; }
+    .ico {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      color: #79c0ff;
+    }
+    .item.danger .ico { color: #ff7b72; }
+    .sep { height: 1px; background: #2c2c3e; margin: 4px 8px; }
+    .lbl { flex: 1; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="panel" id="panel">
+    <button type="button" class="item" data-act="registry">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="2" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M5 13h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="lbl">Open Observatory</span>
+    </button>
+    <button type="button" class="item" data-act="agent">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="5.5" r="2.2" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M3.5 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="lbl">Agent demo</span>
+    </button>
+    <button type="button" class="item" data-act="workflow">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="4" cy="8" r="1.6" stroke="currentColor" stroke-width="1.2"/>
+        <circle cx="12" cy="4" r="1.6" stroke="currentColor" stroke-width="1.2"/>
+        <circle cx="12" cy="12" r="1.6" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M5.6 7.2 10.4 4.8M5.6 8.8l4.8 2.4" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      <span class="lbl">Workflow demo</span>
+    </button>
+    <button type="button" class="item" data-act="quality">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="lbl">Open Quality Check</span>
+    </button>
+    <div class="sep" role="separator"></div>
+    <button type="button" class="item" data-act="restart">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M11.5 2.5A5.5 5.5 0 1 0 13 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M13 2.5v3.5H9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="lbl">Restart</span>
+    </button>
+    <button type="button" class="item danger" data-act="quit">
+      <svg class="ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M4 4l8 8M12 4 4 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span class="lbl">Exit</span>
+    </button>
+  </div>
+  <script>
+    const panel = document.getElementById('panel');
+    panel.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-act]');
+      if (!btn || !window.trayMenu) return;
+      window.trayMenu.act(btn.getAttribute('data-act'));
+    });
+    requestAnimationFrame(() => {
+      if (window.trayMenu) window.trayMenu.ready(Math.ceil(panel.getBoundingClientRect().height));
+    });
+  </script>
+</body>
+</html>

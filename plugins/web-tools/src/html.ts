@@ -12,8 +12,10 @@ export interface PageDoc {
   sections: Array<{ heading?: Heading; markdown: string; text: string }>;
 }
 
-const DROP = /<(script|style|noscript|svg|iframe|canvas|form|template)[\s\S]*?<\/\1>/gi;
-const DROP_EMPTY = /<(br|hr|img|input|meta|link)\b[^>]*\/?>/gi;
+const HTML_RE = {
+  block: /<(script|style|noscript|svg|iframe|canvas|form|template)[\s\S]*?<\/\1>/gi,
+  empty: /<(br|hr|img|input|meta|link)\b[^>]*\/?>/gi,
+};
 
 export function decodeEntities(raw: string): string {
   return raw
@@ -49,7 +51,7 @@ function slug(text: string, i: number): string {
 export function parsePage(html: string): PageDoc {
   const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
   const title = decodeEntities(titleMatch?.[1] ?? '').replace(/\s+/g, ' ').trim();
-  let src = pickMain(html).replace(DROP, ' ').replace(DROP_EMPTY, ' ');
+  let src = pickMain(html).replace(HTML_RE.block, ' ').replace(HTML_RE.empty, ' ');
   src = src.replace(/<!--[\s\S]*?-->/g, ' ');
 
   const headings: Heading[] = [];

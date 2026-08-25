@@ -9,6 +9,8 @@ import type {
   AssembleContext,
   AssembledContextEntry,
   AssembledSection,
+  ContextUsageInput,
+  ContextUsageReport,
   LlmToolSpec,
   PromptAssembly,
   PromptApplied,
@@ -21,6 +23,7 @@ import type {
   TrajectoryService,
 } from '@wizard-harness/contracts';
 import { renderContexts, renderSections } from './render.js';
+import { buildContextUsage } from './usage.js';
 
 const PERSONA_SECTION = 'session:persona';
 const PERSONA_ORDER = 0;
@@ -323,6 +326,16 @@ export function createPromptContextRegistry(ctx: PluginContext): PromptContextSe
         assembledAt: lastAssembledAt,
         applied: lastApplied,
       };
+    },
+    usage(input: ContextUsageInput = {}): ContextUsageReport {
+      const assembly = this.assemble({
+        sessionId: input.sessionId,
+        scope: input.scope as ScopeKey | undefined,
+      });
+      const entries = input.sessionId
+        ? (sessionOf(ctx).peek(input.sessionId).entries ?? [])
+        : [];
+      return buildContextUsage(assembly, entries, input);
     },
   };
 }

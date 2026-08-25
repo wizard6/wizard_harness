@@ -1,11 +1,7 @@
 import React, { useMemo } from 'react';
 import type { DepDirection, DepPluginRow, DepTreeNode } from './dep-graph.js';
 
-const NODE_W = 248;
-const NODE_H = 96;
-const GAP_X = 32;
-const GAP_Y = 76;
-const PAD = 20;
+const LAYOUT = { NODE_W: 248, NODE_H: 96, GAP_X: 32, GAP_Y: 76, PAD: 20 };
 
 const EDGE = {
   plugin: { stroke: '#79c0ff', dash: '', marker: 'dc-arrow-blue' },
@@ -30,9 +26,9 @@ interface PlacedEdge {
 }
 
 function measureSubtree(node: DepTreeNode): number {
-  if (node.children.length === 0) return NODE_W;
-  const sum = node.children.reduce((acc, c) => acc + measureSubtree(c) + GAP_X, -GAP_X);
-  return Math.max(NODE_W, sum);
+  if (node.children.length === 0) return LAYOUT.NODE_W;
+  const sum = node.children.reduce((acc, c) => acc + measureSubtree(c) + LAYOUT.GAP_X, -LAYOUT.GAP_X);
+  return Math.max(LAYOUT.NODE_W, sum);
 }
 
 function edgeKindOf(child: DepTreeNode): EdgeKind {
@@ -49,7 +45,7 @@ function layoutForest(roots: DepTreeNode[]): {
 } {
   const nodes: PlacedNode[] = [];
   const edges: PlacedEdge[] = [];
-  let cursorX = PAD;
+  let cursorX = LAYOUT.PAD;
   let maxDepth = 0;
 
   function walk(
@@ -61,8 +57,8 @@ function layoutForest(roots: DepTreeNode[]): {
   ): number {
     maxDepth = Math.max(maxDepth, depth);
     const w = measureSubtree(node);
-    const x = left + (w - NODE_W) / 2;
-    const y = PAD + depth * (NODE_H + GAP_Y);
+    const x = left + (w - LAYOUT.NODE_W) / 2;
+    const y = LAYOUT.PAD + depth * (LAYOUT.NODE_H + LAYOUT.GAP_Y);
     nodes.push({ key: node.key, x, y, node });
     if (parentKey && linkKind) {
       edges.push({
@@ -76,28 +72,28 @@ function layoutForest(roots: DepTreeNode[]): {
     for (const child of node.children) {
       const cw = measureSubtree(child);
       walk(child, depth + 1, cx, node.key, edgeKindOf(child));
-      cx += cw + GAP_X;
+      cx += cw + LAYOUT.GAP_X;
     }
     return w;
   }
 
   for (const root of roots) {
     const w = walk(root, 0, cursorX, null, null);
-    cursorX += w + GAP_X * 2;
+    cursorX += w + LAYOUT.GAP_X * 2;
   }
 
   return {
     nodes,
     edges,
-    width: Math.max(cursorX + PAD, 320),
-    height: PAD * 2 + (maxDepth + 1) * NODE_H + maxDepth * GAP_Y + 56,
+    width: Math.max(cursorX + LAYOUT.PAD, 320),
+    height: LAYOUT.PAD * 2 + (maxDepth + 1) * LAYOUT.NODE_H + maxDepth * LAYOUT.GAP_Y + 56,
   };
 }
 
 function linkPath(ax: number, ay: number, bx: number, by: number): string {
-  const sx = ax + NODE_W / 2;
-  const sy = ay + NODE_H;
-  const ex = bx + NODE_W / 2;
+  const sx = ax + LAYOUT.NODE_W / 2;
+  const sy = ay + LAYOUT.NODE_H;
+  const ex = bx + LAYOUT.NODE_W / 2;
   const ey = by;
   const mid = (sy + ey) / 2;
   return `M${sx},${sy} C${sx},${mid} ${ex},${mid} ${ex},${ey}`;
@@ -136,7 +132,7 @@ const CANVAS_CSS = `
       linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px);
     background-size:100px 100px, 100px 100px, 20px 20px, 20px 20px; }
   .dc-lines { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
-  .dc-node { position:absolute; left:0; top:0; width:${NODE_W}px; min-height:${NODE_H}px;
+  .dc-node { position:absolute; left:0; top:0; width:${LAYOUT.NODE_W}px; min-height:${LAYOUT.NODE_H}px;
     background:#1b1b28; border:1px solid #2c2c3e; border-radius:12px; padding:12px 14px;
     box-shadow:0 4px 14px rgba(0,0,0,.35); box-sizing:border-box; }
   .dc-node:hover { border-color:#4a6aa0; box-shadow:0 6px 18px rgba(74,106,160,.28); }
@@ -209,8 +205,8 @@ export function DepCanvas({ forest, direction, plugins }: DepCanvasProps): React
               if (!a || !b) return null;
               const k = EDGE[e.kind];
               const d = linkPath(a.x, a.y, b.x, b.y);
-              const mx = (a.x + b.x + NODE_W) / 2;
-              const my = (a.y + b.y + NODE_H) / 2;
+              const mx = (a.x + b.x + LAYOUT.NODE_W) / 2;
+              const my = (a.y + b.y + LAYOUT.NODE_H) / 2;
               return (
                 <g key={`${e.fromKey}-${e.toKey}-${e.kind}`}>
                   <path

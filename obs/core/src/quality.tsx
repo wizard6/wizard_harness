@@ -1,4 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  STATUS_TEXT,
+  buildFolderTree,
+  dimCounts,
+  fmt,
+  hashKind,
+  linesMatch,
+  pathOf,
+  reviewKind,
+  rowPass,
+  type Dim,
+  type DimCounts,
+  type Filter,
+  type FolderNode,
+  type HashFilter,
+  type LinesFilter,
+  type ReviewFilter,
+} from './quality-helpers.js';
+import { QUALITY_PANEL_CSS } from './quality-styles.js';
 
 /** 质检数据行：单个文件较上次质检的修改状态（基线扫描 + 智能评审两个维度） */
 export interface QualityRow {
@@ -50,133 +69,6 @@ export interface QualityPanelProps {
   onRuleScan?: () => void;
   /** 在代码浏览器独立窗口中打开 */
   onOpenFile?: (rel: string) => void;
-}
-
-type Filter = 'all' | QualityRow['status'];
-type Dim = 'base' | 'smart';
-type DimCounts = QualityData['counts'];
-type ReviewFilter = 'all' | 'pass' | 'wait' | 'none' | 'fail';
-type LinesFilter = 'all' | 'lt80' | 'mid' | 'gt300';
-type HashFilter = 'all' | 'changed' | 'same';
-
-type FolderNode = {
-  name: string;
-  path: string;
-  count: number;
-  children: FolderNode[];
-};
-
-const STATUS_TEXT: Record<QualityRow['status'], string> = {
-  unchanged: '未修改',
-  modified: '已修改',
-  added: '新增',
-  removed: '删除',
-};
-
-const short = (h: string): string => (h ? `${h.slice(0, 8)}…` : '—');
-
-const fmtAt = (iso: string | null | undefined): string => {
-  if (!iso) return '无记录';
-  return iso.slice(0, 19).replace('T', ' ');
-};
-
-/** 按某一维统计胶囊数字（与另一维过滤无关，避免两维互相污染） */
-function dimCounts(rows: QualityRow[], key: 'status' | 'aiStatus'): DimCounts {
-  const c: DimCounts = { total: rows.length, unchanged: 0, modified: 0, added: 0, removed: 0 };
-  for (const r of rows) c[r[key]] += 1;
-  return c;
-}
-
-const fileName = (rel: string): string => {
-  const i = rel.lastIndexOf('/');
-  return i >= 0 ? rel.slice(i + 1) : rel;
-};
-
-const fileDir = (rel: string): string => {
-  const i = rel.lastIndexOf('/');
-  return i > 0 ? rel.slice(0, i) : '';
-};
-
-const inFolder = (rel: string, folder: string): boolean => {
-  if (!folder) return true;
-  return rel === folder || rel.startsWith(`${folder}/`);
-};
-
-function reviewKind(r: QualityRow, dim: Dim): Exclude<ReviewFilter, 'all'> {
-  if (dim === 'base') {
-    if (r.status === 'added' || !r.lastHash) return 'none';
-    if (r.status === 'modified') return 'wait';
-    return r.lastIssues.length > 0 ? 'fail' : 'pass';
-  }
-  if (!r.aiHash || r.aiStatus === 'added') return 'none';
-  if (r.aiStatus === 'modified') return 'wait';
-  return r.aiIssues.length > 0 ? 'fail' : 'pass';
-}
-
-/** 指纹变化：无对照基准不计「未变化」，也不计「已变化」 */
-function hashKind(r: QualityRow, dim: Dim): 'changed' | 'same' | 'none' {
-  const last = dim === 'base' ? r.lastHash : r.aiHash;
-  if (!last) return 'none';
-  return last !== r.curHash ? 'changed' : 'same';
-}
-
-type ColSkip = 'status' | 'query' | 'lines' | 'review' | 'hash';
-
-/** 列筛选：skip 本列时用于表头下拉计数（Excel 口径，与目录树同源） */
-function rowPass(
-  r: QualityRow,
-  dim: Dim,
-  status: Filter,
-  qn: string,
-  lines: LinesFilter,
-  review: ReviewFilter,
-  hash: HashFilter,
-  skip?: ColSkip,
-): boolean {
-  if (skip !== 'status' && status !== 'all' && (dim === 'base' ? r.status : r.aiStatus) !== status) return false;
-  if (skip !== 'query' && qn && !r.rel.toLowerCase().includes(qn)) return false;
-  if (skip !== 'lines' && !linesMatch(r.lines, lines)) return false;
-  if (skip !== 'review' && review !== 'all' && reviewKind(r, dim) !== review) return false;
-  if (skip !== 'hash' && hash !== 'all' && hashKind(r, dim) !== hash) return false;
-  return true;
-}
-
-function linesMatch(lines: number, f: LinesFilter): boolean {
-  if (f === 'all') return true;
-  if (f === 'lt80') return lines > 0 && lines < 80;
-  if (f === 'mid') return lines >= 80 && lines <= 300;
-  return lines > 300;
-}
-
-/** 目录树：结构来自全部文件，计数跟随当前列筛选（不含目录本身） */
-function buildFolderTree(all: QualityRow[], counted: QualityRow[]): FolderNode {
-  type Mut = { name: string; path: string; count: number; kids: Map<string, Mut> };
-  const root: Mut = { name: '全部', path: '', count: counted.length, kids: new Map() };
-  const walk = (rel: string, add: number) => {
-    const dir = fileDir(rel);
-    if (!dir) return;
-    let cur = root;
-    let acc = '';
-    for (const part of dir.split('/')) {
-      acc = acc ? `${acc}/${part}` : part;
-      let next = cur.kids.get(part);
-      if (!next) {
-        next = { name: part, path: acc, count: 0, kids: new Map() };
-        cur.kids.set(part, next);
-      }
-      next.count += add;
-      cur = next;
-    }
-  };
-  for (const r of all) walk(r.rel, 0);
-  for (const r of counted) walk(r.rel, 1);
-  const freeze = (n: Mut): FolderNode => ({
-    name: n.name,
-    path: n.path,
-    count: n.count,
-    children: [...n.kids.values()].map(freeze).sort((a, b) => a.name.localeCompare(b.name)),
-  });
-  return freeze(root);
 }
 
 /** 质量检测面板：一次只看一个维度，基线扫描与智能评审互不混用 */
@@ -240,7 +132,7 @@ export function QualityPanel({
     });
   }, [folderFilter]);
 
-  const shown = colFiltered.filter((r) => inFolder(r.rel, folderFilter));
+  const shown = colFiltered.filter((r) => pathOf.inFolder(r.rel, folderFilter));
   const firstLoad = data.rows.length === 0 && loading === true;
 
   const accent = dim === 'base' ? '#79c0ff' : '#a371f7';
@@ -308,10 +200,16 @@ export function QualityPanel({
       );
     }
     if (kind === 'fail') {
+      const preview = issues[0] ?? '';
+      const more = issues.length > 1 ? ` 等 ${issues.length} 项` : '';
       return (
-        <span className="qp-badge qp-b-fail" title={issues.join('\n')}>
-          ⚠ {issues.length} 项
-        </span>
+        <div className="qp-review-fail">
+          <span className="qp-badge qp-b-fail">⚠ {issues.length} 项</span>
+          <span className="qp-issue-preview" title={issues.join('\n')}>
+            {preview}
+            {more}
+          </span>
+        </div>
       );
     }
     return <span className="qp-badge qp-b-pass">✓ 通过</span>;
@@ -321,26 +219,26 @@ export function QualityPanel({
     const last = lastHashOf(r);
     const st = statusOf(r);
     if (st === 'added' || !last) {
-      return <span className="mono dim" title={r.curHash}>{short(r.curHash)}</span>;
+      return <span className="mono dim" title={r.curHash}>{fmt.short(r.curHash)}</span>;
     }
     if (st === 'removed') {
-      return <span className="mono dim" title={last}>{short(last)}</span>;
+      return <span className="mono dim" title={last}>{fmt.short(last)}</span>;
     }
     if (st === 'modified') {
       return (
         <span className="qp-hash-diff" title={`${last}\n→\n${r.curHash}`}>
-          <span className="mono dim">{short(last)}</span>
+          <span className="mono dim">{fmt.short(last)}</span>
           <span className="qp-hash-arrow">→</span>
-          <span className="mono">{short(r.curHash)}</span>
+          <span className="mono">{fmt.short(r.curHash)}</span>
         </span>
       );
     }
-    return <span className="mono dim" title={r.curHash}>{short(r.curHash)}</span>;
+    return <span className="mono dim" title={r.curHash}>{fmt.short(r.curHash)}</span>;
   };
 
   const fileCell = (r: QualityRow): React.ReactElement => {
-    const dir = fileDir(r.rel);
-    const name = fileName(r.rel);
+    const dir = pathOf.fileDir(r.rel);
+    const name = pathOf.fileName(r.rel);
     const segs = dir ? dir.split('/') : [];
     let acc = '';
     return (
@@ -374,15 +272,20 @@ export function QualityPanel({
     );
   };
 
-  const renderRow = (r: QualityRow): React.ReactElement => (
-    <tr key={r.rel} className={statusOf(r) === 'modified' ? 'qp-row-mod' : undefined}>
-      <td>{badge(statusOf(r))}</td>
+  const renderRow = (r: QualityRow): React.ReactElement => {
+    const fail = reviewKind(r, dim) === 'fail';
+    const mod = statusOf(r) === 'modified';
+    const rowCls = [mod ? 'qp-row-mod' : '', fail ? 'qp-row-fail' : ''].filter(Boolean).join(' ') || undefined;
+    return (
+    <tr key={r.rel} className={rowCls}>
+      <td className="qp-status">{badge(statusOf(r))}</td>
       {fileCell(r)}
-      <td className="dim">{r.lines || '—'}</td>
-      <td>{review(r)}</td>
-      <td>{fingerprint(r)}</td>
+      <td className="dim qp-num">{r.lines || '—'}</td>
+      <td className="qp-review">{review(r)}</td>
+      <td className="qp-fp">{fingerprint(r)}</td>
     </tr>
-  );
+    );
+  };
 
   const renderTree = (node: FolderNode, depth: number): React.ReactNode => {
     const hasKids = node.children.length > 0;
@@ -440,134 +343,7 @@ export function QualityPanel({
 
   return (
     <div className={`qp qp-${dim}`} style={{ ['--qp-accent' as string]: accent }}>
-      <style>{`
-        .qp { font: 13px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
-              padding: 14px 18px 12px; height: 100%; box-sizing: border-box;
-              display: flex; flex-direction: column; min-height: 0;
-              --qp-accent: #79c0ff; }
-        .qp-smart { --qp-accent: #a371f7; }
-        .qp-head { display:flex; align-items:center; gap:12px; margin-bottom:8px; flex:none; }
-        .qp-sub { color:#8b949e; font-size:11px; margin:0 auto 0 4px; min-width:0;
-                  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .qp-sub .mono { font-family:ui-monospace,Consolas,monospace; }
-        .qp-actions { display:inline-flex; align-items:center; gap:2px; flex:none; }
-        .qp-act { background:transparent; color:#a8a8bd; border:none; border-radius:6px;
-                  padding:6px 10px; cursor:pointer; font-size:12px; font-family:inherit;
-                  display:inline-flex; align-items:center; gap:6px; }
-        .qp-act:hover:not(:disabled) { color:#e6e6ef; background:rgba(255,255,255,.06); }
-        .qp-act:disabled { opacity:.55; cursor:default; }
-        .qp-act.primary { color:#79c0ff; }
-        .qp-act.primary:hover:not(:disabled) { color:#bcdfff; background:rgba(121,192,255,.1); }
-        .qp-spin { width:12px; height:12px; border:2px solid rgba(255,255,255,.2); border-top-color:#79c0ff;
-                   border-radius:50%; animation:qp-rot .7s linear infinite; display:inline-block; flex:none; }
-        .qp-spin-lg { width:20px; height:20px; border-width:2.5px; }
-        @keyframes qp-rot { to { transform:rotate(360deg); } }
-        .qp-loading { display:flex; align-items:center; justify-content:center; gap:10px;
-                      padding:48px 0; color:#a8a8bd; font-size:13px; flex:1; }
-        .qp-err { color:#ff7b72; font-size:12px; margin-bottom:10px; flex:none; }
-        .qp-dims { display:flex; gap:2px; flex:none; }
-        .qp-dim-btn { background:transparent; border:none; color:#8b8b9c; padding:5px 10px;
-                      font-size:13px; font-family:inherit; cursor:pointer; display:inline-flex;
-                      align-items:center; gap:10px; font-weight:600; border-radius:8px;
-                      transition:color .12s ease, background .12s ease; }
-        .qp-dim-btn:hover { color:#e6e6ef; background:rgba(255,255,255,.05); }
-        .qp-dim-btn.base.active { color:#9ecbff; background:rgba(121,192,255,.1); }
-        .qp-dim-btn.smart.active { color:#c4b0f0; background:rgba(163,113,247,.1); }
-        .qp-dim-stats { display:flex; gap:7px; font-size:11px; font-weight:600; letter-spacing:.02em; }
-        .qp-dim-stats .mod { color:#8a7a4a; }
-        .qp-dim-stats .add { color:#5d7a96; }
-        .qp-dim-stats .del { color:#8a5e5c; }
-        .qp-dim-stats .mod.on { color:#d4b44a; }
-        .qp-dim-stats .add.on { color:#7db0d8; }
-        .qp-dim-stats .del.on { color:#e08b86; }
-        .qp-folder-chip { display:inline-flex; align-items:center; max-width:88px;
-                          background:rgba(255,255,255,.05); color:#c8c8d4;
-                          border:1px solid rgba(255,255,255,.1); border-radius:6px;
-                          padding:2px 6px; font-size:11px; font-family:inherit; cursor:pointer;
-                          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
-        .qp-folder-chip:hover { border-color:rgba(255,255,255,.2); color:#e6e6ef; }
-        .qp-th { display:flex; flex-direction:row; align-items:center; gap:6px;
-                 white-space:nowrap; font-weight:600; min-width:0; }
-        .qp-th-label { color:#a8a8bd; font-size:11px; flex:none; }
-        .qp-th-filter, .qp-th-input {
-          box-sizing:border-box; background:rgba(255,255,255,.04);
-          border:1px solid rgba(255,255,255,.1); border-radius:6px; color:#d7d7e0;
-          font-size:11px; font-family:inherit; outline:none; padding:3px 6px; height:24px;
-        }
-        .qp-th-filter { min-width:0; max-width:118px; flex:1; }
-        .qp-th-input { width:112px; flex:none; }
-        .qp-th-filter:focus, .qp-th-input:focus { border-color:rgba(255,255,255,.22); }
-        .qp-th-filter option { background:#1b1b24; }
-        .qp-th-input::placeholder { color:#7a7a8a; }
-        .qp-th-clear { width:20px; height:20px; flex:none; border:none; border-radius:4px;
-                       background:transparent; color:#8b8b9c; cursor:pointer; font-size:13px;
-                       line-height:20px; padding:0; }
-        .qp-th-clear:hover { color:#e6e6ef; background:rgba(255,255,255,.08); }
-        .qp-st-unchanged { color:#7ee787 !important; }
-        .qp-st-modified { color:#d29922 !important; }
-        .qp-st-added { color:var(--qp-accent) !important; }
-        .qp-st-removed { color:#ff7b72 !important; }
-        .qp-rv-pass { color:#7ee787 !important; }
-        .qp-rv-wait { color:#d29922 !important; }
-        .qp-rv-none { color:#a8a8bd !important; }
-        .qp-rv-fail { color:#ff7b72 !important; }
-        .qp-hs-changed { color:#d29922 !important; }
-        .qp-hs-same { color:#7ee787 !important; }
-        .qp-body { display:flex; flex:1; min-height:0; gap:10px; }
-        .qp-tree { width:228px; flex:none; overflow:auto; scrollbar-gutter:stable;
-                   border:1px solid rgba(255,255,255,.08); border-radius:12px;
-                   background:rgba(255,255,255,.045); padding:8px 6px; }
-        .qp-tree-row { display:flex; align-items:center; gap:4px; padding:3px 8px 3px 0;
-                       border-radius:6px; cursor:pointer; color:#c8c8d4; font-size:12px; }
-        .qp-tree-row:hover { background:rgba(255,255,255,.05); color:#e6e6ef; }
-        .qp-tree-row.on { background:color-mix(in srgb, var(--qp-accent) 16%, transparent); color:var(--qp-accent); }
-        .qp-tree-caret { width:16px; flex:none; background:none; border:none; color:inherit;
-                         cursor:pointer; font-size:11px; padding:0; font-family:inherit; }
-        .qp-tree-leaf { visibility:hidden; }
-        .qp-tree-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .qp-tree-n { margin-left:auto; color:#8b949e; font-size:10px; font-weight:600; flex:none; }
-        .qp-tree-row.on .qp-tree-n { color:var(--qp-accent); }
-        .qp-table-wrap { flex:1; min-width:0; min-height:0; overflow:auto; border:1px solid rgba(255,255,255,.08);
-                         border-radius:12px; background:rgba(255,255,255,.045);
-                         scrollbar-gutter: stable; }
-        .qp table { width:100%; border-collapse:collapse; table-layout:fixed; }
-        .qp th,.qp td { text-align:center; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
-        .qp th { color:#a8a8bd; font-weight:600; font-size:11px; background:#1b1b24;
-                 position:sticky; top:0; z-index:1; text-align:left; vertical-align:middle;
-                 white-space:nowrap; }
-        .qp td.qp-file { text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .qp-path-seg, .qp-name, .qp-slash { font: inherit; }
-        .qp-path-seg, .qp-name { background:none; border:none; padding:0; cursor:pointer;
-                                 font-family:ui-monospace,Consolas,monospace; font-size:12px; }
-        .qp-path-seg { color:#8b949e; }
-        .qp-path-seg:hover, .qp-path-seg.on { color:var(--qp-accent); text-decoration:underline; }
-        .qp-slash { color:#6e6e80; }
-        .qp-name { color:#e6e6ef; }
-        .qp-name:hover { color:var(--qp-accent); text-decoration:underline; }
-        .qp tr:last-child td { border-bottom:none; }
-        .qp tbody tr:hover td { background:rgba(255,255,255,.03); }
-        .qp tbody tr.qp-row-mod td { background:rgba(210,153,34,.05); }
-        .qp .mono { font-family:ui-monospace,Consolas,monospace; font-size:12px; }
-        .qp .dim { color:#8b949e; }
-        .qp-badge { display:inline-flex; align-items:center; justify-content:center;
-                    min-width:76px; height:22px; box-sizing:border-box;
-                    font-size:11px; padding:0 10px; border-radius:999px; font-weight:600;
-                    white-space:nowrap; border:1px solid transparent; }
-        .qp-b-unchanged { color:#7ee787; background:rgba(126,231,135,.12); }
-        .qp-b-modified { color:#d29922; background:rgba(210,153,34,.14); }
-        .qp-b-added { color:var(--qp-accent); background:color-mix(in srgb, var(--qp-accent) 14%, transparent); }
-        .qp-b-removed { color:#ff7b72; background:rgba(255,123,114,.12); text-decoration:line-through; }
-        .qp-b-pass { color:#7ee787; background:rgba(126,231,135,.12); }
-        .qp-b-fail { color:#ff7b72; background:rgba(255,123,114,.12); }
-        .qp-b-wait { color:#d29922; border-style:dashed; border-color:#d29922; background:transparent; }
-        .qp-b-none { color:#a8a8bd; border-style:dashed; border-color:rgba(168,168,189,.45); background:transparent; }
-        .qp-hash-diff { display:inline-flex; align-items:center; gap:6px; }
-        .qp-hash-arrow { color:#d29922; font-size:11px; }
-        .qp-empty { text-align:center !important; color:#a8a8bd; padding:36px 12px !important; }
-        .qp-empty button { margin-left:10px; background:transparent; color:var(--qp-accent); border:none;
-                           cursor:pointer; font-family:inherit; font-size:12px; }
-        .qp-foot { flex:none; margin-top:8px; color:#8b949e; font-size:11px; }
-      `}</style>
+      <style>{QUALITY_PANEL_CSS}</style>
 
       <div className="qp-head">
         <div className="qp-dims">
@@ -576,7 +352,7 @@ export function QualityPanel({
         </div>
         <span className="qp-sub">
           {dim === 'base' ? '基线对照' : '智能对照'}{' '}
-          <span className="mono">{fmtAt(dim === 'base' ? data.baseAt : data.aiAt)}</span>
+          <span className="mono">{fmt.at(dim === 'base' ? data.baseAt : data.aiAt)}</span>
         </span>
         <div className="qp-actions">
           {hasFilters && (
@@ -622,11 +398,11 @@ export function QualityPanel({
       <div className="qp-table-wrap">
       <table>
         <colgroup>
-          <col style={{ width: 168 }} />
+          <col style={{ width: 92 }} />
           <col />
-          <col style={{ width: 118 }} />
-          <col style={{ width: 148 }} />
-          <col style={{ width: 148 }} />
+          <col style={{ width: 72 }} />
+          <col style={{ width: 'min(36%, 320px)' }} />
+          <col style={{ width: 120 }} />
         </colgroup>
         <thead>
           <tr>
@@ -651,7 +427,7 @@ export function QualityPanel({
                 <span className="qp-th-label">文件</span>
                 {folderFilter ? (
                   <button type="button" className="qp-folder-chip" title="清除目录筛选" onClick={() => setFolderFilter('')}>
-                    {fileName(folderFilter) || folderFilter} ×
+                    {pathOf.fileName(folderFilter) || folderFilter} ×
                   </button>
                 ) : null}
                 <input

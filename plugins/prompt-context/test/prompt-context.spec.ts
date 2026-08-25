@@ -11,7 +11,7 @@ describe('prompt-context 插件', () => {
     expect(PROMPT_CONTEXT_SERVICE).toBe('promptContext');
     expect(promptContextPlugin.manifest.provides).toEqual(['promptContext']);
     expect(promptContextPlugin.inject).toEqual({ session: true, logger: false, trajectory: false });
-    expect(promptContextPlugin.ui?.rpc).toEqual({ promptContext: ['inspect', 'assemble'] });
+    expect(promptContextPlugin.ui?.rpc).toEqual({ promptContext: ['inspect', 'assemble', 'usage'] });
   });
 
   it('assemble：sections + contexts + tools + variables；apply 写入 session', async () => {
@@ -52,6 +52,33 @@ describe('prompt-context 插件', () => {
     expect(sess.replay()).toHaveLength(4);
     expect(seen.some((e) => e.action === 'prompt-context/assemble')).toBe(true);
     expect(seen.some((e) => e.action === 'prompt-context/apply')).toBe(true);
+  });
+
+  it('usage：按类别估算 token 并可拆分正文', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(promptContextPlugin);
+    const pc = harness.services.get<PromptContextService>('promptContext')!;
+    const session = harness.services.get<SessionService>('session')!;
+    const sess = session.start({ title: 'usage' });
+
+    pc.section({ name: 'base', order: 0, text: 'You are helpful.' });
+    pc.context({ name: 'cwd', order: 0, text: 'cwd: /tmp' });
+    pc.tools(() => [{ name: 'echo', description: 'echo back' }]);
+    sess.append('message', { role: 'user', content: 'hello' });
+    sess.append('message', { role: 'assistant', content: 'hi there' });
+
+    const report = pc.usage({ sessionId: sess.id });
+    expect(report.limitTokens).toBe(200_000);
+    expect(report.totalTokens).toBeGreaterThan(0);
+    expect(report.categories.map((c) => c.id)).toEqual(
+      expect.arrayContaining(['system-prompt', 'tool-definitions', 'runtime-context', 'conversation']),
+    );
+    const system = report.categories.find((c) => c.id === 'system-prompt');
+    expect(system?.text).toContain('You are helpful.');
+    const conv = report.categories.find((c) => c.id === 'conversation');
+    expect(conv?.text).toContain('hello');
+    expect(conv?.breakdown?.length).toBeGreaterThanOrEqual(2);
   });
 
   it('inspect：素材清单 + 最近成品；scoped 层可区分', async () => {

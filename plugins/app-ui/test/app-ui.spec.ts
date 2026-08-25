@@ -30,7 +30,7 @@ describe('app-ui 插件', () => {
     });
     expect(appUiPlugin.ui?.rpc).toEqual({
       appChat: ['send', 'cancel', 'listSessions', 'resumeSession'],
-      promptContext: ['inspect'],
+      promptContext: ['inspect', 'usage'],
       trajectory: ['latest', 'list', 'snapshot'],
       sandbox: ['info', 'list'],
     });
@@ -46,7 +46,10 @@ describe('app-ui 插件', () => {
     expect(APP_UI_HTML).toContain('pullSandbox');
     expect(APP_UI_HTML).toContain('pullPromptContext');
     expect(APP_UI_HTML).toContain('setAgentChip');
-    expect(APP_UI_HTML).toContain('prompt-context');
+    expect(APP_UI_HTML).toContain('id="ctx-usage"');
+    expect(APP_UI_HTML).toContain('compose-actions');
+    expect(APP_UI_HTML).toContain('上下文');
+    expect(APP_UI_HTML).toContain('promptContext","usage');
     expect(APP_UI_HTML).toContain('id="ws"');
     expect(APP_UI_HTML).toContain('workspace');
     expect(APP_UI_HTML).toContain('renderTrajectory');
@@ -60,6 +63,6 @@ describe('app-ui 插件', () => {
     await harness.registry.register(fakeChat);
     await harness.registry.register(appUiPlugin);
     const svc = harness.services.get<AppUiService>('appUi');
-    expect(svc?.title).toBe('App demo');
+    expect(svc?.title).toBe('Agent demo');
   });
 });

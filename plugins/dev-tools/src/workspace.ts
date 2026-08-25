@@ -8,92 +8,25 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { promisify, TextDecoder } from 'node:util';
+import { promisify } from 'node:util';
 import { assertInside, toPosix } from './jail.js';
+import {
+  FS_LIMITS,
+  asString,
+  clip,
+  decode,
+  globToRegExp,
+  isProbablyBinary,
+  walkFiles,
+} from './workspace-fs.js';
 
 const execP = promisify(exec);
-const MAX_WRITE = 1024 * 1024;
-const MAX_READ = 512 * 1024;
-const MAX_GLOB = 200;
-const MAX_GREP = 80;
-const MAX_BASH_CHARS = 100_000;
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', '.next', '.turbo', 'out']);
-const CMD_PREFIX = process.platform === 'win32' ? 'chcp 65001 >nul && ' : '';
 
-function decode(buf: Buffer): string {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch {
-    return new TextDecoder('gbk').decode(buf);
-  }
-}
-
-function clip(text: string, max = MAX_BASH_CHARS): string {
-  if (text.length <= max) return text;
-  return `${text.slice(0, max)}\n…（截断，共 ${text.length} 字符）`;
-}
-
-function asString(value: unknown, fallback = ''): string {
-  return value === undefined || value === null ? fallback : String(value);
-}
-
-function globToRegExp(glob: string): RegExp {
-  let g = glob.replaceAll('\\', '/').trim();
-  if (g.startsWith('./')) g = g.slice(2);
-  if (!g) throw new Error('glob 不能为空');
-  const re = g
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\?/g, '\u0002')
-    .replace(/\*\*\//g, '\u0001')
-    .replace(/\*\*/g, '\u0000')
-    .replace(/\*/g, '[^/]*')
-    .replace(/\u0001/g, '(?:.*/)?')
-    .replace(/\u0000/g, '.*')
-    .replace(/\u0002/g, '[^/]');
-  return new RegExp(`^${re}$`);
-}
-
-function isSkippedDir(name: string): boolean {
-  return SKIP_DIRS.has(name);
-}
-
-function isProbablyBinary(buf: Buffer): boolean {
-  const n = Math.min(buf.length, 8192);
-  for (let i = 0; i < n; i += 1) {
-    if (buf[i] === 0) return true;
-  }
-  return false;
-}
-
-function walkFiles(rootAbs: string, startAbs: string, out: string[], cap: number): void {
-  if (out.length >= cap) return;
-  if (!existsSync(startAbs)) return;
-  const st = statSync(startAbs);
-  if (st.isFile()) {
-    out.push(startAbs);
-    return;
-  }
-  if (!st.isDirectory()) return;
-  let names: string[];
-  try {
-    names = readdirSync(startAbs);
-  } catch {
-    return;
-  }
-  for (const name of names) {
-    if (out.length >= cap) return;
-    if (isSkippedDir(name)) continue;
-    const next = join(startAbs, name);
-    let nextSt;
-    try {
-      nextSt = statSync(next);
-    } catch {
-      continue;
-    }
-    if (nextSt.isDirectory()) walkFiles(rootAbs, next, out, cap);
-    else if (nextSt.isFile()) out.push(next);
-  }
-}
+const LIMITS = {
+  MAX_WRITE: 1024 * 1024,
+  MAX_BASH_CHARS: 100_000,
+  CMD_PREFIX: process.platform === 'win32' ? 'chcp 65001 >nul && ' : '',
+};
 
 export interface WorkspaceHost {
   info(): { root: string };
@@ -137,7 +70,7 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
       const file = assertInside(rootAbs, path);
       if (!existsSync(file) || !statSync(file).isFile()) throw new Error(`文件不存在：${path}`);
       const buf = readFileSync(file);
-      if (buf.length > MAX_READ) throw new Error(`超过 ${MAX_READ} 字节读取上限`);
+      if (buf.length > FS_LIMITS.MAX_READ) throw new Error(`超过 ${FS_LIMITS.MAX_READ} 字节读取上限`);
       if (isProbablyBinary(buf)) throw new Error(`不像文本文件：${path}`);
       const lines = buf.toString('utf8').split(/\r?\n/);
       const offsetRaw = args.offset;
@@ -155,7 +88,7 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
       const path = asString(args.path).trim();
       if (!path) throw new Error('write_file 需要 args.path');
       if (typeof args.content !== 'string') throw new Error('write_file 需要字符串 args.content');
-      if (args.content.length > MAX_WRITE) throw new Error(`超过 ${MAX_WRITE} 字节写入上限`);
+      if (args.content.length > LIMITS.MAX_WRITE) throw new Error(`超过 ${LIMITS.MAX_WRITE} 字节写入上限`);
       const file = assertInside(rootAbs, path);
       if (file === rootAbs || file.endsWith(sep)) throw new Error('不能把根目录当文件写');
       mkdirSync(dirname(file), { recursive: true });
@@ -197,7 +130,7 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
       walkFiles(rootAbs, start, files, 4000);
       const matches: Array<{ path: string; line: number; text: string }> = [];
       for (const file of files) {
-        if (matches.length >= MAX_GREP) break;
+        if (matches.length >= FS_LIMITS.MAX_GREP) break;
         const rel = relOf(file);
         if (filter && !filter.test(rel)) continue;
         let buf: Buffer;
@@ -206,14 +139,14 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
         } catch {
           continue;
         }
-        if (buf.length > MAX_READ || isProbablyBinary(buf)) continue;
+        if (buf.length > FS_LIMITS.MAX_READ || isProbablyBinary(buf)) continue;
         const lines = buf.toString('utf8').split(/\r?\n/);
         for (let i = 0; i < lines.length; i += 1) {
-          if (matches.length >= MAX_GREP) break;
+          if (matches.length >= FS_LIMITS.MAX_GREP) break;
           if (re.test(lines[i]!)) matches.push({ path: rel, line: i + 1, text: lines[i]! });
         }
       }
-      return { matches, truncated: matches.length >= MAX_GREP };
+      return { matches, truncated: matches.length >= FS_LIMITS.MAX_GREP };
     },
     glob(args) {
       const pattern = asString(args.pattern).trim();
@@ -226,9 +159,9 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
       for (const file of files) {
         const rel = relOf(file);
         if (filter.test(rel)) paths.push(rel);
-        if (paths.length >= MAX_GLOB) break;
+        if (paths.length >= FS_LIMITS.MAX_GLOB) break;
       }
-      return { paths, truncated: paths.length >= MAX_GLOB };
+      return { paths, truncated: paths.length >= FS_LIMITS.MAX_GLOB };
     },
     async bash(args) {
       const command = asString(args.command).trim();
@@ -236,19 +169,19 @@ export function createWorkspaceHost(root: string): WorkspaceHost {
       const timeoutMsRaw = Number(args.timeoutMs ?? 30_000);
       const timeoutMs = Math.min(120_000, Math.max(1_000, Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : 30_000));
       try {
-        const { stdout, stderr } = await execP(CMD_PREFIX + command, {
+        const { stdout, stderr } = await execP(LIMITS.CMD_PREFIX + command, {
           cwd: rootAbs,
           encoding: 'buffer',
           timeout: timeoutMs,
           maxBuffer: 2 * 1024 * 1024,
           windowsHide: true,
         });
-        return { stdout: clip(decode(stdout)), stderr: clip(decode(stderr)), code: 0 };
+        return { stdout: clip(decode(stdout), LIMITS.MAX_BASH_CHARS), stderr: clip(decode(stderr), LIMITS.MAX_BASH_CHARS), code: 0 };
       } catch (err) {
         const e = err as { stdout?: Buffer; stderr?: Buffer; code?: number | null };
         return {
-          stdout: clip(e.stdout ? decode(e.stdout) : ''),
-          stderr: clip(e.stderr ? decode(e.stderr) : String(err)),
+          stdout: clip(e.stdout ? decode(e.stdout) : '', LIMITS.MAX_BASH_CHARS),
+          stderr: clip(e.stderr ? decode(e.stderr) : String(err), LIMITS.MAX_BASH_CHARS),
           code: e.code ?? 1,
         };
       }

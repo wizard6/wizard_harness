@@ -2,14 +2,15 @@ import { assertPublicHttpUrl } from './ssrf.js';
 import { approxTokens, joinMarkdown, joinText, matchSection, parsePage, type PageDoc } from './html.js';
 import { parseBraveJson, parseDdgHtml, parseSearxJson, type SearchHit } from './search.js';
 
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36';
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const CACHE_MAX = 24;
-const BODY_CAP = 800_000;
-const DEFAULT_MAX_CHARS = 6000;
-const HARD_MAX_CHARS = 20_000;
-const SMALL_PAGE = 4000;
+const LIMITS = {
+  UA: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+  CACHE_TTL_MS: 10 * 60 * 1000,
+  CACHE_MAX: 24,
+  BODY_CAP: 800_000,
+  DEFAULT_MAX_CHARS: 6000,
+  HARD_MAX_CHARS: 20_000,
+  SMALL_PAGE: 4000,
+};
 
 export const WEB_TOOL_NAMES = ['web_search', 'web_outline', 'web_read', 'web_find'] as const;
 
@@ -51,7 +52,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
   function cacheGet(url: string): CacheEntry | undefined {
     const hit = cache.get(url);
     if (!hit) return undefined;
-    if (now() - hit.at > CACHE_TTL_MS) {
+    if (now() - hit.at > LIMITS.CACHE_TTL_MS) {
       cache.delete(url);
       return undefined;
     }
@@ -61,7 +62,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
   function cacheSet(entry: CacheEntry): void {
     cache.delete(entry.url);
     cache.set(entry.url, entry);
-    while (cache.size > CACHE_MAX) {
+    while (cache.size > LIMITS.CACHE_MAX) {
       const first = cache.keys().next().value as string | undefined;
       if (first === undefined) break;
       cache.delete(first);
@@ -84,7 +85,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
         headers: {
           accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
           'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'user-agent': UA,
+          'user-agent': LIMITS.UA,
         },
       });
     } finally {
@@ -94,7 +95,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
     const finalUrl = res.url || key;
     if (finalUrl !== key) await assertPublicHttpUrl(finalUrl, opts.lookup);
     const buf = new Uint8Array(await res.arrayBuffer());
-    const html = new TextDecoder('utf-8', { fatal: false }).decode(buf.byteLength > BODY_CAP ? buf.slice(0, BODY_CAP) : buf);
+    const html = new TextDecoder('utf-8', { fatal: false }).decode(buf.byteLength > LIMITS.BODY_CAP ? buf.slice(0, LIMITS.BODY_CAP) : buf);
     const type = (res.headers.get('content-type') ?? '').toLowerCase();
     if (type.includes('pdf')) throw new Error('暂不支持 PDF，请换 HTML 页面');
     const doc = type.includes('json')
@@ -141,7 +142,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
       const url = String(args.url ?? '').trim();
       if (!url) throw new Error('web_read 需要 args.url');
       const mode = String(args.mode ?? 'markdown').toLowerCase() === 'text' ? 'text' : 'markdown';
-      const maxChars = clampInt(args.max_chars, DEFAULT_MAX_CHARS, 500, HARD_MAX_CHARS);
+      const maxChars = clampInt(args.max_chars, LIMITS.DEFAULT_MAX_CHARS, 500, LIMITS.HARD_MAX_CHARS);
       const offset = Math.max(0, Number(args.offset ?? 0) || 0);
       const heading = String(args.heading ?? args.section ?? '').trim();
       const page = await loadPage(url);
@@ -162,7 +163,7 @@ export function createWebHost(opts: WebHostOptions = {}): WebHost {
         : mode === 'text'
           ? joinText(page.doc)
           : joinMarkdown(page.doc);
-      if (!heading && !offset && full.length > SMALL_PAGE && full.length > maxChars) {
+      if (!heading && !offset && full.length > LIMITS.SMALL_PAGE && full.length > maxChars) {
         return {
           url: page.url,
           title: page.doc.title,
@@ -265,7 +266,7 @@ async function runSearch(
       const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}`;
       const res = await ctx.doFetch(url, {
         signal: ac.signal,
-        headers: { accept: 'application/json', 'x-subscription-token': ctx.braveKey, 'user-agent': UA },
+        headers: { accept: 'application/json', 'x-subscription-token': ctx.braveKey, 'user-agent': LIMITS.UA },
       });
       if (!res.ok) throw new Error(`Brave 搜索失败 HTTP ${res.status}`);
       return parseBraveJson(await res.json());
@@ -273,14 +274,14 @@ async function runSearch(
     if (ctx.engine === 'searx' && ctx.searxUrl) {
       const base = ctx.searxUrl.replace(/\/$/, '');
       const url = `${base}/search?q=${encodeURIComponent(query)}&format=json`;
-      const res = await ctx.doFetch(url, { signal: ac.signal, headers: { accept: 'application/json', 'user-agent': UA } });
+      const res = await ctx.doFetch(url, { signal: ac.signal, headers: { accept: 'application/json', 'user-agent': LIMITS.UA } });
       if (!res.ok) throw new Error(`SearX 搜索失败 HTTP ${res.status}`);
       return parseSearxJson(await res.json());
     }
     const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
     const res = await ctx.doFetch(url, {
       signal: ac.signal,
-      headers: { accept: 'text/html', 'user-agent': UA },
+      headers: { accept: 'text/html', 'user-agent': LIMITS.UA },
     });
     if (!res.ok) throw new Error(`DuckDuckGo 搜索失败 HTTP ${res.status}`);
     return parseDdgHtml(await res.text());

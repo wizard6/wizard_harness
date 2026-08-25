@@ -73,6 +73,48 @@ export interface PromptInspect {
   readonly applied?: PromptApplied;
 }
 
+export type ContextUsageCategoryId =
+  | 'system-prompt'
+  | 'tool-definitions'
+  | 'rules'
+  | 'skills'
+  | 'mcp-tools'
+  | 'subagents'
+  | 'runtime-context'
+  | 'summarized'
+  | 'conversation';
+
+export interface ContextUsageBreakdown {
+  readonly name: string;
+  readonly tokens: number;
+  readonly chars: number;
+  readonly text: string;
+}
+
+export interface ContextUsageCategory {
+  readonly id: ContextUsageCategoryId;
+  readonly label: string;
+  readonly tokens: number;
+  readonly chars: number;
+  readonly text: string;
+  readonly breakdown?: readonly ContextUsageBreakdown[];
+}
+
+export interface ContextUsageInput {
+  readonly sessionId?: string;
+  readonly scope?: ScopeRef;
+  /** 上下文窗口 token 上限（仅用于百分比展示，默认 200_000） */
+  readonly limitTokens?: number;
+}
+
+export interface ContextUsageReport {
+  readonly limitTokens: number;
+  readonly totalTokens: number;
+  readonly categories: readonly ContextUsageCategory[];
+  readonly sessionId?: string;
+  readonly at: number;
+}
+
 export interface PromptAssembly {
   readonly sections: readonly AssembledSection[];
   readonly contexts: readonly AssembledContextEntry[];
@@ -106,4 +148,6 @@ export interface PromptContextService {
   getPersona(sessionId: string): string | undefined;
   /** 登记中的素材 + 最近一次 assemble/apply 成品（弹窗追溯用） */
   inspect(): PromptInspect;
+  /** 按类别估算上下文用量（token ≈ chars/4）；可点击查看各类正文 */
+  usage(input?: ContextUsageInput): ContextUsageReport;
 }

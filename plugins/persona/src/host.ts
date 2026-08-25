@@ -16,13 +16,15 @@ export const DEFAULT_PERSONALITY =
 
 const DEFAULT_HABITS = ['先看工作区再改文件', '长网页先 outline 再读一节', '不确定时说明假设，不编造结果'];
 
-const MAX_PERSONALITY = 4000;
-const MAX_HABITS = 24;
-const MAX_HABIT_LEN = 200;
-const MAX_MEMORIES_STORE = 80;
-const MAX_MEMORY_LEN = 400;
-const ASSEMBLE_UNPINNED = 6;
-const ASSEMBLE_CLIP = 220;
+const LIMITS = {
+  MAX_PERSONALITY: 4000,
+  MAX_HABITS: 24,
+  MAX_HABIT_LEN: 200,
+  MAX_MEMORIES_STORE: 80,
+  MAX_MEMORY_LEN: 400,
+  ASSEMBLE_UNPINNED: 6,
+  ASSEMBLE_CLIP: 220,
+};
 
 export interface PersonaHostOpts {
   persistFile?: string;
@@ -43,8 +45,8 @@ function asHabits(raw: unknown): string[] {
     const t = String(row ?? '').replace(/\s+/g, ' ').trim();
     if (!t || seen.has(t)) continue;
     seen.add(t);
-    out.push(t.slice(0, MAX_HABIT_LEN));
-    if (out.length >= MAX_HABITS) break;
+    out.push(t.slice(0, LIMITS.MAX_HABIT_LEN));
+    if (out.length >= LIMITS.MAX_HABITS) break;
   }
   return out;
 }
@@ -71,10 +73,10 @@ export function renderCore(profile: PersonaProfile): string {
 
 export function renderMemory(profile: PersonaProfile): string {
   const pinned = profile.memories.filter((m) => m.pinned).sort((a, b) => b.at - a.at);
-  const rest = profile.memories.filter((m) => !m.pinned).sort((a, b) => b.at - a.at).slice(0, ASSEMBLE_UNPINNED);
-  const picked = [...pinned, ...rest].slice(0, pinned.length + ASSEMBLE_UNPINNED);
+  const rest = profile.memories.filter((m) => !m.pinned).sort((a, b) => b.at - a.at).slice(0, LIMITS.ASSEMBLE_UNPINNED);
+  const picked = [...pinned, ...rest].slice(0, pinned.length + LIMITS.ASSEMBLE_UNPINNED);
   if (!picked.length) return '';
-  const lines = picked.map((m) => `- ${m.pinned ? '[钉] ' : ''}${clip(m.text, ASSEMBLE_CLIP)}`);
+  const lines = picked.map((m) => `- ${m.pinned ? '[钉] ' : ''}${clip(m.text, LIMITS.ASSEMBLE_CLIP)}`);
   return `# 相关记忆\n${lines.join('\n')}`;
 }
 
@@ -109,7 +111,7 @@ export function createPersonaHost(opts: PersonaHostOpts = {}): PersonaService & 
   }
 
   function rememberMemory(input: { text: string; pinned?: boolean }): PersonaSnapshot {
-    const text = String(input.text ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_MEMORY_LEN);
+    const text = String(input.text ?? '').replace(/\s+/g, ' ').trim().slice(0, LIMITS.MAX_MEMORY_LEN);
     if (!text) throw new Error('需要 text');
     const row: PersonaMemory = {
       id: `mem-${randomUUID().slice(0, 8)}`,
@@ -117,7 +119,7 @@ export function createPersonaHost(opts: PersonaHostOpts = {}): PersonaService & 
       pinned: Boolean(input.pinned),
       at: Date.now(),
     };
-    const memories = [row, ...profile.memories].slice(0, MAX_MEMORIES_STORE);
+    const memories = [row, ...profile.memories].slice(0, LIMITS.MAX_MEMORIES_STORE);
     return commit({ ...profile, memories }, 'persona/remember');
   }
 
@@ -127,7 +129,7 @@ export function createPersonaHost(opts: PersonaHostOpts = {}): PersonaService & 
     snapshot: () => snap(),
     save(patch: PersonaSavePatch) {
       const name = String(patch.name ?? profile.name).trim() || profile.name;
-      const personality = String(patch.personality ?? profile.personality).slice(0, MAX_PERSONALITY);
+      const personality = String(patch.personality ?? profile.personality).slice(0, LIMITS.MAX_PERSONALITY);
       const habits = patch.habits !== undefined ? asHabits(patch.habits) : [...profile.habits];
       return commit({ ...profile, name, personality, habits }, 'persona/save');
     },
@@ -165,17 +167,17 @@ function loadProfile(file?: string): PersonaProfile | undefined {
       ? raw.memories
           .map((m) => ({
             id: String(m?.id ?? `mem-${randomUUID().slice(0, 8)}`),
-            text: String(m?.text ?? '').trim().slice(0, MAX_MEMORY_LEN),
+            text: String(m?.text ?? '').trim().slice(0, LIMITS.MAX_MEMORY_LEN),
             pinned: Boolean(m?.pinned),
             at: Number(m?.at) || Date.now(),
           }))
           .filter((m) => m.text)
-          .slice(0, MAX_MEMORIES_STORE)
+          .slice(0, LIMITS.MAX_MEMORIES_STORE)
       : [];
     return {
       id: String(raw.id ?? base.id),
       name: String(raw.name ?? base.name).trim() || base.name,
-      personality: String(raw.personality ?? base.personality).slice(0, MAX_PERSONALITY),
+      personality: String(raw.personality ?? base.personality).slice(0, LIMITS.MAX_PERSONALITY),
       habits: asHabits(raw.habits ?? base.habits),
       memories,
     };

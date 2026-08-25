@@ -46,17 +46,32 @@ describe('llm 插件', () => {
   });
 
   it('toWireMessages 给 assistant.tool_calls 补 type:function', async () => {
-    const { toWireMessages } = await import('../src/adapter.js');
-    const wire = toWireMessages([
-      { role: 'user', content: 'echo hi' },
-      { role: 'assistant', content: '', tool_calls: [{ id: 'c1', name: 'echo', args: { input: 'hi' } }] },
-      { role: 'tool', content: 'hi', tool_call_id: 'c1', name: 'echo' },
-    ]);
+    const { toWireMessages, buildToolWireMaps } = await import('../src/adapter.js');
+    const { realToWire } = buildToolWireMaps([{ name: 'echo' }]);
+    const wire = toWireMessages(
+      [
+        { role: 'user', content: 'echo hi' },
+        { role: 'assistant', content: '', tool_calls: [{ id: 'c1', name: 'echo', args: { input: 'hi' } }] },
+        { role: 'tool', content: 'hi', tool_call_id: 'c1', name: 'echo' },
+      ],
+      realToWire,
+    );
     expect(wire[1]).toMatchObject({
       role: 'assistant',
       tool_calls: [{ id: 'c1', type: 'function', function: { name: 'echo', arguments: '{"input":"hi"}' } }],
     });
     expect(wire[2]).toEqual({ role: 'tool', tool_call_id: 'c1', content: 'hi' });
+  });
+
+  it('wireToolName 把 box.* 转成 API 合法名', async () => {
+    const { wireToolName, buildToolWireMaps } = await import('../src/adapter.js');
+    expect(wireToolName('box.open_folder')).toBe('box_open_folder');
+    const { wireToReal, realToWire } = buildToolWireMaps([
+      { name: 'box.open_folder' },
+      { name: 'bash' },
+    ]);
+    expect(realToWire.get('box.open_folder')).toBe('box_open_folder');
+    expect(wireToReal.get('box_open_folder')).toBe('box.open_folder');
   });
 
   it('已 abort 的 signal 使 complete 失败', async () => {

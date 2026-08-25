@@ -16,11 +16,9 @@
       "aiIssues": []
     },
     "contracts/src/index.ts": {
-      "hash": "fb00735f07c1c67b5f5aa0cd1c485f7de63de4e95200a141ceef1cacc7855a32",
-      "issues": [
-        "import 过多 20 个 > 12，耦合偏高"
-      ],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "hash": "2285cb723b860d6897a9b59b8bdc8dab897b254df684e5c9b677656a1e7882b0",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
       "aiHash": "67ee9a66334fb1fa81825d4266aa63d9a06c80865464c997011ddac6bc7f777b",
       "aiIssues": []
     },
@@ -81,9 +79,9 @@
       "aiIssues": []
     },
     "core/src/index.ts": {
-      "hash": "f477a99f717b74c73cfee57b2c6de013dd82b9830d2dca7d4fe86c26b7414dc9",
+      "hash": "f2db08931d48f0c21f4dcbf06a000f4339218e47537795401043d313244b7834",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "checkedAt": "2026-08-25T05:17:13.109Z",
       "aiHash": "c7b45c7756fc87083b4bf51d40f2f5f9a1783dc5cf93636ef5fd063abfdaa152",
       "aiIssues": []
     },
@@ -110,9 +108,9 @@
       "aiCheckedAt": "2026-08-20T02:59:29.238Z"
     },
     "core/src/registrar/types.ts": {
-      "hash": "e98888a24869ce222ffda201d6c52587df664200b1f86723b5314e34c8ba88fe",
+      "hash": "74d10fc8162b98b395110211c469e584e50dca91332e24a4692175fbad833e0d",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "checkedAt": "2026-08-25T05:17:13.109Z",
       "aiHash": "1dbdd54d9e4a82359a4d5e433e3fb4309781c6e0cbc6f676b67028c5983adb74",
       "aiIssues": []
     },
@@ -124,9 +122,9 @@
       "aiIssues": []
     },
     "core/src/shell.ts": {
-      "hash": "c1c673ef9f356bc4ac9420fae2f136046365f23d519af2be91704ca26bc110e1",
+      "hash": "629f3085b9379ca147a73e8faf2ec0ba2fa46fc60072a88b174c7a6e5c14c590",
       "issues": [],
-      "checkedAt": "2026-08-21T01:37:33.429Z",
+      "checkedAt": "2026-08-25T05:17:13.109Z",
       "aiHash": "34cad5d82d4a181ab1f6e61c2069a257fafb09f4f8f49b8820ae96f5958c5219",
       "aiIssues": []
     },
@@ -145,9 +143,9 @@
       "aiIssues": []
     },
     "obs/core/src/gui.tsx": {
-      "hash": "7fd62166d7808cf395498282e5f4de1d60e1c58a92b67681049305fb9c3e2556",
+      "hash": "70f167f853134d40137790cfd70c6406e018bb097898af418c71013a2b83d33b",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "checkedAt": "2026-08-25T06:38:08.717Z",
       "aiHash": "a5d45f535495567733241a603847a1810b2d06ca4f3d068c3b12ae734a3d5d0e",
       "aiIssues": []
     },
@@ -159,9 +157,9 @@
       "aiIssues": []
     },
     "obs/core/src/spec.ts": {
-      "hash": "7133b141abadeb561d93cc9ff055e9b962b4583be6c95389fb3da5f336b53142",
+      "hash": "378fbd2254effc1fc9438a75d10b09a153a1bf602624a28445c6ba1a3e457497",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "checkedAt": "2026-08-25T05:17:13.109Z",
       "aiHash": "5859abb0c5a45971e0b8aa155446654dfe53c3f5a76ca2d2690ab142de9d9d2e",
       "aiIssues": []
     },
@@ -173,9 +171,9 @@
       "aiIssues": []
     },
     "obs/gui/src/renderer.tsx": {
-      "hash": "483787c8a20c4ed69bf68d8d50c7c9fc521f27ce7ecdc1e187b2fe58f5b822aa",
+      "hash": "068bf2867fe594f2b5ad4985fdbda5631571dc1fe941b754e48ff3d833aa05ce",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "checkedAt": "2026-08-25T06:23:34.469Z",
       "aiHash": "16827fd400a68b4b7ba73afe1ae970ec085d461ac4ad30297f5c65a681e70775",
       "aiIssues": []
     },
@@ -264,19 +262,16 @@
       "aiIssues": []
     },
     "core/src/registrar/lifecycle.ts": {
-      "hash": "5ad2883533b9da7e88f9f71563bb4f15d80086736c4c9c6e87b89eb5a1fc1b71",
+      "hash": "4afabccb0cbffef5c3d50bb8989b147d1b6f7c19d8a4779722056ae897646975",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "checkedAt": "2026-08-25T05:17:13.109Z",
       "aiHash": "fa9a518cb160ffba0549ffc41bc7fe3cd08bd813d9d653bdcc1c846cc0b1a887",
       "aiIssues": []
     },
     "obs/core/src/quality.tsx": {
-      "hash": "0aa418a407c93729a873b75d3a3b93b3936b5349b341665a4c17a771c69b5aa3",
-      "issues": [
-        "文件过大 756 行 > 600（除非特殊）",
-        "顶层声明过多 13 个 > 10，职责过多，考虑拆分"
-      ],
-      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "hash": "f1d7385a44e2bdb7087e526ab637632cfdd9624b1d7d4f72df5c818a376df813",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:38:08.717Z",
       "aiHash": "a2a773cadd1d520546bea049fdccfbcb5094df14fd6102f150a72bb8fca58598",
       "aiIssues": [
         "智能对照时间误用 generatedAt（每次刷新的当前时刻），QualityData 未下发 aiCheckedAt，无法表示智能评审基准",
@@ -289,385 +284,884 @@
     "core/src/profile/index.ts": {
       "hash": "f7009ff2d0fd611407e48b7120391ccf66345dd0f05f68023a7e0834cf11e911",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "f7009ff2d0fd611407e48b7120391ccf66345dd0f05f68023a7e0834cf11e911",
+      "aiIssues": []
     },
     "core/src/profile/load.ts": {
       "hash": "d28bd19c4aac70e005c64dcbb961c827229b82c0387b7da43ab29d8756e2e420",
       "issues": [],
-      "checkedAt": "2026-08-20T08:03:20.038Z"
+      "checkedAt": "2026-08-20T08:03:20.038Z",
+      "aiHash": "d28bd19c4aac70e005c64dcbb961c827229b82c0387b7da43ab29d8756e2e420",
+      "aiIssues": []
     },
     "core/src/profile/patch.ts": {
       "hash": "458bf34e2bb3cd26845c535013a83a2e718a4111824957fe152c3690bcfbc971",
       "issues": [],
-      "checkedAt": "2026-08-20T08:03:20.038Z"
+      "checkedAt": "2026-08-20T08:03:20.038Z",
+      "aiHash": "458bf34e2bb3cd26845c535013a83a2e718a4111824957fe152c3690bcfbc971",
+      "aiIssues": []
     },
     "core/src/profile/types.ts": {
       "hash": "bb2886a9b06353a11c241701552c362bd649b661bd1187628f5e8822b3026317",
       "issues": [],
-      "checkedAt": "2026-08-20T08:03:20.038Z"
+      "checkedAt": "2026-08-20T08:03:20.038Z",
+      "aiHash": "bb2886a9b06353a11c241701552c362bd649b661bd1187628f5e8822b3026317",
+      "aiIssues": []
     },
     "contracts/src/llm.ts": {
       "hash": "bdd345c2cee10c777de2f4630f919509a7eb8b23f2a0138c4f35d5b64b388ece",
       "issues": [],
-      "checkedAt": "2026-08-21T03:13:34.432Z"
+      "checkedAt": "2026-08-21T03:13:34.432Z",
+      "aiHash": "bdd345c2cee10c777de2f4630f919509a7eb8b23f2a0138c4f35d5b64b388ece",
+      "aiIssues": []
     },
     "contracts/src/session.ts": {
-      "hash": "ae6b0d2e4cecb87e45a4373b6471284b2e5e7f07a34bfb1b411eea48bee56a98",
+      "hash": "43815eedabe21df2ad360b70292200ddbd6e4c674903e05fbd1c039dd940afd3",
       "issues": [],
-      "checkedAt": "2026-08-21T03:13:34.432Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "43815eedabe21df2ad360b70292200ddbd6e4c674903e05fbd1c039dd940afd3",
+      "aiIssues": []
     },
     "core/src/scope/index.ts": {
       "hash": "f6ba3291fadc73f2028200edfa6d81fc054aea9f76bf3282a6fed976f0d32b52",
       "issues": [],
-      "checkedAt": "2026-08-21T01:37:33.429Z"
+      "checkedAt": "2026-08-21T01:37:33.429Z",
+      "aiHash": "f6ba3291fadc73f2028200edfa6d81fc054aea9f76bf3282a6fed976f0d32b52",
+      "aiIssues": []
     },
     "core/src/scope/keys.ts": {
-      "hash": "e01045a2f4a43ef469eca8cf866144a2ae808f4eef0ba5f4c905d508869ac0eb",
-      "issues": [
-        "顶层声明过多 12 个 > 10，职责过多，考虑拆分"
-      ],
-      "checkedAt": "2026-08-21T01:37:33.429Z"
+      "hash": "1c71506be865981661b88fca107539bde6e634ee854ccffff2618ea7974ecb75",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "1c71506be865981661b88fca107539bde6e634ee854ccffff2618ea7974ecb75",
+      "aiIssues": []
     },
     "core/src/scope/layers.ts": {
       "hash": "916ba3f238bca48de65571935bfb44b06f523ba694850b96d289d5812b30ab24",
       "issues": [],
-      "checkedAt": "2026-08-21T01:37:33.429Z"
+      "checkedAt": "2026-08-21T01:37:33.429Z",
+      "aiHash": "916ba3f238bca48de65571935bfb44b06f523ba694850b96d289d5812b30ab24",
+      "aiIssues": []
     },
     "plugins/llm/src/adapter.ts": {
-      "hash": "069cd8868c1f2723e094c033de61d84bba4b419f30c2bf0d9c5fa52c08fef098",
+      "hash": "53ad493a070aafe997467bcf0a01de6883b209c0f319fbfb16b5efd6c504fd21",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "53ad493a070aafe997467bcf0a01de6883b209c0f319fbfb16b5efd6c504fd21",
+      "aiIssues": []
     },
     "plugins/llm/src/index.ts": {
-      "hash": "e36669d17f11a09a9433ea4c90ca7200abfbc6f96e6af977e911c8db061b610f",
+      "hash": "7b1e42f4be74177002f216284fb4cd827a871d456470c42362e2752fc45ad107",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "7b1e42f4be74177002f216284fb4cd827a871d456470c42362e2752fc45ad107",
+      "aiIssues": []
     },
     "plugins/session/src/index.ts": {
-      "hash": "829d940fcc96effa8772b513e50df1fad7dc9ae4e9c1d34b4b16e7c0e49534ef",
+      "hash": "0c125e140696cb2faa16b5858ab9c283ee14df19f4d8a728e11a0047d3791e9a",
       "issues": [],
-      "checkedAt": "2026-08-21T03:13:34.432Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "0c125e140696cb2faa16b5858ab9c283ee14df19f4d8a728e11a0047d3791e9a",
+      "aiIssues": []
     },
     "plugins/session/src/store.ts": {
-      "hash": "767f0178a40eb8bab8bd82d72b9a515a5e83b471af18aa69dc3c6271524f0dc7",
+      "hash": "adf6392234d69433b1112671bb34e2a02bcbc980deaba1758e353c52dc6d74a6",
       "issues": [],
-      "checkedAt": "2026-08-21T03:13:34.432Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "adf6392234d69433b1112671bb34e2a02bcbc980deaba1758e353c52dc6d74a6",
+      "aiIssues": []
     },
     "contracts/src/tools.ts": {
-      "hash": "f5e3d1ec201158f4f4c2ee4daf8b4d8380280ed9c3f553889a18cb794cde1409",
+      "hash": "739c24f8ddfd0e94ba2d8be7ac2309d60208b2af9135116d83338666d10d461f",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "739c24f8ddfd0e94ba2d8be7ac2309d60208b2af9135116d83338666d10d461f",
+      "aiIssues": []
     },
     "plugins/tools/src/index.ts": {
-      "hash": "d76d1a89659518c4bbfa29521b2fc531ee70b65dba5ee370042e1776c0dfa566",
+      "hash": "9776c744a8f31cb97779daef6ca96674203e32d2146cf72a5e2676a13cd08acf",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "9776c744a8f31cb97779daef6ca96674203e32d2146cf72a5e2676a13cd08acf",
+      "aiIssues": []
     },
     "plugins/tools/src/registry.ts": {
-      "hash": "bf606dbd30a5e2a4bc3d91c26bbf34a100c956dbd5b5c35d8ec047d672e16ef6",
+      "hash": "21634276a2576d17fb64035e5a8f0e1de20a06d2127dd7af0537a0d38f90731a",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "21634276a2576d17fb64035e5a8f0e1de20a06d2127dd7af0537a0d38f90731a",
+      "aiIssues": []
     },
     "contracts/src/agent-loop.ts": {
-      "hash": "788f0a997ee8d3a07ecfbb143461587eeb168ed5969b30c091129a595b6e76f0",
+      "hash": "1ddf399a55a0865cdd31dfd7846e564a096302d891dcd0f90bded8cccb17059d",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "1ddf399a55a0865cdd31dfd7846e564a096302d891dcd0f90bded8cccb17059d",
+      "aiIssues": []
     },
     "contracts/src/agent.ts": {
-      "hash": "4159d962de0cc4244c0f18c33c37d716f2723e39febc4fff1a819776ceb6baa4",
+      "hash": "6487a4d1e8976172efae934b962f6e45020c8af607b9d05d883b1ac1e245bb2e",
       "issues": [],
-      "checkedAt": "2026-08-24T02:47:17.789Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "6487a4d1e8976172efae934b962f6e45020c8af607b9d05d883b1ac1e245bb2e",
+      "aiIssues": []
     },
     "obs/api/src/expose.ts": {
-      "hash": "4f1d24eb640e629f1aee08217e2a85aba4581d79588c00313a3ebe8dfa721ef2",
+      "hash": "42cff74f52d4bf64f7999931f249641fad9a36049a019e8a012ed059395013cd",
       "issues": [],
-      "checkedAt": "2026-08-24T02:47:17.789Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "42cff74f52d4bf64f7999931f249641fad9a36049a019e8a012ed059395013cd",
+      "aiIssues": []
     },
     "plugins/agent-loop/src/index.ts": {
       "hash": "f598b5179cb6688b4bfe09d74ce7eff0524e3843c1ad1d0a3f79bdd03aa0be7e",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "f598b5179cb6688b4bfe09d74ce7eff0524e3843c1ad1d0a3f79bdd03aa0be7e",
+      "aiIssues": []
     },
     "plugins/agent-loop/src/loop.ts": {
-      "hash": "e919dd2736dfc94efe6415e9513580e96b68c9665557474192fd98d291bb53cf",
+      "hash": "33c18ff73348b4663d067ef67cb2802eed76317f5243982ccee7780af193a9fd",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "33c18ff73348b4663d067ef67cb2802eed76317f5243982ccee7780af193a9fd",
+      "aiIssues": []
     },
     "plugins/agent/src/host.ts": {
-      "hash": "7a113cfc37a7e12e1f0ee8b3a21dbad0e497c5a1465eb086adba9894f181a238",
+      "hash": "0a4e0e59aa690a9caae1821de874565eb27a13d76d439e486aa906b63a2c8313",
       "issues": [],
-      "checkedAt": "2026-08-21T03:13:34.432Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "0a4e0e59aa690a9caae1821de874565eb27a13d76d439e486aa906b63a2c8313",
+      "aiIssues": []
     },
     "plugins/agent/src/index.ts": {
       "hash": "f59170e451d0e5af30fed7654ee57829c135041a1704d07a7c98e4c477e15155",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "f59170e451d0e5af30fed7654ee57829c135041a1704d07a7c98e4c477e15155",
+      "aiIssues": []
     },
     "contracts/src/app-ui.ts": {
       "hash": "a4cb67f1b54ae3dcf9d3be86a703bdca698dcf50f82575d272454f8bf1e19e94",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "a4cb67f1b54ae3dcf9d3be86a703bdca698dcf50f82575d272454f8bf1e19e94",
+      "aiIssues": []
     },
     "plugins/app-ui/src/index.ts": {
-      "hash": "333d79be11a9b8db79d93c33d9d36ade001eaa4ab0380586c3963cf65a8adbcb",
+      "hash": "18b8b85a76062a922a21ac968e3d976b7fab7a3ccbc4cbf760ce8458b67f0a58",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "18b8b85a76062a922a21ac968e3d976b7fab7a3ccbc4cbf760ce8458b67f0a58",
+      "aiIssues": []
     },
     "plugins/app-ui/src/page.ts": {
-      "hash": "d0eed21e1f38e65e66a3bd62ad359e6d2063caf42a3680e9239577fa84ec48db",
+      "hash": "fc34988c284cbec628652e921a0e3cb4a595318fef7d211adf7a86c08315936b",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "fc34988c284cbec628652e921a0e3cb4a595318fef7d211adf7a86c08315936b",
+      "aiIssues": []
     },
     "contracts/src/app-chat.ts": {
-      "hash": "a1b37053c3844ba4635a0a34dcfcefaa1c450ac60553baae673e63ba26ab290a",
+      "hash": "2753258d1f129d7ef494ad9ae742ebd5d096006a784d980cc9ff8f91ac759d5b",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "2753258d1f129d7ef494ad9ae742ebd5d096006a784d980cc9ff8f91ac759d5b",
+      "aiIssues": []
     },
     "contracts/src/prompt-context.ts": {
-      "hash": "ea599dbda3789bdc8ea556f8cd83331e6558106f45578a3e4edaaa42f2f608ff",
+      "hash": "5d339bf33df29afe627dc2a05c535de9078d125f00424865d6ebf169e4a517ac",
       "issues": [],
-      "checkedAt": "2026-08-24T02:47:17.789Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "5d339bf33df29afe627dc2a05c535de9078d125f00424865d6ebf169e4a517ac",
+      "aiIssues": []
     },
     "contracts/src/trajectory.ts": {
       "hash": "0e3d3409af8be41404025032aaf2caf3eca7f052e6ef56423d197c22b4871e99",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "0e3d3409af8be41404025032aaf2caf3eca7f052e6ef56423d197c22b4871e99",
+      "aiIssues": []
     },
     "plugins/agent-loop/src/intents.ts": {
       "hash": "11927846123f057c2f5e6cba924c36c93224dbbc7332a544a9dd31418753b609",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "11927846123f057c2f5e6cba924c36c93224dbbc7332a544a9dd31418753b609",
+      "aiIssues": []
     },
     "plugins/agent-loop/src/ota.ts": {
       "hash": "d29b0cb8959a0e47e754029c0a6efefc1374bbe527e87188b061a871d91ef36e",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "d29b0cb8959a0e47e754029c0a6efefc1374bbe527e87188b061a871d91ef36e",
+      "aiIssues": []
     },
     "plugins/app-chat/src/index.ts": {
-      "hash": "d5f1d92106b8ac29a8705e677b2d0d4c04149ca656219489cb2a2a08f08e6567",
-      "issues": [
-        "顶层声明过多 14 个 > 10，职责过多，考虑拆分"
-      ],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "hash": "21d69d788c62a4a5c41c9c6c9e923ac3da0d7f23b75eaafb7c46de3f79462fff",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:38:08.717Z",
+      "aiHash": "105a42f557cb8bf4d74ba627d3d7425a0dcefc40ed1fd75ef1425d682f1b808e",
+      "aiIssues": []
     },
     "plugins/app-ui/src/traj-view.ts": {
       "hash": "e14c06183eff9eba5bffd5f6e929c403b274871b1255d22823213e5707e53216",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "e14c06183eff9eba5bffd5f6e929c403b274871b1255d22823213e5707e53216",
+      "aiIssues": []
     },
     "plugins/prompt-context/src/index.ts": {
-      "hash": "d796bcfce85debecc2d630cd84c6c1f144cb0b2493d41c97daff0cd1515839bc",
+      "hash": "2fbd26c81ad6c52259c939fa6915d1490f3f949c1a07331f0bde4eab382079f5",
       "issues": [],
-      "checkedAt": "2026-08-24T02:47:17.789Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "2fbd26c81ad6c52259c939fa6915d1490f3f949c1a07331f0bde4eab382079f5",
+      "aiIssues": []
     },
     "plugins/prompt-context/src/registry.ts": {
-      "hash": "b18e56761786dab63d37f43fc2bb5a462681164c8953de8c5838bc8d7139085a",
+      "hash": "b6607a87b751185b30da1d9fac9f49ae77461ea4a694773e5c398e95c3dee5ed",
       "issues": [],
-      "checkedAt": "2026-08-24T01:31:23.034Z"
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "b6607a87b751185b30da1d9fac9f49ae77461ea4a694773e5c398e95c3dee5ed",
+      "aiIssues": []
     },
     "plugins/prompt-context/src/render.ts": {
       "hash": "28566d4655cb5f4883e431fca9db1146ed9b0059f3b6f58a28ecc1424a8009a0",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "28566d4655cb5f4883e431fca9db1146ed9b0059f3b6f58a28ecc1424a8009a0",
+      "aiIssues": []
     },
     "plugins/trajectory/src/index.ts": {
       "hash": "380a4fab735ae0c0c9beca3ee8c16ba3bcb99de205c47f3ab2c3f95bba97554c",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "380a4fab735ae0c0c9beca3ee8c16ba3bcb99de205c47f3ab2c3f95bba97554c",
+      "aiIssues": []
     },
     "plugins/trajectory/src/page.ts": {
       "hash": "bca9a0a84d8998af6cc2f193294f3c127f96dec58a4cbcd2addf64c4b154c302",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "bca9a0a84d8998af6cc2f193294f3c127f96dec58a4cbcd2addf64c4b154c302",
+      "aiIssues": []
     },
     "plugins/trajectory/src/store.ts": {
       "hash": "e59888d646a04a5919db19bbf65e55690700e75cd51bea0970504fe746374573",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "e59888d646a04a5919db19bbf65e55690700e75cd51bea0970504fe746374573",
+      "aiIssues": []
     },
     "plugins/trajectory/src/view.ts": {
       "hash": "af6e5361e361fd8902eaaa5e3e5230e748876e18c6ff05addb36246cd1545318",
       "issues": [],
-      "checkedAt": "2026-08-24T01:16:04.267Z"
+      "checkedAt": "2026-08-24T01:16:04.267Z",
+      "aiHash": "af6e5361e361fd8902eaaa5e3e5230e748876e18c6ff05addb36246cd1545318",
+      "aiIssues": []
     },
     "plugins/prompt-context/src/page.ts": {
       "hash": "fd195f7898e8871c87aa505b9341732b93d3a01a6af8e748b94231ff51041244",
       "issues": [],
-      "checkedAt": "2026-08-24T02:47:17.789Z"
+      "checkedAt": "2026-08-24T02:47:17.789Z",
+      "aiHash": "fd195f7898e8871c87aa505b9341732b93d3a01a6af8e748b94231ff51041244",
+      "aiIssues": []
     },
     "contracts/src/app-workflow.ts": {
       "hash": "da4a35bf2f4940a27222977ae3799bb1ad2c360df7217bbdad62d3e982ec9411",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "da4a35bf2f4940a27222977ae3799bb1ad2c360df7217bbdad62d3e982ec9411",
+      "aiIssues": []
     },
     "contracts/src/code-browser.ts": {
       "hash": "62b60dbb08f4a5501fe607c92fe716c8ed1c1691703dc7c6b01016ff725d4270",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "62b60dbb08f4a5501fe607c92fe716c8ed1c1691703dc7c6b01016ff725d4270",
+      "aiIssues": []
     },
     "contracts/src/code-editor.ts": {
-      "hash": "c20a58170fa833d415f369f98ea16d6422adccc6e225072b926861c5b2fa3e98",
+      "hash": "108d2ba962d1ea14e540835abeeac671154bd86c0d392f96f3a008c855e4eafb",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "108d2ba962d1ea14e540835abeeac671154bd86c0d392f96f3a008c855e4eafb",
+      "aiIssues": []
     },
     "contracts/src/file-manager.ts": {
       "hash": "ce2c9f2b9e6edd03d7b21c4a9c24f1506ae592a22e6f5be987fd165488c0b3e1",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "ce2c9f2b9e6edd03d7b21c4a9c24f1506ae592a22e6f5be987fd165488c0b3e1",
+      "aiIssues": []
     },
     "contracts/src/sandbox.ts": {
       "hash": "13303fc445f29e34261884f13b0c875e984ff575b42fb54cb46ecf199063f293",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "13303fc445f29e34261884f13b0c875e984ff575b42fb54cb46ecf199063f293",
+      "aiIssues": []
     },
     "contracts/src/workflow-agent.ts": {
       "hash": "80de0f17b7de21560a456cc1c23c3c2b7a6b5938f028db89d8b0a3afd0daf869",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "80de0f17b7de21560a456cc1c23c3c2b7a6b5938f028db89d8b0a3afd0daf869",
+      "aiIssues": []
     },
     "contracts/src/workflow-nodes.ts": {
       "hash": "f1b498fccd9f4967f6bb2df4d998b63873a362ca205a414ea16bd5c84cf50cb1",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "f1b498fccd9f4967f6bb2df4d998b63873a362ca205a414ea16bd5c84cf50cb1",
+      "aiIssues": []
     },
     "contracts/src/workflow.ts": {
       "hash": "8c00217ed99894a3e82ea4ae54c552f4f573b95bb73bc8075099a52e3dd248f9",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "8c00217ed99894a3e82ea4ae54c552f4f573b95bb73bc8075099a52e3dd248f9",
+      "aiIssues": []
     },
     "core/src/profile/save.ts": {
       "hash": "50924b7e3bbca29ff31941df76dc1d91e7241c6885ee18e24f274af6bcb5886f",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "50924b7e3bbca29ff31941df76dc1d91e7241c6885ee18e24f274af6bcb5886f",
+      "aiIssues": []
     },
     "plugins/agent/src/page.ts": {
       "hash": "ca240ea1c877cffbb32251d9e1ecc073e55b9b5748550bcbc8df306369eb0545",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "ca240ea1c877cffbb32251d9e1ecc073e55b9b5748550bcbc8df306369eb0545",
+      "aiIssues": []
     },
     "plugins/app-workflow/src/index.ts": {
       "hash": "e817963340a83a6ccc5c72d8ae3f4023989858e010b94dac0262f3e47d203817",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "e817963340a83a6ccc5c72d8ae3f4023989858e010b94dac0262f3e47d203817",
+      "aiIssues": []
     },
     "plugins/app-workflow/src/page.ts": {
-      "hash": "98f3d2ed68b84801d56a06740c5a9eac2f0f719a09458da933618746898785da",
-      "issues": [
-        "顶层声明过多 43 个 > 10，职责过多，考虑拆分"
-      ],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "hash": "4d4fca49c000a93f64f166398e80c8efe6842adbebd1680a9e7f505e921f4bc0",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "4d4fca49c000a93f64f166398e80c8efe6842adbebd1680a9e7f505e921f4bc0",
+      "aiIssues": []
     },
     "plugins/code-browser/src/index.ts": {
       "hash": "7798610b324a0b30fd7acaed8767dec00123e59dcdc63f2f9a29a16cc4c243e0",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "7798610b324a0b30fd7acaed8767dec00123e59dcdc63f2f9a29a16cc4c243e0",
+      "aiIssues": []
     },
     "plugins/code-browser/src/page.ts": {
-      "hash": "9815e10dfc8b6020c23f37af1f1d39864b345af8d5cd8e996083e05c7be916a9",
+      "hash": "55144336dcf921c1740ecd5080d9c7b0dbcf579fa11145be7afa907c927b1ff1",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "55144336dcf921c1740ecd5080d9c7b0dbcf579fa11145be7afa907c927b1ff1",
+      "aiIssues": []
     },
     "plugins/code-browser/src/syntax.ts": {
-      "hash": "976c853fbaefaa87b3b7dbc9bf8fdb73c844e1d4c30b70dcd5d4c5b4f9c13dd7",
+      "hash": "38c64c67b9b2d8f2303bcd9adf6225688b779638611da526a7b27336412756d3",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "38c64c67b9b2d8f2303bcd9adf6225688b779638611da526a7b27336412756d3",
+      "aiIssues": []
     },
     "plugins/code-browser/src/workspace.ts": {
       "hash": "476fd5f87ca2439666e9c8654c5e644ed06f2deb3fed1b64f630554485681e64",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "476fd5f87ca2439666e9c8654c5e644ed06f2deb3fed1b64f630554485681e64",
+      "aiIssues": []
     },
     "plugins/code-editor/src/index.ts": {
-      "hash": "41c664a20bcf1c9314c0944db9722f944c5986f62483109b88fc4c9815a7d2b0",
+      "hash": "3ba227baaefb2be3ec7f41a9f76d5e874cc388071e80bd1bd62e0cef3bd0f446",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "3ba227baaefb2be3ec7f41a9f76d5e874cc388071e80bd1bd62e0cef3bd0f446",
+      "aiIssues": []
     },
     "plugins/code-editor/src/page.ts": {
-      "hash": "6be02d6c7f44b8cca1a7d2bf4450191337f2c10dfc9501d8ee8289a3de37e65e",
+      "hash": "6b0f7d7bb74329f235ed983caf38c6540a8e6e6f0b6e8b414614d00b40f0968f",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
-    },
-    "plugins/code-editor/src/syntax.ts": {
-      "hash": "1eb0f937e845cde6613b3f3e7eb10eabea03b8194dc33ae15018f66c83bd0e57",
-      "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "6b0f7d7bb74329f235ed983caf38c6540a8e6e6f0b6e8b414614d00b40f0968f",
+      "aiIssues": []
     },
     "plugins/code-editor/src/workspace.ts": {
-      "hash": "6e71ae1dc3e7418251fe3b9b22013db2560584dd7f701318237d00c4d1fe5017",
+      "hash": "c19134015fada5ad3cb510bb6eb1aa9861343f2d83c5372849f7da91452eeadd",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "c19134015fada5ad3cb510bb6eb1aa9861343f2d83c5372849f7da91452eeadd",
+      "aiIssues": []
     },
     "plugins/file-manager/src/index.ts": {
       "hash": "95722f19b73df087757d2494b581c37ea5a35eb39da64e73b57d25e872405406",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "95722f19b73df087757d2494b581c37ea5a35eb39da64e73b57d25e872405406",
+      "aiIssues": []
     },
     "plugins/file-manager/src/page.ts": {
       "hash": "70a28ba1d9a6d5474bd849f2ad05362792622edc5cd7e3fcb5b0660f6aeb0cb9",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "70a28ba1d9a6d5474bd849f2ad05362792622edc5cd7e3fcb5b0660f6aeb0cb9",
+      "aiIssues": []
     },
     "plugins/file-manager/src/workspace.ts": {
       "hash": "50ee5a8c72acf706450a85f2ce7e77fdf789b3794c1726d76e3333f7ed8c22f7",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "50ee5a8c72acf706450a85f2ce7e77fdf789b3794c1726d76e3333f7ed8c22f7",
+      "aiIssues": []
     },
     "plugins/sandbox/src/index.ts": {
       "hash": "76d60cb9a943d4c5bc61c11055296ac53ea38ae35cb19cf4c12df9888ba84985",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "76d60cb9a943d4c5bc61c11055296ac53ea38ae35cb19cf4c12df9888ba84985",
+      "aiIssues": []
     },
     "plugins/sandbox/src/jail.ts": {
       "hash": "2c66ab446efd94b8e5595230b734bb8a9f38dc8252e1b824e595348aa13c19d1",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "2c66ab446efd94b8e5595230b734bb8a9f38dc8252e1b824e595348aa13c19d1",
+      "aiIssues": []
     },
     "plugins/sandbox/src/page.ts": {
       "hash": "32bbee50d1f5433514d508ed33489118155333f8bbb327c4ea3997a3bf05731d",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "32bbee50d1f5433514d508ed33489118155333f8bbb327c4ea3997a3bf05731d",
+      "aiIssues": []
     },
     "plugins/workflow-nodes/src/handlers.ts": {
       "hash": "f3d3d11c4edafebd9800683394b807f32aa6f88a82d5e155bd5621a04539e328",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "f3d3d11c4edafebd9800683394b807f32aa6f88a82d5e155bd5621a04539e328",
+      "aiIssues": []
     },
     "plugins/workflow-nodes/src/index.ts": {
       "hash": "3ec13a7b00dde0fd6d3b6d83745f5ee93333580f16e7d1e2cbce7137f8fcf4ad",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "3ec13a7b00dde0fd6d3b6d83745f5ee93333580f16e7d1e2cbce7137f8fcf4ad",
+      "aiIssues": []
     },
     "plugins/workflow/src/host.ts": {
       "hash": "8a28913ba288f65872d327521832aa814e7b45a104f0be6be076d38ad9c3e43b",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "8a28913ba288f65872d327521832aa814e7b45a104f0be6be076d38ad9c3e43b",
+      "aiIssues": []
     },
     "plugins/workflow/src/index.ts": {
       "hash": "6313af92897c4f9d8795e555ab1d4ed23cf3bd00070dcd0f55aecad28679c654",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "6313af92897c4f9d8795e555ab1d4ed23cf3bd00070dcd0f55aecad28679c654",
+      "aiIssues": []
     },
     "plugins/workflow/src/schedule.ts": {
       "hash": "203aac096cc4e50fd5bff3ff991ff52a3caeef29742cfefb54ec9f574aba9ac8",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "203aac096cc4e50fd5bff3ff991ff52a3caeef29742cfefb54ec9f574aba9ac8",
+      "aiIssues": []
     },
     "plugins/workflow/src/wires.ts": {
       "hash": "407857d9f583ecd6f752d2da4ccfe7ed6c40b0301515cf7f13c64e370650a184",
       "issues": [],
-      "checkedAt": "2026-08-24T15:08:56.511Z"
+      "checkedAt": "2026-08-24T15:08:56.511Z",
+      "aiHash": "407857d9f583ecd6f752d2da4ccfe7ed6c40b0301515cf7f13c64e370650a184",
+      "aiIssues": []
+    },
+    "contracts/src/dev-tools.ts": {
+      "hash": "bfd795cb7a798d303eb91f538d051898c839b92ac98a6b567943b9c63e0425f4",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "bfd795cb7a798d303eb91f538d051898c839b92ac98a6b567943b9c63e0425f4",
+      "aiIssues": []
+    },
+    "contracts/src/persona.ts": {
+      "hash": "29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240",
+      "aiIssues": []
+    },
+    "contracts/src/toolbox.ts": {
+      "hash": "028a047ebc73bb7657517a5c3d3da55f02e93fd354b5a988461afad06150f9b2",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "028a047ebc73bb7657517a5c3d3da55f02e93fd354b5a988461afad06150f9b2",
+      "aiIssues": []
+    },
+    "contracts/src/web-tools.ts": {
+      "hash": "51c8dcf62a92b89415848e3d0b12de172e363e3deef243bf0a716ca76fdc66b8",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "51c8dcf62a92b89415848e3d0b12de172e363e3deef243bf0a716ca76fdc66b8",
+      "aiIssues": []
+    },
+    "core/src/cascade-restore.ts": {
+      "hash": "01f62e7af8674c3c8249c30da71a3613f09fa6207e5c6ea34019cb79e6b9341e",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "01f62e7af8674c3c8249c30da71a3613f09fa6207e5c6ea34019cb79e6b9341e",
+      "aiIssues": []
+    },
+    "obs/core/src/dep-canvas.tsx": {
+      "hash": "1c1bedb5b6436c615fcc7fe45ae5160630edeb48ed87cc62fe56f90d19386cab",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "1c1bedb5b6436c615fcc7fe45ae5160630edeb48ed87cc62fe56f90d19386cab",
+      "aiIssues": []
+    },
+    "obs/core/src/dep-graph.ts": {
+      "hash": "6b321307030c8bbd7195d8d8d1370123dda7d60948f401e2e9d1c72bdef36200",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "6b321307030c8bbd7195d8d8d1370123dda7d60948f401e2e9d1c72bdef36200",
+      "aiIssues": []
+    },
+    "plugins/app-ui/src/markdown.ts": {
+      "hash": "ee798c5f3a411e5fcbeb602f70f711dea45027c942f8825de77989cc8644d5a3",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "ee798c5f3a411e5fcbeb602f70f711dea45027c942f8825de77989cc8644d5a3",
+      "aiIssues": []
+    },
+    "plugins/code-browser/src/context-menu.ts": {
+      "hash": "7b2492bdd5fe7cd01b27b521f0d2569a4de87b1072a6e24469471685c6b33eb1",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "7b2492bdd5fe7cd01b27b521f0d2569a4de87b1072a6e24469471685c6b33eb1",
+      "aiIssues": []
+    },
+    "plugins/code-browser/src/file-sync.ts": {
+      "hash": "63dc3dcf96411488191894a9ab195532c595aef5394df2e589fc5960f73aa01c",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "63dc3dcf96411488191894a9ab195532c595aef5394df2e589fc5960f73aa01c",
+      "aiIssues": []
+    },
+    "plugins/code-browser/src/view-chrome.ts": {
+      "hash": "7707a7e5573f1f2515dec1681c6066dbec7d313a0c2ce04c78fc5581619425ce",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "7707a7e5573f1f2515dec1681c6066dbec7d313a0c2ce04c78fc5581619425ce",
+      "aiIssues": []
+    },
+    "plugins/code-editor/src/page-body.ts": {
+      "hash": "7cf7b09a90470c6858443dc4d72c7abf7a2e9b55d9da1271e2975964f4bd9324",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "7cf7b09a90470c6858443dc4d72c7abf7a2e9b55d9da1271e2975964f4bd9324",
+      "aiIssues": []
+    },
+    "plugins/dev-tools/src/index.ts": {
+      "hash": "4a339bd05dd524fd3cb2e72232a8e78cc504f7302881de4ea4ef32116f56c4f0",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "4a339bd05dd524fd3cb2e72232a8e78cc504f7302881de4ea4ef32116f56c4f0",
+      "aiIssues": []
+    },
+    "plugins/dev-tools/src/jail.ts": {
+      "hash": "6669f53107b32db81f7c41019f05ba907e37d2e6ac2608f8a70c9d15586752e1",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "6669f53107b32db81f7c41019f05ba907e37d2e6ac2608f8a70c9d15586752e1",
+      "aiIssues": []
+    },
+    "plugins/dev-tools/src/page.ts": {
+      "hash": "b785787554338023c93a0f409c24452b95e84ccf52959f85b09430801d15600b",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "b785787554338023c93a0f409c24452b95e84ccf52959f85b09430801d15600b",
+      "aiIssues": []
+    },
+    "plugins/dev-tools/src/workspace.ts": {
+      "hash": "51646c281ec4683399567344647c212e1d93d90e5969324536caf0155ceae860",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "51646c281ec4683399567344647c212e1d93d90e5969324536caf0155ceae860",
+      "aiIssues": []
+    },
+    "plugins/persona/src/host.ts": {
+      "hash": "8465f8495aca622787ba62169b998222aa8d09dec8608e5e496ef7646c249f49",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "8465f8495aca622787ba62169b998222aa8d09dec8608e5e496ef7646c249f49",
+      "aiIssues": []
+    },
+    "plugins/persona/src/index.ts": {
+      "hash": "576b181e772da3365a2f478083f01b558ba04b6788b4913fb9a4b660efe79788",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "576b181e772da3365a2f478083f01b558ba04b6788b4913fb9a4b660efe79788",
+      "aiIssues": []
+    },
+    "plugins/persona/src/page.ts": {
+      "hash": "e3456f78d702d578dc8f381d0d45a03acbc4e612fd980df17b3e42ead20bf5d1",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "e3456f78d702d578dc8f381d0d45a03acbc4e612fd980df17b3e42ead20bf5d1",
+      "aiIssues": []
+    },
+    "plugins/session/src/page.ts": {
+      "hash": "cc3de07cc7783e3751925e9bd2563294415e9814668f79646f8b8dd374faeffb",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "cc3de07cc7783e3751925e9bd2563294415e9814668f79646f8b8dd374faeffb",
+      "aiIssues": []
+    },
+    "plugins/toolbox/src/config.ts": {
+      "hash": "4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c",
+      "aiIssues": []
+    },
+    "plugins/toolbox/src/index.ts": {
+      "hash": "a45e844628c91f7958d801522fe3e12d3d9bb36884bddf51d2bcaef5b4d5d944",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "a45e844628c91f7958d801522fe3e12d3d9bb36884bddf51d2bcaef5b4d5d944",
+      "aiIssues": []
+    },
+    "plugins/toolbox/src/page.ts": {
+      "hash": "38d672ede898ff4b477a841439f2555d4e6af3f0319c92f46d8d86b898e82cd2",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "38d672ede898ff4b477a841439f2555d4e6af3f0319c92f46d8d86b898e82cd2",
+      "aiIssues": []
+    },
+    "plugins/toolbox/src/runner.ts": {
+      "hash": "2b3177d9a15c887be570a4d0659219f66de6b1da8b8e14adc2600734453b5a5f",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "2b3177d9a15c887be570a4d0659219f66de6b1da8b8e14adc2600734453b5a5f",
+      "aiIssues": []
+    },
+    "plugins/tools/src/page.ts": {
+      "hash": "1e0f617490186820ef02ff6d82c9f12cfab9e64b5f719c761d52b3c32bfab8f5",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "1e0f617490186820ef02ff6d82c9f12cfab9e64b5f719c761d52b3c32bfab8f5",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/host.ts": {
+      "hash": "92a8edda3ebbb072d700099ad87cecf599f36ef1b6ace2349cf71d2cc44bde9d",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "92a8edda3ebbb072d700099ad87cecf599f36ef1b6ace2349cf71d2cc44bde9d",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/html.ts": {
+      "hash": "0475e23c1381c59775cb54133bae8c2303fa694a7b12655e8299f9e922242971",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "0475e23c1381c59775cb54133bae8c2303fa694a7b12655e8299f9e922242971",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/index.ts": {
+      "hash": "ed9d2cedb3b9646bb14cfb42d607f123b0c6158b398593f2fd66fca544badf15",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "ed9d2cedb3b9646bb14cfb42d607f123b0c6158b398593f2fd66fca544badf15",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/page.ts": {
+      "hash": "916043a48d92e0f0dedc5ac5fdfb6cc9d08c431dfe78bec3af53df19e7c720b2",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "916043a48d92e0f0dedc5ac5fdfb6cc9d08c431dfe78bec3af53df19e7c720b2",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/search.ts": {
+      "hash": "8d2b4185a532fb2b712d81dd8ac146145b87bc7a306575ebfc9cd267b60e217e",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "8d2b4185a532fb2b712d81dd8ac146145b87bc7a306575ebfc9cd267b60e217e",
+      "aiIssues": []
+    },
+    "plugins/web-tools/src/ssrf.ts": {
+      "hash": "6e7a98ead310a363c9a68ab7c434964366639ee93f815b1faa50d65d1db6feac",
+      "issues": [],
+      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "aiHash": "6e7a98ead310a363c9a68ab7c434964366639ee93f815b1faa50d65d1db6feac",
+      "aiIssues": []
+    },
+    "plugins/app-ui/src/context-usage.ts": {
+      "hash": "fab26a2b8447c72e92ff58a11d92e869a0a2b5f5c4043eca7df69f9111b4eb3b",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "fab26a2b8447c72e92ff58a11d92e869a0a2b5f5c4043eca7df69f9111b4eb3b",
+      "aiIssues": []
+    },
+    "plugins/prompt-context/src/tokens.ts": {
+      "hash": "ef5cf1133e3dc27a20b9855a2c856b5f3c217e813f2bbd83fc4c9bcc70dc1050",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:23:34.469Z",
+      "aiHash": "ef5cf1133e3dc27a20b9855a2c856b5f3c217e813f2bbd83fc4c9bcc70dc1050",
+      "aiIssues": []
+    },
+    "plugins/prompt-context/src/usage.ts": {
+      "hash": "e37dc5cf1f069ec8901f1539b6e788ae906a5efc81f19c2c9e2e997a30566a4d",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "e37dc5cf1f069ec8901f1539b6e788ae906a5efc81f19c2c9e2e997a30566a4d",
+      "aiIssues": []
+    },
+    "contracts/src/plugin-context.ts": {
+      "hash": "6d5a6ca46cc5c86f7f4aceffbac233b14b251e06d273ca0acf530cd0f1b3f7df",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "aiHash": "28ee2bdb306ef466f243d9d3cf49ca6d38134ed6420b4b2416139a69d18f409f",
+      "aiIssues": []
+    },
+    "obs/core/src/gui-styles.ts": {
+      "hash": "4a4d51e8ae2d52313d0cef1b6b6b2392a7ac48a29260eddbb3c424614502c860",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:38:08.717Z",
+      "aiHash": "dfb657cd91d86208539198e81d0a1489be1a3b057ae090a7e7cfe4458bfc05e0",
+      "aiIssues": []
+    },
+    "obs/core/src/quality-helpers.ts": {
+      "hash": "0a0837625da5b33d961bfec5d6ebd3c3c80bc756a8b70c41eb836211b59ecfe7",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:38:08.717Z",
+      "aiHash": "7e0091cbf7efa64e81052c22b3dbea6e103c8011240deb0c3572a61cb5a2a8ff",
+      "aiIssues": []
+    },
+    "obs/core/src/quality-styles.ts": {
+      "hash": "5a44cb05407e5187e87ccd1a9f6f4a3b9d5dee4eab949090c2ee56c9f5fd9517",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "5a44cb05407e5187e87ccd1a9f6f4a3b9d5dee4eab949090c2ee56c9f5fd9517",
+      "aiIssues": []
+    },
+    "plugins/app-chat/src/runtime.ts": {
+      "hash": "13216daa3508eceafcfd2ccbce004ab2d9544cfab670ae719e2b970e89617346",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:38:08.717Z",
+      "aiHash": "e1018dc93cb9bade2c28805aa1a1296e68b3cd0938f81e47300fbc3cca79bb19",
+      "aiIssues": []
+    },
+    "plugins/dev-tools/src/workspace-fs.ts": {
+      "hash": "66c4393c2f42e9484751ecef8ef129417ff1c7352c98aac716178c3691aff16e",
+      "issues": [],
+      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "aiHash": "66c4393c2f42e9484751ecef8ef129417ff1c7352c98aac716178c3691aff16e",
+      "aiIssues": []
+    },
+    "contracts/src/plugin-service-types.ts": {
+      "hash": "77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "aiHash": "77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52",
+      "aiIssues": []
+    },
+    "contracts/src/timer.ts": {
+      "hash": "c8845f39987bcbbdeb4cd6660909e4ec312b7cb1704f15c14ffd4a38acd0f005",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "9b38fbaf92135c1b1fc3137686b71a64bef8b49433ee1c1365bc964cfb5e867a",
+      "aiIssues": []
+    },
+    "plugins/timer/src/actions.ts": {
+      "hash": "ecb9ad4918d794bd36485a2a5218338371a7f1eb62168fd81785562a1a9db52b",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "aiHash": "ecb9ad4918d794bd36485a2a5218338371a7f1eb62168fd81785562a1a9db52b",
+      "aiIssues": []
+    },
+    "plugins/timer/src/cron.ts": {
+      "hash": "4290c9d47d89113efadac34a669cacd0aab7d96287519f23bc8efb125653e949",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "aiHash": "4290c9d47d89113efadac34a669cacd0aab7d96287519f23bc8efb125653e949",
+      "aiIssues": []
+    },
+    "plugins/timer/src/host.ts": {
+      "hash": "a22fe50a5fae31418ef5d84bc5bbab1ec8faa4d35570647cf71ff5ffdc800512",
+      "issues": [
+        "顶层函数 createTimerHost 过大（331 行 > 300），低内聚/职责过多，考虑拆分"
+      ],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "d102f10012afacd42d1b42640caf57c141028d33acf95d48fc203b0c4e001125",
+      "aiIssues": []
+    },
+    "plugins/timer/src/index.ts": {
+      "hash": "7b570d69d2dcdaf9741a9c8668b3eff98b8759c80d4d69599a716fece0dafed4",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "9655920b4d3cb627a2b9c270a9aca2b2253e2f39b060adf35c6e5f8dede0a75f",
+      "aiIssues": []
+    },
+    "plugins/timer/src/page.ts": {
+      "hash": "734c58c0ad72d0651964cf38f7e1fee181dad6b0f0bab8241e19905690118ca8",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "3ea94d8f8c1dbc27269beeec1c7d33d0699ac84da91997dbd0bba59ab6377223",
+      "aiIssues": []
+    },
+    "plugins/timer/src/scheduler.ts": {
+      "hash": "46511bad8cfdb10302f744542c5876934deeea37bc1ec982bbc73045ed6fb156",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:30:46.150Z",
+      "aiHash": "46511bad8cfdb10302f744542c5876934deeea37bc1ec982bbc73045ed6fb156",
+      "aiIssues": []
+    },
+    "plugins/timer/src/flow-plan.ts": {
+      "hash": "3a7a1626f38b8a3730853cd449a8aefa64a1c813faff681b827956966d5dc981",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "3a7a1626f38b8a3730853cd449a8aefa64a1c813faff681b827956966d5dc981",
+      "aiIssues": []
+    },
+    "plugins/timer/src/flow-runner.ts": {
+      "hash": "da506268c8cec0202323d50fcff15177aa8d1f0e45643eac1b56ed363ea1cd1c",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "da506268c8cec0202323d50fcff15177aa8d1f0e45643eac1b56ed363ea1cd1c",
+      "aiIssues": []
+    },
+    "plugins/timer/src/page-tree.ts": {
+      "hash": "207fc8226b4c4f5dac12749f4f2aec288edca5081a0769a0e52c5662ba9c5817",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "207fc8226b4c4f5dac12749f4f2aec288edca5081a0769a0e52c5662ba9c5817",
+      "aiIssues": []
+    },
+    "plugins/timer/src/trace.ts": {
+      "hash": "3127e5735d95f7c29339883caad92d8d36833a2ffc39a96a51e840a10e20d58f",
+      "issues": [],
+      "checkedAt": "2026-08-25T08:45:00.248Z",
+      "aiHash": "3127e5735d95f7c29339883caad92d8d36833a2ffc39a96a51e840a10e20d58f",
+      "aiIssues": []
     }
   },
   "global": {
     "typecheck": {
       "status": "pass",
       "failed": [],
-      "at": "2026-08-24T15:08:56.511Z"
+      "at": "2026-08-25T08:45:00.248Z"
     },
     "test": {
       "status": "pass",
-      "summary": "Test Files 39 passed | Tests 183 passed",
-      "at": "2026-08-24T15:08:56.511Z"
+      "summary": "Test Files 48 passed | Tests 235 passed",
+      "at": "2026-08-25T08:45:00.248Z"
     }
   },
   "rulesVersion": 7

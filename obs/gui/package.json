@@ -19,7 +19,7 @@
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "start": "node ../../scripts/ensure-electron.cjs && pnpm build && electron .",
+    "start": "node ../../scripts/ensure-electron.cjs && pnpm -w build && electron .",
     "build": "esbuild src/renderer.tsx --bundle --format=iife --outfile=electron/renderer.bundle.js --define:process.env.NODE_ENV='\"production\"' --sourcemap",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }

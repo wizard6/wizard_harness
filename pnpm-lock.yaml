@@ -317,6 +317,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/timer:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/toolbox:
     dependencies:
       '@wizard-harness/contracts':

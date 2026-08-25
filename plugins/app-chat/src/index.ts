@@ -1,16 +1,14 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
 import { APP_CHAT_SERVICE } from '@wizard-harness/contracts';
-import type {
-  AgentLoopService,
-  AgentService,
-  AppChatMessagePreview,
-  AppChatResumeResult,
-  AppChatSendOpts,
-  AppChatService,
-  AppChatSessionSummary,
-  PromptContextService,
-  SessionService,
-} from '@wizard-harness/contracts';
+import type { AppChatSendOpts, AppChatService, AppChatSessionSummary } from '@wizard-harness/contracts';
+import {
+  attachAgent,
+  cfgOf,
+  chatRuntime,
+  lastUserPreviewOf,
+  registerPersonaSection,
+  setAppChatCtx,
+} from './runtime.js';
 
 const PERSONA_SECTION = 'app-chat:persona';
 
@@ -19,92 +17,6 @@ const PERSONA_SECTION = 'app-chat:persona';
  * 人设由 persona → prompt-context 出门；无 persona 时本插件登记 app-chat:persona section。
  * 说明文档：docs/plugins/app-chat.html
  */
-let ctx: PluginContext | undefined;
-
-function loopOf(): AgentLoopService {
-  const loop = ctx?.agentLoop ?? ctx?.get<AgentLoopService>('agentLoop');
-  if (!loop) throw new Error('app-chat 需要 agent-loop');
-  return loop;
-}
-
-function agentOf(): AgentService {
-  const agent = ctx?.agent ?? ctx?.get<AgentService>('agent');
-  if (!agent) throw new Error('app-chat 需要 agent 服务');
-  return agent;
-}
-
-function sessionOf(): SessionService {
-  const session = ctx?.session ?? ctx?.get<SessionService>('session');
-  if (!session) throw new Error('app-chat 需要 session 服务');
-  return session;
-}
-
-function personaOf(c: PluginContext): string {
-  const cfg = c.config ?? {};
-  return String(
-    cfg.persona ||
-      '你是能自主完成任务的助手。收到问题后按「观察-思考-行动」循环：先理解上下文，再决定是否需要调用工具，逐步执行直到可以给出最终答复。',
-  );
-}
-
-function registerPersona(c: PluginContext) {
-  const prompts = c.promptContext ?? c.get<PromptContextService>('promptContext');
-  if (!prompts) throw new Error('app-chat 需要 prompt-context');
-  prompts.section({ name: PERSONA_SECTION, order: 0, text: personaOf(c) });
-}
-
-function cfgOf() {
-  const c = ctx?.config ?? {};
-  return {
-    maxStepsWithTools: Math.max(1, Number(c.maxStepsWithTools ?? 12)),
-    maxStepsNoTools: Math.max(1, Number(c.maxStepsNoTools ?? 1)),
-  };
-}
-
-function previewOf(content: unknown): string {
-  const s = String(content ?? '').replace(/\s+/g, ' ').trim();
-  return s.length <= 80 ? s : `${s.slice(0, 80)}…`;
-}
-
-function messagesFromReplay(sessionId: string): AppChatMessagePreview[] {
-  const replay = sessionOf().get(sessionId)?.replay() ?? [];
-  const out: AppChatMessagePreview[] = [];
-  for (const entry of replay) {
-    if (entry.kind !== 'message') continue;
-    const role = entry.data.role;
-    if (role !== 'user' && role !== 'assistant' && role !== 'system' && role !== 'tool') continue;
-    out.push({
-      role,
-      content: typeof entry.data.content === 'string' ? entry.data.content : previewOf(entry.data.content),
-    });
-  }
-  return out;
-}
-
-function lastUserPreview(sessionId: string): string | undefined {
-  const replay = sessionOf().get(sessionId)?.replay() ?? [];
-  for (let i = replay.length - 1; i >= 0; i -= 1) {
-    const entry = replay[i];
-    if (entry?.kind === 'message' && entry.data.role === 'user') {
-      return previewOf(entry.data.content);
-    }
-  }
-  return undefined;
-}
-
-function attachAgent(sessionId: string, title?: string): AppChatResumeResult {
-  const sess = sessionOf().get(sessionId);
-  if (!sess) throw new Error(`session 不存在：${sessionId}`);
-  const agent = agentOf();
-  const existing = agent.list().find((row) => row.sessionId === sessionId);
-  const handle = existing ?? agent.spawn({ sessionId, title: title ?? sess.title ?? 'app-chat' });
-  return {
-    agentId: handle.id,
-    sessionId,
-    messages: messagesFromReplay(sessionId),
-  };
-}
-
 const api: AppChatService = {
   async send(opts: AppChatSendOpts) {
     const prompt = String(opts.prompt ?? '').trim();
@@ -113,7 +25,7 @@ const api: AppChatService = {
     const cfg = cfgOf();
     let agentId = opts.agentId?.trim();
     if (!agentId && opts.sessionId) agentId = attachAgent(opts.sessionId).agentId;
-    const out = await loopOf().run({
+    const out = await chatRuntime().loop.run({
       agentId,
       prompt,
       useTools,
@@ -130,17 +42,18 @@ const api: AppChatService = {
     };
   },
   cancel(agentId: string) {
-    loopOf().cancel(agentId);
+    chatRuntime().loop.cancel(agentId);
   },
   async listSessions() {
-    const rows: AppChatSessionSummary[] = sessionOf()
+    const rows: AppChatSessionSummary[] = chatRuntime()
+      .session
       .list()
       .map((sess) => ({
         id: sess.id,
         title: sess.title,
         startedAt: sess.startedAt,
         entryCount: sess.replay().length,
-        preview: lastUserPreview(sess.id),
+        preview: lastUserPreviewOf(sess.id),
       }));
     rows.sort((a, b) => b.startedAt - a.startedAt);
     return rows;
@@ -166,11 +79,11 @@ const appChatPlugin: Plugin = {
   inject: { agentLoop: true, promptContext: true, agent: true, session: true, logger: false },
   api,
   register(c) {
-    ctx = c;
-    registerPersona(c);
+    setAppChatCtx(c);
+    registerPersonaSection(c, PERSONA_SECTION);
     c.logger?.info?.('app-chat 插件就绪（人设已登记 prompt-context）');
     c.effect(() => () => {
-      ctx = undefined;
+      setAppChatCtx(undefined);
     });
   },
 };

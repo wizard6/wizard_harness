@@ -15,6 +15,35 @@ export interface RunModelOpts {
   onHttp?: (trace: Record<string, unknown>) => void;
 }
 
+/** OpenAI/DeepSeek 要求 function.name 匹配 ^[a-zA-Z0-9_-]+$ */
+export function wireToolName(name: string): string {
+  const cleaned = String(name ?? '').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return cleaned || 'tool';
+}
+
+export function buildToolWireMaps(tools: readonly LlmToolSpec[] | undefined): {
+  wireToReal: Map<string, string>;
+  realToWire: Map<string, string>;
+} {
+  const wireToReal = new Map<string, string>();
+  const realToWire = new Map<string, string>();
+  const used = new Set<string>();
+  for (const t of tools ?? []) {
+    const real = t.name?.trim();
+    if (!real) continue;
+    let wire = wireToolName(real);
+    if (used.has(wire) && wireToReal.get(wire) !== real) {
+      let n = 2;
+      while (used.has(`${wire}_${n}`)) n += 1;
+      wire = `${wire}_${n}`;
+    }
+    used.add(wire);
+    wireToReal.set(wire, real);
+    realToWire.set(real, wire);
+  }
+  return { wireToReal, realToWire };
+}
+
 function mockReply(
   messages: LlmMessage[],
   tools?: readonly LlmToolSpec[],
@@ -37,20 +66,27 @@ function mockReply(
   return { text };
 }
 
-function asOpenAiTools(tools: readonly LlmToolSpec[] | undefined) {
-  if (!tools?.length) return undefined;
-  return tools.map((t) => ({
-    type: 'function' as const,
-    function: {
-      name: t.name,
-      description: t.description ?? '',
-      parameters: { type: 'object', additionalProperties: true },
-    },
-  }));
+function asOpenAiTools(tools: readonly LlmToolSpec[] | undefined, wireToReal: Map<string, string>) {
+  if (!tools?.length || wireToReal.size === 0) return undefined;
+  const byName = new Map(tools.map((t) => [t.name, t]));
+  return [...wireToReal.entries()].map(([wire, real]) => {
+    const t = byName.get(real);
+    return {
+      type: 'function' as const,
+      function: {
+        name: wire,
+        description: t?.description ?? '',
+        parameters: { type: 'object', additionalProperties: true },
+      },
+    };
+  });
 }
 
 /** 内部 LlmMessage → OpenAI/DeepSeek Chat Completions 线格式（必须带 tool_calls.type） */
-export function toWireMessages(messages: LlmMessage[]): Record<string, unknown>[] {
+export function toWireMessages(
+  messages: LlmMessage[],
+  realToWire?: Map<string, string>,
+): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = [];
   for (const m of messages) {
     if (m.role === 'tool') {
@@ -65,7 +101,10 @@ export function toWireMessages(messages: LlmMessage[]): Record<string, unknown>[
         tool_calls: m.tool_calls.map((c) => ({
           id: c.id,
           type: 'function',
-          function: { name: c.name, arguments: JSON.stringify(c.args ?? {}) },
+          function: {
+            name: realToWire?.get(c.name) ?? wireToolName(c.name),
+            arguments: JSON.stringify(c.args ?? {}),
+          },
         })),
       });
       continue;
@@ -75,13 +114,14 @@ export function toWireMessages(messages: LlmMessage[]): Record<string, unknown>[
   return out;
 }
 
-function parseToolCalls(raw: unknown): LlmToolCall[] | undefined {
+function parseToolCalls(raw: unknown, wireToReal: Map<string, string>): LlmToolCall[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) return undefined;
   const out: LlmToolCall[] = [];
   for (const item of raw) {
     const row = item as { id?: string; function?: { name?: string; arguments?: string } };
-    const name = row.function?.name;
-    if (!name) continue;
+    const wireName = row.function?.name;
+    if (!wireName) continue;
+    const name = wireToReal.get(wireName) ?? wireName;
     let args: Record<string, unknown> = {};
     try {
       const parsed = JSON.parse(row.function?.arguments || '{}') as unknown;
@@ -158,8 +198,9 @@ export async function runModel(
   }
   const url = cfg.baseUrl.replace(/\/$/, '') + '/chat/completions';
   const stream = Boolean(opts.onDelta) && !opts.tools?.length;
-  const wire = toWireMessages(messages);
-  const tools = asOpenAiTools(opts.tools);
+  const { wireToReal, realToWire } = buildToolWireMaps(opts.tools);
+  const wire = toWireMessages(messages, realToWire);
+  const tools = asOpenAiTools(opts.tools, wireToReal);
   const request = {
     model: cfg.model,
     messages: wire,
@@ -200,7 +241,7 @@ export async function runModel(
   const msg = json.choices?.[0]?.message;
   const text = msg?.content ?? '';
   if (text) opts.onDelta?.(text);
-  const toolCalls = parseToolCalls(msg?.tool_calls);
+  const toolCalls = parseToolCalls(msg?.tool_calls, wireToReal);
   opts.onHttp?.({ ...traceBase, ok: true, status: res.status, response: { text, toolCalls } });
   return { text, provider: cfg.provider, toolCalls };
 }

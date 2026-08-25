@@ -8,6 +8,7 @@
       { "id": "workflow", "name": "workflow" },
       { "id": "workflow-nodes", "name": "workflow-nodes" },
       { "id": "toolbox", "name": "toolbox" },
+      { "id": "timer", "name": "timer" },
       { "id": "app-workflow", "name": "app-workflow" },
       { "id": "app-chat", "name": "app-chat" },
       { "id": "app-ui", "name": "app-ui" }

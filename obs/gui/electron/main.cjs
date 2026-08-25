@@ -1,5 +1,5 @@
 // wizard-harness GUI 桌面壳 · Electron 主进程
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, shell, dialog, screen, nativeTheme } = require('electron');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
@@ -678,7 +678,7 @@ ipcMain.handle('wh:scan-plugins', async () => {
 /** 观测台试跑白名单（与 obs:api DEFAULT_EXPOSE 对齐，不含 console/tools.call） */
 const CALL_ALLOW = {
   agent: ['list', 'stop'],
-  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona', 'inspect'],
+  promptContext: ['assemble', 'apply', 'setPersona', 'getPersona', 'inspect', 'usage'],
   agentLoop: ['run', 'cancel'],
   codeEditor: ['info', 'read', 'write', 'patch', 'takePendingOpen', 'queueOpen'],
   codeBrowser: ['info', 'read', 'takePendingOpen', 'queueOpen'],
@@ -906,6 +906,7 @@ ipcMain.on('wh:window-control', (event, action) => {
 });
 
 app.whenReady().then(async () => {
+  nativeTheme.themeSource = 'dark';
   setupMenu();
   await loadElectronIcons();
   await init();
@@ -943,30 +944,114 @@ ipcMain.handle('wh:open-quality', () => {
   openQualityWindow();
 });
 
-/** 系统托盘：常驻后台 + 快捷菜单（观测台 / App demo / 质量检测 / Restart / 退出） */
+/** 系统托盘：常驻后台 + 深色圆角菜单（Cursor 式定位） */
 let tray = null;
+let trayMenuWindow = null;
+let trayMenuAnchor = null;
+const TRAY_MENU_W = 248;
+
+function closeTrayMenu() {
+  if (trayMenuWindow && !trayMenuWindow.isDestroyed()) {
+    trayMenuWindow.close();
+  }
+  trayMenuWindow = null;
+  trayMenuAnchor = null;
+}
+
+/** 从鼠标点击位置弹出；近屏幕底缘时自动向上展开 */
+function placeTrayMenu(win, anchor, menuH) {
+  const point = anchor || screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(point);
+  const { workArea } = display;
+  const h = Math.max(120, Math.ceil(menuH));
+  let x = Math.round(point.x);
+  let y = Math.round(point.y);
+  if (y + h > workArea.y + workArea.height) {
+    y = Math.round(point.y - h);
+  }
+  if (x + TRAY_MENU_W > workArea.x + workArea.width) {
+    x = workArea.x + workArea.width - TRAY_MENU_W;
+  }
+  if (x < workArea.x) x = workArea.x;
+  if (y < workArea.y) y = workArea.y;
+  win.setBounds({ x, y, width: TRAY_MENU_W, height: h }, false);
+}
+
+function showTrayMenu(anchor) {
+  if (trayMenuWindow && !trayMenuWindow.isDestroyed()) {
+    closeTrayMenu();
+    return;
+  }
+  trayMenuAnchor = anchor;
+  trayMenuWindow = new BrowserWindow({
+    width: TRAY_MENU_W,
+    height: 120,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    focusable: true,
+    hasShadow: true,
+    thickFrame: false,
+    roundedCorners: true,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: path.join(__dirname, 'tray-menu-preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  trayMenuWindow.setMenuBarVisibility(false);
+  trayMenuWindow.on('blur', () => closeTrayMenu());
+  trayMenuWindow.on('closed', () => {
+    trayMenuWindow = null;
+    trayMenuAnchor = null;
+  });
+  trayMenuWindow.loadFile(path.join(__dirname, 'tray-menu.html'));
+}
+
 function restartApp() {
   app.relaunch();
   app.exit(0);
 }
+
+function handleTrayMenuAction(action) {
+  closeTrayMenu();
+  if (action === 'registry') openRegistryWindow();
+  else if (action === 'agent') openPluginWindow('app-ui');
+  else if (action === 'workflow') openPluginWindow('app-workflow');
+  else if (action === 'quality') openQualityWindow();
+  else if (action === 'restart') restartApp();
+  else if (action === 'quit') app.quit();
+}
+
 function setupTray() {
   const icon = trayIcon && !trayIcon.isEmpty() ? trayIcon : nativeImage.createFromPath(process.execPath);
   tray = new Tray(icon);
-  tray.setToolTip('wizard-harness · 观测台');
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: '显示观测台', click: () => openRegistryWindow() },
-      { label: '打开 App demo', click: () => openPluginWindow('app-ui') },
-      { label: '打开 Workflow demo', click: () => openPluginWindow('app-workflow') },
-      { label: '打开质量检测', click: () => openQualityWindow() },
-      { type: 'separator' },
-      { label: 'Restart', click: () => restartApp() },
-      { label: '退出', click: () => app.quit() },
-    ]),
-  );
-  // 单击托盘图标（Windows）→ 显示观测台
+  tray.setToolTip('wizard-harness');
+  tray.on('right-click', () => {
+    showTrayMenu(screen.getCursorScreenPoint());
+  });
+  // 单击托盘图标（Windows）→ 打开观测台
   tray.on('click', () => openRegistryWindow());
 }
+
+ipcMain.on('tray-menu-ready', (_evt, height) => {
+  if (!trayMenuWindow || trayMenuWindow.isDestroyed()) return;
+  placeTrayMenu(trayMenuWindow, trayMenuAnchor, Number(height) || 200);
+  trayMenuWindow.show();
+  trayMenuWindow.focus();
+});
+
+ipcMain.on('tray-menu-action', (_evt, action) => {
+  handleTrayMenuAction(String(action || ''));
+});
 
 app.on('window-all-closed', () => {
   // 有托盘：关闭全部窗口不退出，应用常驻后台；托盘"退出"才真正退出

@@ -26,6 +26,7 @@ const api: PromptContextService = {
   setPersona: (id, c) => live().setPersona(id, c),
   getPersona: (id) => live().getPersona(id),
   inspect: () => live().inspect(),
+  usage: (input) => live().usage(input),
 };
 
 const promptContextPlugin: Plugin = {
@@ -44,7 +45,7 @@ const promptContextPlugin: Plugin = {
     title: 'Prompt Context',
     width: 860,
     height: 640,
-    rpc: { promptContext: ['inspect', 'assemble'] },
+    rpc: { promptContext: ['inspect', 'assemble', 'usage'] },
     content: PROMPT_CONTEXT_HTML,
   },
   register(c) {

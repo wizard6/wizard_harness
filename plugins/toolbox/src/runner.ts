@@ -5,21 +5,25 @@ import { promisify, TextDecoder } from 'node:util';
 import type { ToolboxScriptConfig } from './config.js';
 
 const execP = promisify(exec);
-const CMD_PREFIX = process.platform === 'win32' ? 'chcp 65001 >nul && ' : '';
-const MAX_OUT = 100_000;
 
-function decode(buf: Buffer): string {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch {
-    return new TextDecoder('gbk').decode(buf);
-  }
-}
+const RUN = {
+  CMD_PREFIX: process.platform === 'win32' ? 'chcp 65001 >nul && ' : '',
+  MAX_OUT: 100_000,
+};
 
-function clip(text: string): string {
-  if (text.length <= MAX_OUT) return text;
-  return `${text.slice(0, MAX_OUT)}\n…（截断，共 ${text.length} 字符）`;
-}
+const IO = {
+  decode(buf: Buffer): string {
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+    } catch {
+      return new TextDecoder('gbk').decode(buf);
+    }
+  },
+  clip(text: string): string {
+    if (text.length <= RUN.MAX_OUT) return text;
+    return `${text.slice(0, RUN.MAX_OUT)}\n…（截断，共 ${text.length} 字符）`;
+  },
+};
 
 function asString(value: unknown, fallback = ''): string {
   return value === undefined || value === null ? fallback : String(value);
@@ -57,7 +61,7 @@ function renderTemplate(template: string, ctx: RunContext, cwd: string): string 
 }
 
 async function runShell(command: string, cwd: string, timeoutMs: number) {
-  const { stdout, stderr } = await execP(CMD_PREFIX + command, {
+  const { stdout, stderr } = await execP(RUN.CMD_PREFIX + command, {
     cwd,
     encoding: 'buffer',
     timeout: timeoutMs,
@@ -65,8 +69,8 @@ async function runShell(command: string, cwd: string, timeoutMs: number) {
     windowsHide: true,
   });
   return {
-    stdout: clip(decode(stdout)),
-    stderr: clip(decode(stderr)),
+    stdout: IO.clip(IO.decode(stdout)),
+    stderr: IO.clip(IO.decode(stderr)),
     code: 0,
   };
 }
@@ -129,8 +133,8 @@ export async function runScript(script: ToolboxScriptConfig, ctx: RunContext): P
     } catch (err) {
       const e = err as { stdout?: Buffer; stderr?: Buffer; code?: number | null };
       return JSON.stringify({
-        stdout: clip(e.stdout ? decode(e.stdout) : ''),
-        stderr: clip(e.stderr ? decode(e.stderr) : String(err)),
+        stdout: IO.clip(e.stdout ? IO.decode(e.stdout) : ''),
+        stderr: IO.clip(e.stderr ? IO.decode(e.stderr) : String(err)),
         code: e.code ?? 1,
       });
     }
