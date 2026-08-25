@@ -5,3 +5,5 @@ dist/
 docs/logs/*.jsonl
 obs/gui/electron/renderer.bundle.js
 obs/gui/electron/renderer.bundle.js.map
+temp/
+.tmp-memory-vitest/

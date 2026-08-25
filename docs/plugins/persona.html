@@ -32,9 +32,9 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="kicker">wizard-harness · capability plugin</div>
+      <div class="kicker">wizard-harness · capability plugin · v0.2.0</div>
       <h1>persona — 人格 / 习惯 / 记忆</h1>
-      <p class="lede">当前助手的人设档案。正文经 prompt-context 出门，不替代组装器。弹窗可改人格与习惯、钉住或删除记忆。</p>
+      <p class="lede">当前助手的人设档案。支持 AI 通过工具自生成人格（名字、风格、性格等元数据），正文经 prompt-context 出门。</p>
       <div class="badges">
         <span class="badge ok">id: persona</span>
         <span class="badge ok">provides: persona</span>
@@ -45,44 +45,45 @@
 
     <h2>1. 用途与边界</h2>
     <div class="card">
-      <p style="margin:0"><b>一句话：</b>改默认人设只动本插件（或本插件落盘的 <code>$WH_HOME/persona.json</code>）。不要写进 app-chat / loop。</p>
+      <p style="margin:0"><b>一句话：</b>改默认人设只动本插件（或 <code>$WH_HOME/persona.json</code>）。AI 可用 <code>persona_apply</code> 一次性写入自生成人格。</p>
     </div>
     <ul class="tight">
-      <li>管：名称、人格、习惯、相关记忆；live <code>section persona:core</code>（order 2）与 <code>context persona:memory</code>（order 8）；工具 <code>persona_remember</code></li>
-      <li>不管：拼装顺序以外的配方、session 历史、loop 步进</li>
+      <li>管：名称、元数据（角色/风格/语气/性格/边界/自述）、人格正文、习惯、相关记忆</li>
+      <li>不管：跨会话经历桶（见 <a href="./memory.html">memory</a>）、session 历史、loop 步进</li>
     </ul>
 
     <h2>2. 怎么进模型</h2>
     <table>
       <thead><tr><th>素材</th><th>出门</th><th>内容</th></tr></thead>
       <tbody>
-        <tr><td class="mono">persona:core</td><td>system section</td><td>人格正文 + 习惯列表</td></tr>
-        <tr><td class="mono">persona:memory</td><td>runtime context</td><td>全部钉住 + 最近 6 条未钉；空则 <code>''</code>（不占 token）</td></tr>
+        <tr><td class="mono">persona:core</td><td>system section</td><td>「我是谁」元数据 + 人格正文 + 习惯</td></tr>
+        <tr><td class="mono">persona:authoring-hint</td><td>system section</td><td>仍为默认人设时提示调用 persona_guide / persona_apply；定制后为空</td></tr>
+        <tr><td class="mono">persona:memory</td><td>runtime context</td><td>钉住 + 最近 6 条未钉；空则 <code>''</code></td></tr>
       </tbody>
     </table>
-    <p>落盘默认 <code>$WH_HOME/persona.json</code>。vitest 不落盘，除非 <code>config.persistFile</code>。</p>
+    <p>落盘默认 <code>$WH_HOME/persona.json</code>（含 <code>meta</code> 字段）。旧文件无 meta 时自动补空对象，兼容升级。</p>
 
-    <h2>3. 服务与弹窗</h2>
-    <p>服务名 <code>PERSONA_SERVICE = 'persona'</code>。消费方：<code>ctx.persona</code>。</p>
+    <h2>3. 服务与工具</h2>
     <table>
-      <thead><tr><th>方法</th><th>作用</th></tr></thead>
+      <thead><tr><th>方法 / 工具</th><th>作用</th></tr></thead>
       <tbody>
-        <tr><td class="mono">snapshot()</td><td>档案 + 预览 + 当前 live agent 列表</td></tr>
-        <tr><td class="mono">save({ name?, personality?, habits? })</td><td>改人格 / 习惯</td></tr>
-        <tr><td class="mono">addMemory / removeMemory / pinMemory</td><td>相关记忆</td></tr>
-        <tr><td class="mono">remember({ text, kind?, pinned? })</td><td>kind=habit 进习惯，否则进记忆</td></tr>
+        <tr><td class="mono">read / persona_read</td><td>档案 + 预览 + 落盘路径 + 是否默认人设</td></tr>
+        <tr><td class="mono">guide / persona_guide</td><td>自生成字段说明、模板、检查清单</td></tr>
+        <tr><td class="mono">apply / persona_apply</td><td>一次性写入完整人格（推荐首次定制）</td></tr>
+        <tr><td class="mono">configure / persona_configure</td><td>局部修改元数据或正文</td></tr>
+        <tr><td class="mono">save / configure</td><td>弹窗保存（人类编辑）</td></tr>
+        <tr><td class="mono">remember / persona_remember</td><td>记事实或追加习惯</td></tr>
       </tbody>
     </table>
-    <p><code>ui.rpc</code>：<code>snapshot</code> / <code>save</code> / <code>addMemory</code> / <code>removeMemory</code> / <code>pinMemory</code>。不开放 <code>remember</code>（给工具用）。</p>
-    <p>工具 <code>persona_remember</code>：<code>args.text</code> 必填；可选 <code>kind=memory|habit</code>、<code>pinned</code>。</p>
+    <p><code>persona_apply</code> 必填 <code>name</code>、<code>personality</code>；建议同时提供 <code>role</code>、<code>voice_style</code>、<code>traits</code>。</p>
 
     <h2>4. 给后续 AI</h2>
     <div class="card ai">
       <ul class="tight">
-        <li>不要再造 <code>system-prompt</code> 插件。人设出口只有 prompt-context。</li>
-        <li>不要让 app-chat 在首次 send 传 <code>loop.run({ persona })</code>：<code>setPersona</code> 会另开 <code>session:persona</code> 段，和 <code>persona:core</code> 叠两份。</li>
-        <li><code>run.persona</code> 仍是显式覆盖（结构改造 #2 未完）。默认路径不要用它。</li>
-        <li>空记忆必须返回空字符串，不要写「暂无记忆」占 token。</li>
+        <li>首次定制推荐：<code>persona_read</code> → <code>persona_guide</code> → <code>persona_apply</code>。</li>
+        <li>微调用 <code>persona_configure</code>，不要重复 apply 整份覆盖除非有意重置。</li>
+        <li>跨会话「经历」用 <code>memory_hold</code>，不要把一切都塞进 persona 短记忆。</li>
+        <li>空记忆 / 空 hint 必须返回空字符串，不占 token。</li>
       </ul>
     </div>
     <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/persona/</span> · 契约 <span class="mono">contracts/src/persona.ts</span></p>

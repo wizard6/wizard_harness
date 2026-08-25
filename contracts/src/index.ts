@@ -124,14 +124,35 @@ export type { WebToolsInfo, WebToolsService } from './web-tools.js';
 export { PERSONA_SERVICE } from './persona.js';
 export type {
   PersonaAgentRef,
+  PersonaApplyInput,
+  PersonaConfigurePatch,
+  PersonaGuide,
+  PersonaGuideField,
   PersonaMemory,
+  PersonaMeta,
   PersonaPreview,
   PersonaProfile,
+  PersonaReadResult,
   PersonaRememberInput,
   PersonaSavePatch,
   PersonaService,
   PersonaSnapshot,
 } from './persona.js';
+export { MEMORY_SERVICE } from './memory.js';
+export type {
+  MemoryBreathResult,
+  MemoryBucket,
+  MemoryBucketType,
+  MemoryGrowInput,
+  MemoryHoldInput,
+  MemoryPreview,
+  MemoryPulse,
+  MemorySearchHit,
+  MemorySearchOpts,
+  MemoryService,
+  MemorySnapshot,
+  MemoryTracePatch,
+} from './memory.js';
 export { WORKFLOW_SERVICE, workflowToolName } from './workflow.js';
 export type {
   WorkflowExecOpts,

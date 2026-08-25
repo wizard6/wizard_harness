@@ -26,6 +26,7 @@ docs/
 | 核对仓库现状与测试数 | [reference/项目体检.md](./reference/项目体检.md) |
 | 下一步做什么 | [planning/product-maturity.html](./planning/product-maturity.html) · [planning/todo.md](./planning/todo.md) |
 | 某个插件怎么用 | [plugins/](./plugins/) |
+| 外部参考项目 | [reference/projects.md](./reference/projects.md) |
 | 已确认的设计边界 | [confirmed/](./confirmed/) |
 
 ## 目录说明
@@ -45,6 +46,8 @@ docs/
 
 - **项目体检.md** — 包数、测试、架构快照、遗留项
 - **hash-viewer.html** — `pnpm hash:check` 生成的 hash 查看器
+- **[projects.md](./reference/projects.md)** — 外部参考项目列表
+- **[ombre-brain.md](./reference/ombre-brain.md)** — Ombre-Brain 记忆系统对照分析（→ `plugins/memory`）
 
 ### `planning/` — 规划
 

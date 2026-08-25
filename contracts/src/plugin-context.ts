@@ -12,6 +12,7 @@ import type {
   FileManagerService,
   LlmService,
   LoggerService,
+  MemoryService,
   PersonaService,
   PromptContextService,
   SandboxService,
@@ -52,6 +53,7 @@ declare module '@wizard-harness/core' {
     readonly skills?: SkillsService;
     readonly webTools?: WebToolsService;
     readonly persona?: PersonaService;
+    readonly memory?: MemoryService;
     readonly workflow?: WorkflowService;
     readonly workflowNodes?: WorkflowNodesService;
     readonly appWorkflow?: AppWorkflowService;

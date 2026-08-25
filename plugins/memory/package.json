@@ -1,6 +1,6 @@
 {
-  "name": "@wizard-harness/plugin-persona",
-  "version": "0.2.0",
+  "name": "@wizard-harness/plugin-memory",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

@@ -19,6 +19,7 @@ export type { TimerService } from './timer.js';
 export type { SkillsService } from './skills.js';
 export type { WebToolsService } from './web-tools.js';
 export type { PersonaService } from './persona.js';
+export type { MemoryService } from './memory.js';
 export type { WorkflowService } from './workflow.js';
 export type { WorkflowNodesService } from './workflow-nodes.js';
 export type { AppWorkflowService } from './app-workflow.js';

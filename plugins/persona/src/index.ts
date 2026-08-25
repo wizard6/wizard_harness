@@ -4,12 +4,15 @@ import type { Plugin, PluginContext } from '@wizard-harness/core';
 import { PERSONA_SERVICE } from '@wizard-harness/contracts';
 import type {
   AgentService,
+  PersonaApplyInput,
+  PersonaConfigurePatch,
   PersonaRememberInput,
   PersonaSavePatch,
   PersonaService,
   PromptContextService,
   ToolsService,
 } from '@wizard-harness/contracts';
+import { PERSONA_AUTHORING_HINT } from './guide.js';
 import { createPersonaHost } from './host.js';
 import { PERSONA_HTML } from './page.js';
 
@@ -17,16 +20,20 @@ import { PERSONA_HTML } from './page.js';
  * persona：当前助手的人格 / 习惯 / 记忆。经 prompt-context 出门，不替代组装器。
  * 说明文档：docs/plugins/persona.html
  */
-let impl: PersonaService | undefined;
+let impl: ReturnType<typeof createPersonaHost> | undefined;
 
-function live(): PersonaService {
+function live(): ReturnType<typeof createPersonaHost> {
   if (!impl) throw new Error('persona 未就绪');
   return impl;
 }
 
 const api: PersonaService = {
   snapshot: () => live().snapshot(),
+  read: () => live().read(),
+  guide: () => live().guide(),
   save: (patch: PersonaSavePatch) => live().save(patch),
+  configure: (patch: PersonaConfigurePatch) => live().configure(patch),
+  apply: (input: PersonaApplyInput) => live().apply(input),
   addMemory: (input) => live().addMemory(input),
   removeMemory: (id) => live().removeMemory(id),
   pinMemory: (id, pinned) => live().pinMemory(id, pinned),
@@ -48,6 +55,11 @@ function wirePrompt(ctx: PluginContext, host: ReturnType<typeof createPersonaHos
     order: 2,
     text: () => host.renderCore(),
   });
+  prompts.section({
+    name: 'persona:authoring-hint',
+    order: 3,
+    text: () => (host.isDefault() ? PERSONA_AUTHORING_HINT : ''),
+  });
   prompts.context({
     name: 'persona:memory',
     order: 8,
@@ -55,9 +67,79 @@ function wirePrompt(ctx: PluginContext, host: ReturnType<typeof createPersonaHos
   });
 }
 
+function asTraits(raw: unknown): string[] | undefined {
+  if (raw == null) return undefined;
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string') return raw.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
+  return undefined;
+}
+
 function wireTools(ctx: PluginContext) {
   const tools = ctx.tools ?? ctx.get<ToolsService>('tools');
   if (!tools) return;
+
+  tools.register({
+    name: 'persona_read',
+    description:
+      '读取当前人格档案：profile、组装预览、落盘路径、是否仍为默认人设。无参数。定制人格前先调用。',
+    handler: () => live().read(),
+  });
+
+  tools.register({
+    name: 'persona_guide',
+    description:
+      '获取自生成人格的字段说明、写作模板与检查清单。无参数。配合 persona_apply 使用。',
+    handler: () => live().guide(),
+  });
+
+  tools.register({
+    name: 'persona_apply',
+    description:
+      '一次性写入自生成人格并落盘。args.name、args.personality 必填；建议同时提供 role、voice_style、traits。可选 tone、boundaries、tagline、habits、replace_habits。',
+    handler: (args) =>
+      live().apply({
+        name: String(args.name ?? ''),
+        personality: String(args.personality ?? ''),
+        role: args.role != null ? String(args.role) : undefined,
+        voiceStyle: args.voice_style != null ? String(args.voice_style) : args.voiceStyle != null ? String(args.voiceStyle) : undefined,
+        tone: args.tone != null ? String(args.tone) : undefined,
+        traits: asTraits(args.traits),
+        boundaries: args.boundaries != null ? String(args.boundaries) : undefined,
+        tagline: args.tagline != null ? String(args.tagline) : undefined,
+        habits: Array.isArray(args.habits) ? args.habits.map(String) : undefined,
+        replaceHabits: args.replace_habits === true || args.replace_habits === 'true',
+      }).profile,
+  });
+
+  tools.register({
+    name: 'persona_configure',
+    description:
+      '局部修改人格档案并落盘。可传 name、personality、habits、role、voice_style、tone、traits、boundaries、tagline（均为可选，只改传入字段）。',
+    handler: (args) => {
+      const patch: PersonaConfigurePatch = {};
+      if (args.name != null) patch.name = String(args.name);
+      if (args.personality != null) patch.personality = String(args.personality);
+      if (Array.isArray(args.habits)) patch.habits = args.habits.map(String);
+      const meta: {
+        role?: string;
+        voiceStyle?: string;
+        tone?: string;
+        traits?: string[];
+        boundaries?: string;
+        tagline?: string;
+      } = {};
+      if (args.role != null) meta.role = String(args.role);
+      if (args.voice_style != null) meta.voiceStyle = String(args.voice_style);
+      else if (args.voiceStyle != null) meta.voiceStyle = String(args.voiceStyle);
+      if (args.tone != null) meta.tone = String(args.tone);
+      if (args.traits != null) meta.traits = asTraits(args.traits);
+      if (args.boundaries != null) meta.boundaries = String(args.boundaries);
+      if (args.tagline != null) meta.tagline = String(args.tagline);
+      if (Object.keys(meta).length) patch.meta = meta;
+      return live().configure(patch).profile;
+    },
+  });
+
   tools.register({
     name: 'persona_remember',
     description:
@@ -74,9 +156,10 @@ function wireTools(ctx: PluginContext) {
 const personaPlugin: Plugin = {
   manifest: {
     id: 'persona',
-    version: '0.1.0',
+    version: '0.2.0',
     name: '人格',
-    description: '管理当前助手的人格、习惯与相关记忆；经 prompt-context 拼进模型可见上下文。',
+    description:
+      '管理助手人格元数据、习惯与相关记忆；提供 persona_apply/configure 等自生成工具；经 prompt-context 拼进模型可见上下文。',
     provides: [PERSONA_SERVICE],
     config: { persistFile: '' },
     tier: 'standard',
@@ -85,10 +168,18 @@ const personaPlugin: Plugin = {
   api,
   ui: {
     title: '人格',
-    width: 720,
-    height: 620,
+    width: 820,
+    height: 680,
     rpc: {
-      persona: ['snapshot', 'save', 'addMemory', 'removeMemory', 'pinMemory'],
+      persona: [
+        'snapshot',
+        'read',
+        'save',
+        'configure',
+        'addMemory',
+        'removeMemory',
+        'pinMemory',
+      ],
     },
     content: PERSONA_HTML,
   },
@@ -100,13 +191,12 @@ const personaPlugin: Plugin = {
     });
     impl = host;
     wirePrompt(c, host);
-    c.logger?.info?.('persona 插件就绪');
+    c.logger?.info?.('persona 插件就绪 v0.2.0');
     c.effect(() => () => {
       impl = undefined;
     });
   },
   onStart(c) {
-    // boot 两阶段：此时 tools 已挂上，即使本插件排在 tools 前面也能登记 persona_remember
     wireTools(c);
   },
 };

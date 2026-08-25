@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>memory 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>memory — 跨会话经历记忆</h1>
+      <p class="lede">对照 <a href="../reference/ombre-brain.md">Ombre-Brain</a>：Markdown 桶 + 遗忘分数 + breath 浮现。经 prompt-context 出门，不替代 persona / session。</p>
+      <div class="badges">
+        <span class="badge ok">id: memory</span>
+        <span class="badge ok">provides: memory</span>
+        <span class="badge">inject: promptContext</span>
+        <span class="badge">bundle: base</span>
+      </div>
+    </header>
+
+    <h2>1. 用途与边界</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>跨会话「我经历过什么」落在 <code>$WH_HOME/memory/</code>；人设仍在 persona，本轮对话仍在 session。</p>
+    </div>
+    <ul class="tight">
+      <li>管：记忆桶、衰减归档、breath / search / hold / grow / trace / pulse</li>
+      <li>不管：人格正文、会话消息历史、向量服务（可后续加）</li>
+    </ul>
+
+    <h2>2. 怎么进模型</h2>
+    <table>
+      <thead><tr><th>素材</th><th>出门</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">memory:breath</td><td>runtime context（order 9）</td><td>核心准则 + 浮现 + 久未浮现；空则 <code>''</code></td></tr>
+      </tbody>
+    </table>
+    <p>落盘默认 <code>$WH_HOME/memory/{dynamic,permanent,archive}/…/*.md</code>。vitest 用临时目录或 <code>config.vaultDir</code>。</p>
+
+    <h2>3. 服务与工具</h2>
+    <p>服务名 <code>MEMORY_SERVICE = 'memory'</code>。消费方：<code>ctx.memory</code>。</p>
+    <table>
+      <thead><tr><th>方法 / 工具</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">breath / memory_breath</td><td>权重池浮现（非搜索）</td></tr>
+        <tr><td class="mono">search / memory_search</td><td>关键词检索</td></tr>
+        <tr><td class="mono">hold / memory_hold</td><td>记下一条</td></tr>
+        <tr><td class="mono">grow / memory_grow</td><td>长文拆 2~6 条</td></tr>
+        <tr><td class="mono">trace / memory_trace</td><td>解决 / 钉住 / 归档 / 强化…</td></tr>
+        <tr><td class="mono">pulse / memory_pulse</td><td>自检计数</td></tr>
+      </tbody>
+    </table>
+    <p><code>ui.rpc</code>：snapshot / pulse / list / get / breath / search / hold / grow / trace。</p>
+
+    <h2>4. 设计硬规则</h2>
+    <ul class="tight">
+      <li>遗忘 = 归档，不是物理删除；可用 <code>restore</code> 恢复。</li>
+      <li>读不会自动强化；强化需 <code>reinforce=true</code>。</li>
+      <li>钉住上限 20；记忆文本是历史痕迹，不是指令。</li>
+    </ul>
+
+    <h2>5. 给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>参考分析见 <span class="mono">docs/reference/ombre-brain.md</span>；列表见 <span class="mono">docs/reference/projects.md</span>。</li>
+        <li>不要把 memory 写进 app-chat 默认 persona；空 breath 必须返回空字符串。</li>
+        <li>feel / plan / letter / embedding 尚未落地，需要时按分析文档「刻意推迟」扩展。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/memory/</span> · 契约 <span class="mono">contracts/src/memory.ts</span></p>
+  </div>
+</body>
+</html>
