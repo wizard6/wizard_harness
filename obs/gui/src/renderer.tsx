@@ -32,7 +32,7 @@ declare global {
       getState(): Promise<RendererState>;
       openPlugin(id: string): Promise<void>;
       reloadPlugin(id: string): Promise<{ ok: boolean; version?: string; cascaded?: string[]; error?: string }>;
-      unregisterPlugin(id: string): Promise<{ ok: boolean; error?: string }>;
+      unregisterPlugin(id: string): Promise<{ ok: boolean; cascaded?: string[]; error?: string }>;
       setPluginEnabled(id: string, enabled: boolean): Promise<{ ok: boolean; error?: string; enabled?: boolean }>;
       scanPlugins(): Promise<{
         ok: boolean;

@@ -83,4 +83,7 @@ export type {
   ServiceRegistry,
 } from './registrar/types.js';
 export { normalizeInject, normalizeProvides, providedServices } from './registrar/types.js';
+export { CascadeRestoreBook } from './cascade-restore.js';
+export type { CascadeRestoreSnapshot } from './cascade-restore.js';
+export { bootDiscoveredPlugins } from './shell.js';
 

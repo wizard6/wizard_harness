@@ -248,3 +248,18 @@ export async function syncRuntime(opts: SyncRuntimeOptions): Promise<SyncRuntime
     composition,
   };
 }
+
+/** 按 id 列表装入尚未注册的插件（用于级联孤儿恢复） */
+export async function bootDiscoveredPlugins(
+  harness: SystemContext,
+  pluginsDir: string,
+  ids: readonly string[],
+): Promise<string[]> {
+  const wanted = new Set(ids.map(String));
+  if (wanted.size === 0) return [];
+  const { plugins: found } = await discoverPlugins(pluginsDir, { cacheBust: true });
+  const targets = found.filter((p) => wanted.has(p.manifest.id) && !harness.registry.has(p.manifest.id));
+  if (targets.length === 0) return [];
+  const { loaded } = await harness.boot(targets);
+  return loaded.map((r) => r.plugin.manifest.id);
+}

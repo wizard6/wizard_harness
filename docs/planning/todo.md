@@ -1,6 +1,6 @@
 # Agent 能力待办
 
-> 插件说明：`docs/plugins/*.html`。路线图体感排序见 [`docs/product-maturity.html`](./product-maturity.html)。
+> 插件说明：`docs/plugins/*.html`。路线图体感排序见 [`product-maturity.html`](./product-maturity.html)。文档索引见 [`docs/README.md`](../README.md)。
 
 ## 第一阶段（已完成）
 
@@ -38,7 +38,7 @@
 
 | # | id | 项 | 状态 | 说明 |
 |---|-----|-----|------|------|
-| 21 | docs-health | 项目体检 + 排错短链 | 已落地 | `docs/项目体检.md` · `docs/troubleshooting.html` |
+| 21 | docs-health | 项目体检 + 排错短链 | 已落地 | `reference/项目体检.md` · `guides/troubleshooting.html` |
 | 22 | gui-plugin-toggle | 观测台禁/启用 + home patch | 已落地 | Registry 禁用按钮 · `setDisabledPlugins` · `upsertHomePatch` |
 | 23 | plugin-sdk | plugin-sdk + plugin-testing + 示例 | 已落地 | `@wizard-harness/plugin-sdk` · `examples/minimal-plugin` |
 

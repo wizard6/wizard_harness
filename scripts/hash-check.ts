@@ -6,7 +6,7 @@
  *
  * - 重新计算全部源码文件的当前 hash（CLI 带进度条）；
  * - 与 .quality-state.json（上次质检记录）对比 → 未修改 / 已修改 / 新增 / 删除；
- * - 生成 docs/hash-viewer.html（数据内嵌，file:// 直接打开即看）。
+ * - 生成 docs/reference/hash-viewer.html（数据内嵌，file:// 直接打开即看）。
  *
  * 注意：本工具只计算与对比，不更新质检状态（刷新状态请跑 pnpm quality）。
  */
@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { ROOT, collectFiles, normalize, sha256, toRel } from './hash-util.js';
 
 const STATE_FILE = join(ROOT, '.quality-state.json');
-const VIEWER = join(ROOT, 'docs', 'hash-viewer.html');
+const VIEWER = join(ROOT, 'docs', 'reference', 'hash-viewer.html');
 
 interface LastFile {
   hash: string;
@@ -101,7 +101,7 @@ function main(): void {
   }
 
   writeFileSync(VIEWER, renderHtml(rows, state, new Date().toISOString()), 'utf8');
-  console.log(`\n查看器 → docs/hash-viewer.html（浏览器直接打开）`);
+  console.log(`\n查看器 → docs/reference/hash-viewer.html（浏览器直接打开）`);
 }
 
 /* ---------- HTML 查看器（数据内嵌，file:// 可开） ---------- */

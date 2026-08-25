@@ -250,6 +250,39 @@ const events = [];
 let eventsFile = '';
 let composition;
 let runtimeDirs = { pluginsDir: '', profileDir: undefined, bundlesDir: undefined, homeDir: undefined };
+let cascadeBook = null;
+let cascadeFile = '';
+
+function loadCascadeBook() {
+  if (!core) return;
+  try {
+    const raw = JSON.parse(readFileSync(cascadeFile, 'utf8'));
+    cascadeBook = core.CascadeRestoreBook.fromSnapshot(raw);
+  } catch {
+    cascadeBook = core.CascadeRestoreBook.fromSnapshot(null);
+  }
+}
+
+function saveCascadeBook() {
+  if (!cascadeBook || !cascadeFile) return;
+  mkdirSync(path.dirname(cascadeFile), { recursive: true });
+  writeFileSync(cascadeFile, `${JSON.stringify(cascadeBook.toSnapshot(), null, 2)}\n`, 'utf8');
+}
+
+/** 父插件装入后，尝试恢复其级联卸掉的孤儿（非手动卸载） */
+async function restoreOrphansForParents(parentIds) {
+  if (!harness || !core || !cascadeBook || !runtimeDirs.pluginsDir) return [];
+  const ids = cascadeBook.orphansForParents(parentIds);
+  if (ids.length === 0) return [];
+  const loaded = await core.bootDiscoveredPlugins(harness, runtimeDirs.pluginsDir, ids);
+  if (loaded.length > 0) {
+    cascadeBook.markRestored(loaded);
+    saveCascadeBook();
+    const nested = await restoreOrphansForParents(loaded);
+    return [...loaded, ...nested];
+  }
+  return [];
+}
 
 async function init() {
   core = await import('@wizard-harness/core');
@@ -306,6 +339,8 @@ async function init() {
   harness = rt.harness;
   registrar = harness.registry;
   composition = rt.composition;
+  cascadeFile = path.join(runtimeDirs.homeDir, 'cascade-restore.json');
+  loadCascadeBook();
 
   // 冒烟：通过服务目录调用 logger 服务
   const logger = harness.services.get('logger');
@@ -480,9 +515,12 @@ async function scanPlugins() {
   } catch {
     // stdout 已断开时忽略
   }
+  const loadedIds = r.loaded.map((p) => p.manifest.id);
+  const restored = await restoreOrphansForParents(loadedIds);
   return {
     ok: true,
-    loaded: r.loaded.map((p) => p.manifest.id),
+    loaded: loadedIds,
+    restored,
     already: r.already,
     skipped: r.skipped,
     pending: r.pending.map((p) => ({ id: p.plugin.manifest.id, missing: p.missing })),
@@ -546,8 +584,14 @@ ipcMain.handle('wh:open-plugin', (_evt, id) => openPluginWindow(id));
 ipcMain.handle('wh:reload-plugin', async (_evt, id) => {
   if (!harness) return { ok: false, error: 'harness 未就绪' };
   try {
-    const r = await harness.reload(String(id));
-    return { ok: true, version: r.plugin.plugin.manifest.version, cascaded: r.cascaded };
+    const pluginId = String(id);
+    const r = await harness.reload(pluginId);
+    if (r.cascaded?.length) {
+      cascadeBook?.recordReloadCascade(pluginId, r.cascaded);
+      saveCascadeBook();
+    }
+    const restored = await restoreOrphansForParents([pluginId]);
+    return { ok: true, version: r.plugin.plugin.manifest.version, cascaded: r.cascaded, restored };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
@@ -555,8 +599,11 @@ ipcMain.handle('wh:reload-plugin', async (_evt, id) => {
 ipcMain.handle('wh:unregister-plugin', async (_evt, id) => {
   if (!harness) return { ok: false, error: 'harness 未就绪' };
   try {
-    await harness.registry.unregister(String(id));
-    return { ok: true };
+    const pluginId = String(id);
+    const r = await harness.registry.unregister(pluginId);
+    cascadeBook?.recordManualUninstall(pluginId, r.cascaded);
+    saveCascadeBook();
+    return { ok: true, cascaded: r.cascaded };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
@@ -577,7 +624,9 @@ async function setPluginEnabled(id, enabled) {
   harness.setDisabledPlugins([...prev]);
   if (!enabled) {
     if (harness.registry.has(pluginId)) {
-      await harness.registry.unregister(pluginId);
+      const r = await harness.registry.unregister(pluginId);
+      cascadeBook?.recordManualUninstall(pluginId, r.cascaded);
+      saveCascadeBook();
     }
     bus.emit({
       id: crypto.randomUUID(),

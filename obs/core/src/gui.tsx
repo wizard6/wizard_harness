@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { CompositionSnapshot, Plugin, PluginEvent } from '@wizard-harness/core';
 import { registrySpec } from './spec.js';
+import { DepCanvas } from './dep-canvas.js';
+import {
+  buildDependencyForest,
+  filterDepForest,
+  type DepDirection,
+} from './dep-graph.js';
 
 export interface RegistryPanelProps {
   /** 插件列表（GUI 展示扩展：services = 该插件提供的服务名，config = 合并后的生效配置） */
@@ -125,8 +131,7 @@ function fmtTime(ts: number): string {
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-type TabId = 'plugins' | 'services' | 'config' | 'events';
-type PluginFilter = 'all' | 'services' | 'ui';
+type TabId = 'plugins' | 'services' | 'deps' | 'config' | 'events';
 
 function collectServices(
   plugins: RegistryPanelProps['plugins'],
@@ -164,17 +169,19 @@ export function RegistryPanel({
   onHeaderDoubleClick,
 }: RegistryPanelProps): React.ReactElement {
   const [tab, setTab] = useState<TabId>('plugins');
-  const [filter, setFilter] = useState<PluginFilter>('all');
+  const [depDirection, setDepDirection] = useState<DepDirection>('depends-on');
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'warn' | 'err'; text: string } | null>(null);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
   const serviceEntries = collectServices(plugins);
+  const depForest = useMemo(
+    () => buildDependencyForest(plugins, depDirection),
+    [plugins, depDirection],
+  );
   const theme = registrySpec.theme;
   const eventColors = theme?.eventColors ?? {};
 
-  const withServices = plugins.filter((p) => (p.services ?? []).length > 0);
-  const withUi = plugins.filter((p) => p.ui);
   const q = query.trim().toLowerCase();
 
   const tabBtn = (id: TabId, label: string, count?: number) => (
@@ -184,7 +191,7 @@ export function RegistryPanel({
     </button>
   );
 
-  const showToolbar = tab === 'plugins' || tab === 'services' || tab === 'events';
+  const showToolbar = tab === 'plugins' || tab === 'services' || tab === 'deps' || tab === 'events';
 
   const runScan = async () => {
     if (!onScan || busy) return;
@@ -287,6 +294,7 @@ export function RegistryPanel({
         <div className="rp-tabs">
           {tabBtn('plugins', '插件', plugins.length)}
           {tabBtn('services', '服务', serviceEntries.length)}
+          {tabBtn('deps', '依赖', plugins.length)}
           {tabBtn('config', '配置', composition ? composition.entries.length : Object.keys(globalConfig).length)}
           {tabBtn('events', '事件', events.length)}
         </div>
@@ -295,29 +303,34 @@ export function RegistryPanel({
 
       {showToolbar && (
         <div className="rp-toolbar">
-          {tab === 'plugins' && (
+          {tab === 'deps' && (
             <>
-              <button type="button" className={filter === 'all' ? 'rp-sub on' : 'rp-sub'} onClick={() => setFilter('all')}>
-                全部 {plugins.length}
+              <button
+                type="button"
+                className={depDirection === 'depends-on' ? 'rp-sub on' : 'rp-sub'}
+                onClick={() => setDepDirection('depends-on')}
+              >
+                我依赖谁
               </button>
-              <button type="button" className={filter === 'services' ? 'rp-sub on' : 'rp-sub'} onClick={() => setFilter('services')}>
-                有服务 {withServices.length}
+              <button
+                type="button"
+                className={depDirection === 'depended-by' ? 'rp-sub on' : 'rp-sub'}
+                onClick={() => setDepDirection('depended-by')}
+              >
+                谁依赖我
               </button>
-              <button type="button" className={filter === 'ui' ? 'rp-sub on' : 'rp-sub'} onClick={() => setFilter('ui')}>
-                有弹窗 {withUi.length}
-              </button>
-              {onScan && (
-                <button
-                  type="button"
-                  className="rp-sub primary"
-                  title="重新扫描 plugins/ 并加载尚未注册的插件"
-                  disabled={busy}
-                  onClick={() => void runScan()}
-                >
-                  {busy ? '扫描中…' : '扫描新插件'}
-                </button>
-              )}
             </>
+          )}
+          {tab === 'plugins' && onScan && (
+            <button
+              type="button"
+              className="rp-sub primary"
+              title="重新扫描 plugins/ 并加载尚未注册的插件"
+              disabled={busy}
+              onClick={() => void runScan()}
+            >
+              {busy ? '扫描中…' : '扫描新插件'}
+            </button>
           )}
           {tab === 'events' && onClearEvents && (
             <button
@@ -333,14 +346,20 @@ export function RegistryPanel({
           <input
             className="rp-search"
             placeholder={
-              tab === 'plugins' ? '过滤插件…' : tab === 'events' ? '过滤事件…' : '过滤服务…'
+              tab === 'plugins'
+                ? '过滤插件…'
+                : tab === 'deps'
+                  ? '过滤依赖树…'
+                  : tab === 'events'
+                    ? '过滤事件…'
+                    : '过滤服务…'
             }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') setQuery('');
             }}
-            style={tab === 'services' ? { marginLeft: 0 } : undefined}
+            style={tab === 'services' || tab === 'deps' ? { marginLeft: 0 } : undefined}
           />
         </div>
       )}
@@ -353,8 +372,7 @@ export function RegistryPanel({
 
       <div className="rp-body">
         {tab === 'plugins' && (() => {
-          const base = filter === 'services' ? withServices : filter === 'ui' ? withUi : plugins;
-          const filtered = base.filter(
+          const filtered = plugins.filter(
             (p) =>
               !q ||
               p.manifest.id.toLowerCase().includes(q) ||
@@ -466,6 +484,23 @@ export function RegistryPanel({
               </div>
             );
           });
+        })()}
+
+        {tab === 'deps' && (() => {
+          const shown = filterDepForest(depForest, q);
+          if (shown.length === 0) {
+            return <div className="rp-empty">{q ? `没有匹配「${q}」的依赖` : '暂无运行中插件'}</div>;
+          }
+          return (
+            <DepCanvas
+              forest={shown}
+              direction={depDirection}
+              plugins={plugins.map((p) => ({
+                manifest: p.manifest,
+                services: p.services,
+              }))}
+            />
+          );
         })()}
 
         {tab === 'services' && (() => {

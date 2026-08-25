@@ -59,11 +59,15 @@ obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
 plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop / trajectory / sandbox / dev-tools / web-tools / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui）
-docs/confirmed/       人类确认意图
-docs/plugins/         插件说明（HTML，给人与后续 AI）
-docs/项目体检.md      源码核对清单（2026-08-19）
-docs/cordis-服务与事件.md   cordis 通信模型问答整理（服务=直接调用 / 事件=广播 + 本仓库差异要点）
-docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直接打开）
+docs/README.md          文档索引（从这里进）
+docs/guides/            开发指南、架构画布、排错
+docs/reference/         项目体检、hash 查看器
+docs/planning/          路线图与待办
+docs/design/            设计评审与底座诊断档案
+docs/confirmed/         人类确认意图
+docs/plugins/           插件说明（HTML，给人与后续 AI）
+docs/reports/           pnpm quality 产出
+docs/logs/              运行时事件/日志（路径固定，非文档）
 ```
 
 依赖方向：core 不依赖插件；插件依赖 core 契约。
@@ -72,7 +76,7 @@ docs/architecture-canvas.html  架构大画布（交互式白板，浏览器直�
 
 基座核心机制闭环：插件契约与生命周期、服务 DI（inject/provides + 级联卸载）、事件总线与五种分发模式、插件发现、Bundle/Profile 组合装配（GUI/API 共用 `assembleRuntime`）。测试见 `pnpm test`。
 
-已知遗留：`Dispatcher` 待接入插件上下文（等首个协作型用例）；GUI 弹窗 IPC 为硬编码（通用 UI 桥待单独设计）。完整条目见 [docs/项目体检.md](docs/项目体检.md)。
+已知遗留：`Dispatcher` 待接入插件上下文（等首个协作型用例）；GUI 弹窗 IPC 为硬编码（通用 UI 桥待单独设计）。完整条目见 [docs/reference/项目体检.md](docs/reference/项目体检.md)。文档导航见 [docs/README.md](docs/README.md)。
 
 ## 计划
 

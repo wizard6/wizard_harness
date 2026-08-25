@@ -88,7 +88,7 @@ ctx.on('user/created', (user) => auditLog(user))
 
 **关于本项目新增的 `ctx.call`（事件化 RPC）**：它不在 cordis 的标准模型里——cordis 的服务调用**就是直接调用**，事件只做广播通知。`ctx.call` 是项目自有的增强：把一次服务调用封装成 `service-call` 事件发到总线 → 路由到该服务的提供方执行（可带 `providerId` 精确路由，多提供方不广播）→ 以 `service-result` 事件返回，全程可观测、可审计、可跨进程（HTTP 网关）。它不改变"服务=能力、事件=通知"的划分，而是**让调用也借道事件通道**的混合形态：语义上仍是点对点 RPC（有请求、有响应、有超时），只是传输走事件总线。
 
-因此：本项目与 cordis 在"**服务直接调、事件广播**"这个根本模型上是一致的；差异在于：① 事件分发的丰富度（5 种分发模式尚未接入 PluginContext，见 `docs/项目体检.md` 遗留项）；② 项目额外提供事件化 RPC（`ctx.call`）与懒加载 factory 等自有增强。
+因此：本项目与 cordis 在"**服务直接调、事件广播**"这个根本模型上是一致的；差异在于：① 事件分发的丰富度（5 种分发模式尚未接入 PluginContext，见 [`reference/项目体检.md`](../reference/项目体检.md) 遗留项）；② 项目额外提供事件化 RPC（`ctx.call`）与懒加载 factory 等自有增强。
 
 ## 附：本仓库服务实现与 cordis 的差异要点
 

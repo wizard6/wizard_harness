@@ -7,6 +7,7 @@ import type {
   RegisterOptions,
   RegisteredPlugin,
   ReloadResult,
+  UnregisterResult,
   ServiceAccess,
 } from './types.js';
 import { normalizeInject, normalizeProvides } from './types.js';
@@ -41,7 +42,7 @@ export interface LifecycleDeps {
 
 export interface Lifecycle {
   register(plugin: Plugin, opts?: RegisterOptions): Promise<RegisteredPlugin>;
-  unregister(id: string): Promise<void>;
+  unregister(id: string): Promise<UnregisterResult>;
   reload(id: string, next: Plugin): Promise<ReloadResult>;
 }
 
@@ -139,37 +140,9 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
     return result;
   }
 
-  async function unregister(id: string): Promise<void> {
-    const plugin = registry.get(id);
-    if (!plugin) {
-      throw new PluginNotFoundError(id);
-    }
-    const provided = normalizeProvides(plugin).map((e) => e.name);
-    try {
-      if (plugin.onStop) {
-        await plugin.onStop(contexts.get(id) ?? makeContext(plugin));
-        emit('stop', id);
-      }
-    } finally {
-      // 可逆副作用：onStop 无论成败，撤销函数（LIFO）都执行，保证系统清洁
-      runDisposers(effects.get(id) ?? [], id);
-      effects.delete(id);
-    }
-    registry.delete(id);
-    contexts.delete(id);
-    trustedMap.delete(id);
-    requiredInject.delete(id);
-    services.dropServices(id);
-    emit('unregister', id);
-
-    // Cordis：必选服务消失 → 依赖方一并卸载
-    const victims = cascadeVictims(id, provided);
-    for (const vid of victims) {
-      if (registry.has(vid)) {
-        emit('inject-cascade', vid, { because: id, services: provided });
-        await unregister(vid);
-      }
-    }
+  async function unregister(id: string): Promise<UnregisterResult> {
+    const cascaded = await unregisterInternal(id, {});
+    return { cascaded };
   }
 
   /** 计算：卸载提供方 id 后，哪些插件因必选服务消失而应被级联卸载 */
@@ -209,10 +182,12 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
     await unregisterInternal(id, { cascading: false });
     // 级联计算需在卸载后（提供方绑定已摘除，服务缺失才成立）
     const victims = cascadeVictims(id, provided);
+    const cascaded: string[] = [];
     for (const vid of victims) {
       if (registry.has(vid)) {
         emit('inject-cascade', vid, { because: id, services: provided });
-        await unregister(vid);
+        const r = await unregister(vid);
+        cascaded.push(vid, ...r.cascaded);
       }
     }
 
@@ -221,7 +196,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
     try {
       registered = await register(next);
     } catch (err) {
-      emit('reload-failed', id, { from: fromVersion, error: String(err), cascaded: victims });
+      emit('reload-failed', id, { from: fromVersion, error: String(err), cascaded });
       try {
         await register(old);
         throw new Error(`热重载失败（${id}）并已回滚旧版本 ${fromVersion}：${String(err)}`);
@@ -231,15 +206,15 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         );
       }
     }
-    emit('reload', id, { from: fromVersion, to: next.manifest.version, cascaded: victims });
-    return { plugin: registered, cascaded: victims, replaced: { id, version: fromVersion } };
+    emit('reload', id, { from: fromVersion, to: next.manifest.version, cascaded });
+    return { plugin: registered, cascaded, replaced: { id, version: fromVersion } };
   }
 
   /** unregister 内部实现：支持关闭级联（reload 需要手动控制级联顺序与观测） */
   async function unregisterInternal(
     id: string,
     opts: { cascading?: boolean },
-  ): Promise<void> {
+  ): Promise<string[]> {
     const plugin = registry.get(id);
     if (!plugin) {
       throw new PluginNotFoundError(id);
@@ -261,19 +236,22 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
     services.dropServices(id);
     emit('unregister', id);
 
-    if (opts.cascading === false) return;
+    if (opts.cascading === false) return [];
+    const cascaded: string[] = [];
     const victims = cascadeVictims(id, provided);
     for (const vid of victims) {
       if (registry.has(vid)) {
         emit('inject-cascade', vid, { because: id, services: provided });
-        await unregister(vid);
+        const nested = await unregisterInternal(vid, {});
+        cascaded.push(vid, ...nested);
       }
     }
+    return cascaded;
   }
 
   return {
     register,
-    unregister: (id) => unregisterInternal(id, {}),
+    unregister,
     reload,
   };
 }

@@ -10,8 +10,8 @@
  *  - 任一文件修改：重跑该文件结构检查 + 全局 typecheck / test。
  *
  * 产出：
- *  - docs/quality-report-ai.md   给 AI 的简洁版报告
- *  - docs/quality-report.html    给人的清晰版报告
+ *  - docs/reports/quality-report-ai.md   给 AI 的简洁版报告
+ *  - docs/reports/quality-report.html    给人的清晰版报告
  *  - .quality-state.json         检查状态（hash 记录，提交到仓库）
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -20,8 +20,8 @@ import { join } from 'node:path';
 import { ROOT, collectFiles, normalize, sha256, toRel } from './hash-util.js';
 
 const STATE_FILE = join(ROOT, '.quality-state.json');
-const AI_REPORT = join(ROOT, 'docs', 'quality-report-ai.md');
-const HTML_REPORT = join(ROOT, 'docs', 'quality-report.html');
+const AI_REPORT = join(ROOT, 'docs', 'reports', 'quality-report-ai.md');
+const HTML_REPORT = join(ROOT, 'docs', 'reports', 'quality-report.html');
 /** 文件行数上限：尽量不超过 600 行（除非特殊） */
 const MAX_LINES = 600;
 /** 顶层函数体行数上限（低内聚信号）。
@@ -464,11 +464,11 @@ function main(): void {
 </body>
 </html>`;
   writeFileSync(HTML_REPORT, html, 'utf8');
-  mkdirSync(join(ROOT, 'docs'), { recursive: true });
+  mkdirSync(join(ROOT, 'docs', 'reports'), { recursive: true });
 
   // 终端摘要
   console.log(`[quality] 修改 ${modifiedCount}，重查 ${recheckedCount}，复用 ${skippedCount}；typecheck=${typecheck.status}；test=${test.status}（${test.summary}）`);
-  console.log(`[quality] AI 版 → docs/quality-report-ai.md；HTML 版 → docs/quality-report.html`);
+  console.log(`[quality] AI 版 → docs/reports/quality-report-ai.md；HTML 版 → docs/reports/quality-report.html`);
 }
 
 main();

@@ -240,6 +240,12 @@ export interface RegisterOptions {
   deferStart?: boolean;
 }
 
+/** 卸载结果 */
+export interface UnregisterResult {
+  /** 因 inject 级联而被卸载的插件 id（含嵌套级联，不含自身） */
+  readonly cascaded: readonly string[];
+}
+
 /** 热重载结果 */
 export interface ReloadResult {
   plugin: RegisteredPlugin;
@@ -252,7 +258,7 @@ export interface ReloadResult {
 /** 注册器接口：登记 / 查找 / 枚举 / 注销 + 服务目录 */
 export interface Registrar {
   register(plugin: Plugin, opts?: RegisterOptions): Promise<RegisteredPlugin>;
-  unregister(id: string): Promise<void>;
+  unregister(id: string): Promise<UnregisterResult>;
   get(id: string): Plugin | undefined;
   list(): Plugin[];
   has(id: string): boolean;
