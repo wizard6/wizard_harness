@@ -7,6 +7,7 @@ import { createServiceRegistry } from './service-registry.js';
 import type { ServiceRegistryBundle } from './service-registry.js';
 import { createLifecycle } from './lifecycle.js';
 import { makePluginContext } from './context.js';
+import { cordisInjectView } from './cordis-inject.js';
 import {
   attachScopeFork,
   eventSubjectOf,
@@ -157,14 +158,21 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
     let self!: PluginContext;
     const currentScope = (): ScopeKey | undefined => scopeOf(self);
 
+    const resolveInjected = <T = unknown>(name: string): T | undefined => {
+      const svc = sreg.pickVisible(name, viewerId, trusted, currentScope());
+      if (svc === undefined) return undefined;
+      return cordisInjectView(name, svc, self, viewerId) as T;
+    };
+
     const servicesView: PluginContext['services'] = {
       get<T = unknown>(name: string, providerId?: string): T | undefined {
         const scope = currentScope();
         if (providerId) {
           if (!sreg.authorizeCall(name, providerId, `plugin:${viewerId}`, scope)) return undefined;
-          return sreg.resolveInstance(name, providerId, scope) as T | undefined;
+          const raw = sreg.resolveInstance(name, providerId, scope);
+          return cordisInjectView(name, raw, self, viewerId) as T | undefined;
         }
-        return sreg.pickVisible(name, viewerId, trusted, scope) as T | undefined;
+        return resolveInjected<T>(name);
       },
       getAll<T = unknown>(name: string): T[] {
         const scope = currentScope();
@@ -229,8 +237,7 @@ export function createRegistrar(opts: CreateRegistrarOptions): Registrar {
           set.delete(sub);
         };
       },
-      get: <T = unknown>(name: string) =>
-        sreg.pickVisible(name, viewerId, trusted, currentScope()) as T | undefined,
+      get: resolveInjected,
       provide(name, service, opts) {
         sreg.services.register(name, service, { providerId: viewerId, ...opts, ctx: self });
       },

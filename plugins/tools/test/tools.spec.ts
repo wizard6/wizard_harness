@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import type { Plugin, PluginContext, PluginEvent } from '@wizard-harness/core';
 import { createEventBus, createHarness, scopeOf } from '@wizard-harness/core';
-import type { PluginEvent } from '@wizard-harness/core';
+import { describe, expect, it } from 'vitest';
 import { TOOLS_SERVICE } from '@wizard-harness/contracts';
 import type { AgentService, PromptContextService, SessionService, ToolsService } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
@@ -107,6 +107,25 @@ describe('tools 插件', () => {
     const scopedAsm = prompts.assemble({ sessionId: h1.sessionId, scope: scopeOf(h1.ctx) });
     expect(scopedAsm.tools.map((t) => t.name)).toContain('ping');
     expect(prompts.assemble({}).tools.map((t) => t.name)).not.toContain('ping');
+  });
+
+  it('ctx.tools.register 随消费方插件卸载撤销（Cordis bind）', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await harness.registry.register(sessionPlugin);
+    await harness.registry.register(promptContextPlugin);
+    await harness.registry.register(toolsPlugin);
+    const guest: Plugin = {
+      manifest: { id: 'guest-tools', version: '1.0.0' },
+      async register() {},
+      async onStart(c) {
+        c.tools?.register({ name: 'guest_ping', description: 'd', handler: () => 'pong' });
+      },
+    };
+    await harness.registry.register(guest);
+    const tools = harness.services.get<ToolsService>('tools')!;
+    expect(tools.list().map((t) => t.name)).toContain('guest_ping');
+    await harness.registry.unregister('guest-tools');
+    expect(tools.list().map((t) => t.name)).not.toContain('guest_ping');
   });
 
   it('内置 now / upper', async () => {

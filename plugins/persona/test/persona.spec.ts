@@ -101,6 +101,17 @@ describe('persona 插件', () => {
     expect(host.renderCore()).toContain('语气：温和');
   });
 
+  it('卸载后 persona_* 工具与 prompt 登记一并撤销', async () => {
+    const harness = await boot({ withTools: true });
+    const tools = harness.services.get<ToolsService>('tools')!;
+    const pc = harness.services.get<PromptContextService>('promptContext')!;
+    expect(tools.list().some((t) => t.name === 'persona_read')).toBe(true);
+    expect(pc.inspect().sources.some((s) => s.name === 'persona:core')).toBe(true);
+    await harness.registry.unregister('persona');
+    expect(tools.list().some((t) => t.name === 'persona_read')).toBe(false);
+    expect(pc.inspect().sources.some((s) => s.name === 'persona:core')).toBe(false);
+  });
+
   it('guide 含字段与模板', () => {
     const host = createPersonaHost({ persistFile: persistFile() });
     const g = host.guide();

@@ -30,6 +30,7 @@ import type {
 
 /**
  * Cordis 风格属性访问：ctx.logger ≡ ctx.get('logger')（运行时由 Proxy 注入）。
+ * 带 bind 的服务（tools、promptContext）经 ctx 访问时自动 bind(当前 ctx)，登记随插件卸载撤销。
  */
 declare module '@wizard-harness/core' {
   interface PluginContext {
