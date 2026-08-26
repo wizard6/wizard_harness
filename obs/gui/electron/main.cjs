@@ -1027,6 +1027,7 @@ function handleTrayMenuAction(action) {
   else if (action === 'agent') openPluginWindow('app-ui');
   else if (action === 'workflow') openPluginWindow('app-workflow');
   else if (action === 'quality') openQualityWindow();
+  else if (action === 'pomodoro') openPluginWindow('pomodoro');
   else if (action === 'restart') restartApp();
   else if (action === 'quit') app.quit();
 }

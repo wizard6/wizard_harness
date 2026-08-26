@@ -76,7 +76,7 @@ docs/logs/              运行时事件/日志（路径固定，非文档）
 
 基座核心机制闭环：插件契约与生命周期、服务 DI（inject/provides + 级联卸载）、事件总线与五种分发模式、插件发现、Bundle/Profile 组合装配（GUI/API 共用 `assembleRuntime`）。测试见 `pnpm test`。
 
-已知遗留：`Dispatcher` 待接入插件上下文（等首个协作型用例）；GUI 弹窗 IPC 为硬编码（通用 UI 桥待单独设计）。完整条目见 [docs/reference/项目体检.md](docs/reference/项目体检.md)。文档导航见 [docs/README.md](docs/README.md)。
+已知遗留：`Dispatcher` 待接入插件上下文（等首个协作型用例）；GUI 弹窗 IPC 为硬编码（通用 UI 桥待单独设计）。完整条目见 [docs/reference/项目体检.md](docs/reference/项目体检.md)。文档导航见 [docs/README.md](docs/README.md)。桌面壳（弹窗 / 托盘 / RPC）见 [docs/guides/desktop-shell/README.md](docs/guides/desktop-shell/README.md)。
 
 ## 计划
 

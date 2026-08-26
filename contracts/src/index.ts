@@ -119,6 +119,14 @@ export type {
 } from './timer.js';
 export { SKILLS_SERVICE } from './skills.js';
 export type { SkillDetail, SkillInfo, SkillsService, SkillsSnapshot } from './skills.js';
+export { POMODORO_SERVICE } from './pomodoro.js';
+export type {
+  PomodoroConfigurePatch,
+  PomodoroConfig,
+  PomodoroPhase,
+  PomodoroService,
+  PomodoroState,
+} from './pomodoro.js';
 export { GIT_TOOLS_SERVICE, gitToolName } from './git-tools.js';
 export type {
   GitProbe,

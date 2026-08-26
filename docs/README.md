@@ -20,6 +20,8 @@ docs/
 | 我想… | 去看 |
 | --- | --- |
 | 写/改插件 | [guides/插件开发约定.md](./guides/插件开发约定.md) |
+| 弹窗 / 托盘 / 桌面壳 | [guides/desktop-shell/README.md](./guides/desktop-shell/README.md) |
+| 做番茄钟类插件 | [guides/desktop-shell/06-pomodoro-implementation.md](./guides/desktop-shell/06-pomodoro-implementation.md) |
 | 理解服务与事件模型 | [guides/cordis-服务与事件.md](./guides/cordis-服务与事件.md) |
 | 看全局架构（可交互） | [guides/architecture-canvas.html](./guides/architecture-canvas.html) |
 | App 不回话怎么查 | [guides/troubleshooting.html](./guides/troubleshooting.html) |
@@ -39,6 +41,7 @@ docs/
 - **cordis-服务与事件** — 服务直接调用 vs 事件广播，与本仓库差异
 - **architecture-canvas.html** — 架构大画布（浏览器打开，可缩放拖拽）
 - **troubleshooting.html** — 「不回话怎么查」排错短链
+- **desktop-shell/** — 插件弹窗、托盘菜单、ui.rpc、bundle 注册（固定机制，勿从 main.cjs 反推）
 
 ### `reference/` — 参考
 
