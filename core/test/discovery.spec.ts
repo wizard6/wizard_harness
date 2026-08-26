@@ -69,6 +69,24 @@ describe('discoverPlugins', () => {
     expect(warnings.some((w) => w.includes('boom'))).toBe(true);
   });
 
+  it('package.json tags 与 manifest.tags 不一致时记入 warnings', async () => {
+    const dir = setupDir({
+      'kit/package.json': JSON.stringify({
+        name: '@wizard-harness/plugin-kit',
+        wizardHarness: { plugin: true, tags: ['工具套件'] },
+      }),
+      'kit/dist/index.js': 'export default {};',
+    });
+
+    const load = async (): Promise<{ default: Plugin }> => ({
+      default: makePlugin('kit'),
+    });
+
+    const { plugins, warnings } = await discoverPlugins(dir, { load });
+    expect(plugins.map((p) => p.manifest.id)).toEqual(['kit']);
+    expect(warnings.some((w) => w.includes('manifest.tags 未声明'))).toBe(true);
+  });
+
   it('目录不存在时返回空结果与警告', async () => {
     const { plugins, warnings } = await discoverPlugins(join(tmpdir(), 'wh-missing-' + Date.now()));
     expect(plugins).toEqual([]);

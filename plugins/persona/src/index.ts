@@ -17,7 +17,7 @@ import { createPersonaHost } from './host.js';
 import { PERSONA_HTML } from './page.js';
 
 /**
- * persona：当前助手的人格 / 习惯 / 记忆。经 prompt-context 出门，不替代组装器。
+ * persona（硅灵）：当前助手的 AI格 / 习惯 / 记忆。经 prompt-context 出门，不替代组装器。
  * 说明文档：docs/plugins/persona.html
  */
 let impl: ReturnType<typeof createPersonaHost> | undefined;
@@ -81,21 +81,21 @@ function wireTools(ctx: PluginContext) {
   tools.register({
     name: 'persona_read',
     description:
-      '读取当前人格档案：profile、组装预览、落盘路径、是否仍为默认人设。无参数。定制人格前先调用。',
+      '读取当前硅灵（AI格）档案：profile、组装预览、落盘路径、是否仍为默认人设。无参数。定制硅灵前先调用。',
     handler: () => live().read(),
   });
 
   tools.register({
     name: 'persona_guide',
     description:
-      '获取自生成人格的字段说明、写作模板与检查清单。无参数。配合 persona_apply 使用。',
+      '获取自生成硅灵的字段说明、写作模板与检查清单。无参数。配合 persona_apply 使用。',
     handler: () => live().guide(),
   });
 
   tools.register({
     name: 'persona_apply',
     description:
-      '一次性写入自生成人格并落盘。args.name、args.personality 必填；建议同时提供 role、voice_style、traits。可选 tone、boundaries、tagline、habits、replace_habits。',
+      '一次性写入自生成硅灵（AI格）并落盘。args.name、args.personality 必填；建议同时提供 role、voice_style、traits。可选 tone、boundaries、tagline、habits、replace_habits。',
     handler: (args) =>
       live().apply({
         name: String(args.name ?? ''),
@@ -114,7 +114,7 @@ function wireTools(ctx: PluginContext) {
   tools.register({
     name: 'persona_configure',
     description:
-      '局部修改人格档案并落盘。可传 name、personality、habits、role、voice_style、tone、traits、boundaries、tagline（均为可选，只改传入字段）。',
+      '局部修改硅灵档案并落盘。可传 name、personality、habits、role、voice_style、tone、traits、boundaries、tagline（均为可选，只改传入字段）。',
     handler: (args) => {
       const patch: PersonaConfigurePatch = {};
       if (args.name != null) patch.name = String(args.name);
@@ -143,7 +143,7 @@ function wireTools(ctx: PluginContext) {
   tools.register({
     name: 'persona_remember',
     description:
-      '把一条事实写入当前人格档案。args.text 必填；可选 args.kind=memory|habit（默认 memory）、args.pinned=true 钉住（每轮都会带上）。习惯会进系统段，记忆进相关记忆（未钉只保留最近几条）。',
+      '把一条事实写入当前硅灵档案。args.text 必填；可选 args.kind=memory|habit（默认 memory）、args.pinned=true 钉住（每轮都会带上）。习惯会进系统段，记忆进相关记忆（未钉只保留最近几条）。',
     handler: (args) =>
       live().remember({
         text: String(args.text ?? ''),
@@ -156,10 +156,10 @@ function wireTools(ctx: PluginContext) {
 const personaPlugin: Plugin = {
   manifest: {
     id: 'persona',
-    version: '0.2.0',
-    name: '人格',
+    version: '0.2.1',
+    name: '硅灵',
     description:
-      '管理助手人格元数据、习惯与相关记忆；提供 persona_apply/configure 等自生成工具；经 prompt-context 拼进模型可见上下文。',
+      '管理助手硅灵（AI格）：元数据、硅格正文、习惯与相关记忆；提供 persona_apply/configure 等自生成工具；经 prompt-context 拼进模型可见上下文。',
     provides: [PERSONA_SERVICE],
     config: { persistFile: '' },
     tier: 'standard',
@@ -167,9 +167,9 @@ const personaPlugin: Plugin = {
   inject: { promptContext: true, logger: false, tools: false, agent: false },
   api,
   ui: {
-    title: '人格',
-    width: 820,
-    height: 680,
+    title: '硅灵',
+    width: 860,
+    height: 720,
     rpc: {
       persona: [
         'snapshot',
@@ -191,7 +191,7 @@ const personaPlugin: Plugin = {
     });
     impl = host;
     wirePrompt(c, host);
-    c.logger?.info?.('persona 插件就绪 v0.2.0');
+    c.logger?.info?.('硅灵（persona）插件就绪 v0.2.1');
     c.effect(() => () => {
       impl = undefined;
     });

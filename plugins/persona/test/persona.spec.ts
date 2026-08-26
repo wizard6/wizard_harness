@@ -32,7 +32,7 @@ describe('persona 插件', () => {
   it('服务名 + 必选 prompt-context + 弹窗 rpc', () => {
     expect(PERSONA_SERVICE).toBe('persona');
     expect(personaPlugin.manifest.provides).toEqual(['persona']);
-    expect(personaPlugin.manifest.version).toBe('0.2.0');
+    expect(personaPlugin.manifest.version).toBe('0.2.1');
     expect(personaPlugin.inject).toEqual({ promptContext: true, logger: false, tools: false, agent: false });
     expect(personaPlugin.ui?.rpc).toEqual({
       persona: [
@@ -46,7 +46,8 @@ describe('persona 插件', () => {
       ],
     });
     expect(PERSONA_HTML).toContain('wh.call("persona"');
-    expect(PERSONA_HTML).toContain('voiceStyle');
+    expect(PERSONA_HTML).toContain('硅灵');
+    expect(PERSONA_HTML).toContain('AI格');
   });
 
   it('默认档案含 OTA 人格；空记忆不占 token', () => {
@@ -55,7 +56,7 @@ describe('persona 插件', () => {
     expect(snap.profile.name).toBe('默认助手');
     expect(snap.profile.personality).toContain('观察-思考-行动');
     expect(snap.profile.habits.length).toBeGreaterThan(0);
-    expect(snap.preview.core).toContain('# 人格');
+    expect(snap.preview.core).toContain('# 硅格');
     expect(snap.preview.core).toContain('# 习惯');
     expect(snap.preview.memory).toBe('');
     expect(snap.profile.personality).toBe(DEFAULT_PERSONALITY);

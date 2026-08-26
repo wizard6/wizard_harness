@@ -36,6 +36,11 @@ export interface PluginManifest {
   config?: Record<string, unknown>;
   /** 成熟度（默认 standard）：core=必须加载 / standard=默认加载 / experimental=默认跳过 */
   tier?: PluginTier;
+  /**
+   * 分类标签（如「工具套件」「工具盒」），用于 GUI 筛选与选型参考。
+   * 应与 package.json `wizardHarness.tags` 保持一致。
+   */
+  tags?: readonly string[];
   /** 信任标记（默认 false）：true 才能调用高权限服务 */
   trusted?: boolean;
   /** 该插件提供的哪些服务是高权限（仅 trusted 插件可调用） */

@@ -12,14 +12,6 @@
           "params": [{ "key": "path", "label": "子路径", "placeholder": "留空=工作区根" }]
         },
         {
-          "name": "git_push",
-          "label": "推送项目",
-          "description": "git add -A、commit、push。无变更时可能失败。",
-          "kind": "shell",
-          "command": "git add -A && git commit -m \"{{message}}\" && git push",
-          "params": [{ "key": "message", "label": "提交说明", "default": "chore: update" }]
-        },
-        {
           "name": "start_gui",
           "label": "启动观测台 GUI",
           "description": "后台启动本仓库 Electron 观测台（pnpm gui:start）。主要面向 Windows。",

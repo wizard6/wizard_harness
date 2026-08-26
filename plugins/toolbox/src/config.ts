@@ -99,12 +99,4 @@ export const DEFAULT_SCRIPTS: ToolboxScriptConfig[] = [
     path: '{{path}}',
     params: [{ key: 'path', label: '子路径', placeholder: '留空=工作区根' }],
   },
-  {
-    name: 'git_push',
-    label: '推送项目',
-    description: 'Git 提交并推送当前工作区。',
-    kind: 'shell',
-    command: 'git add -A && git commit -m "{{message}}" && git push',
-    params: [{ key: 'message', label: '提交说明', default: 'chore: toolbox push' }],
-  },
 ];

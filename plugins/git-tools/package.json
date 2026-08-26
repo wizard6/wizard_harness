@@ -1,5 +1,5 @@
 {
-  "name": "@wizard-harness/plugin-toolbox",
+  "name": "@wizard-harness/plugin-git-tools",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,11 +17,10 @@
   },
   "wizardHarness": {
     "plugin": true,
-    "tags": ["工具盒"]
+    "tags": ["工具套件"]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }

@@ -91,6 +91,7 @@ export function RegistryPanel({
   const [tab, setTab] = useState<TabId>('plugins');
   const [depDirection, setDepDirection] = useState<DepDirection>('depends-on');
   const [query, setQuery] = useState('');
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'warn' | 'err'; text: string } | null>(null);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
@@ -101,6 +102,16 @@ export function RegistryPanel({
   );
   const theme = registrySpec.theme;
   const eventColors = theme?.eventColors ?? {};
+
+  const pluginTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of plugins) {
+      for (const t of p.manifest.tags ?? []) {
+        if (t.trim()) set.add(t);
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'zh'));
+  }, [plugins]);
 
   const q = query.trim().toLowerCase();
 
@@ -241,6 +252,27 @@ export function RegistryPanel({
               </button>
             </>
           )}
+          {tab === 'plugins' && pluginTags.length > 0 && (
+            <span className="rp-tag-filters">
+              <button
+                type="button"
+                className={tagFilter === null ? 'rp-sub on' : 'rp-sub'}
+                onClick={() => setTagFilter(null)}
+              >
+                全部标签
+              </button>
+              {pluginTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={tagFilter === tag ? 'rp-sub on' : 'rp-sub'}
+                  onClick={() => setTagFilter(tag)}
+                >
+                  {tag}
+                </button>
+              ))}
+            </span>
+          )}
           {tab === 'plugins' && onScan && (
             <button
               type="button"
@@ -292,17 +324,21 @@ export function RegistryPanel({
 
       <div className="rp-body">
         {tab === 'plugins' && (() => {
-          const filtered = plugins.filter(
-            (p) =>
-              !q ||
+          const filtered = plugins.filter((p) => {
+            if (tagFilter && !(p.manifest.tags ?? []).includes(tagFilter)) return false;
+            if (!q) return true;
+            return (
               p.manifest.id.toLowerCase().includes(q) ||
               (p.manifest.name ?? '').toLowerCase().includes(q) ||
-              (p.manifest.description ?? '').toLowerCase().includes(q),
-          );
+              (p.manifest.description ?? '').toLowerCase().includes(q) ||
+              (p.manifest.tags ?? []).some((t) => t.toLowerCase().includes(q))
+            );
+          });
           if (filtered.length === 0) {
+            const hint = tagFilter && q ? `标签「${tagFilter}」且匹配「${query.trim()}」` : tagFilter ? `标签「${tagFilter}」` : q ? `「${query.trim()}」` : '';
             return (
               <div className="rp-empty">
-                {q ? `没有匹配「${q}」的插件` : '暂无插件。点「扫描新插件」从 plugins/ 装入。'}
+                {hint ? `没有${hint}的插件` : '暂无插件。点「扫描新插件」从 plugins/ 装入。'}
               </div>
             );
           }
@@ -320,6 +356,11 @@ export function RegistryPanel({
                     {p.manifest.name || p.manifest.id}
                   </span>
                   <span className="rp-meta">
+                    {(p.manifest.tags ?? []).map((tag) => (
+                      <span key={tag} className="rp-tag" title="插件分类标签">
+                        {tag}
+                      </span>
+                    ))}
                     <span className={`rp-tier${tierClass ? ` ${tierClass}` : ''}`}>
                       {p.manifest.tier ?? 'standard'}
                     </span>

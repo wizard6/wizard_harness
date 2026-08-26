@@ -16,7 +16,8 @@
     "@wizard-harness/contracts": "workspace:^"
   },
   "wizardHarness": {
-    "plugin": true
+    "plugin": true,
+    "tags": ["工具套件"]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

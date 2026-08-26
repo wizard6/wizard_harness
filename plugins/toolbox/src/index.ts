@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { Plugin, PluginContext } from '@wizard-harness/core';
+import { PLUGIN_TAG_SCRIPT_BOX } from '@wizard-harness/core';
 import { TOOLBOX_SERVICE } from '@wizard-harness/contracts';
 import type {
   PromptContextService,
@@ -139,6 +140,7 @@ const toolboxPlugin: Plugin = {
       scripts: DEFAULT_SCRIPTS,
     },
     tier: 'standard',
+    tags: [PLUGIN_TAG_SCRIPT_BOX],
   },
   inject: { tools: true, workflow: true, session: false, promptContext: false, logger: false },
   api,

@@ -254,6 +254,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/git-tools:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/hello:
     dependencies:
       '@wizard-harness/contracts':

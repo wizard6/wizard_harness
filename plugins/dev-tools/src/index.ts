@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { Plugin, PluginContext } from '@wizard-harness/core';
+import { PLUGIN_TAG_TOOLKIT } from '@wizard-harness/core';
 import { DEV_TOOLS_SERVICE } from '@wizard-harness/contracts';
 import type {
   DevToolsService,
@@ -91,6 +92,7 @@ const devToolsPlugin: Plugin = {
     provides: [DEV_TOOLS_SERVICE],
     config: { root: '' },
     tier: 'standard',
+    tags: [PLUGIN_TAG_TOOLKIT],
   },
   inject: { tools: true, logger: false, promptContext: false, session: false },
   api,

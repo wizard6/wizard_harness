@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>toolbox · Windows 扩展工具规划</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --line: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --blue: #58a6ff;
+      --yellow: #d29922;
+      --orange: #db6d28;
+      --red: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+      padding: 28px 20px 64px;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    .lede { color: var(--muted); margin: 0 0 20px; max-width: 72ch; }
+    h2 { font-size: 17px; margin: 28px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+    }
+    .card p { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0 18px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--green); }
+    .tier { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .t0 { color: var(--green); border: 1px solid rgba(63,185,80,.35); background: rgba(63,185,80,.08); }
+    .t1 { color: var(--blue); border: 1px solid rgba(88,166,255,.35); background: rgba(88,166,255,.08); }
+    .t2 { color: var(--yellow); border: 1px solid rgba(210,153,34,.35); background: rgba(210,153,34,.08); }
+    .t3 { color: var(--orange); border: 1px solid rgba(219,109,40,.35); background: rgba(219,109,40,.08); }
+    .t4 { color: var(--red); border: 1px solid rgba(248,81,73,.35); background: rgba(248,81,73,.08); }
+    .pri { font-weight: 600; }
+    .p1 { color: var(--green); }
+    .p2 { color: var(--blue); }
+    .p3 { color: var(--muted); }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>toolbox · Windows 扩展工具规划</h1>
+    <p class="lede">
+      目标：在普通 Windows 电脑上让 Agent / 人工按钮「能干很多事」，但仍可审计、可关、可限。
+      现状仅 <code>open_folder</code>、<code>git_push</code> 与三种 kind；工作区路径越界已在 runner 拦截。
+    </p>
+
+    <div class="card">
+      <p><b>风险等级（建议写入 config，而不仅是文档）</b></p>
+      <ul>
+        <li><span class="tier t0">T0 只读</span> 仅读工作区 / 只读系统信息，无副作用</li>
+        <li><span class="tier t1">T1 工作区写</span> 仅在工作区内创建、修改、删除文件</li>
+        <li><span class="tier t2">T2 本机交互</span> 打开路径/URL、剪贴板、通知、启动已白名单程序</li>
+        <li><span class="tier t3">T3 进程/网络</span> 启停进程、装包、访问网络；需超时 + 白名单 + 审计</li>
+        <li><span class="tier t4">T4 高危</span> 注册表写、计划任务、提权、全盘操作；默认关闭，仅人工 + 二次确认</li>
+      </ul>
+      <p><b>横切限制（所有扩展都应具备）</b></p>
+      <ul>
+        <li><code>agentCallable</code> / <code>humanOnly</code>：弹窗可点、Agent 默认禁 T3+</li>
+        <li><code>confirm</code>：T3+ 执行前 GUI 或 workflow 确认卡</li>
+        <li><code>audit</code>：写入 events / logger（谁、何时、参数摘要、退出码）</li>
+        <li><code>timeoutMs</code> + 输出截断（已有）+ 并发上限</li>
+        <li>禁止裸 <code>cmd /c {{任意}}</code>；Agent 只调具名 <code>box.*</code>，参数 schema 校验</li>
+      </ul>
+    </div>
+
+    <h2>一、Git 与版本（优先落地，T0–T1）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.git_status</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>查看变更文件与分支</td>
+          <td><code>git status -sb</code></td>
+          <td>仅 workspace；输出截断</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.git_diff</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>查看 diff（可限路径）</td>
+          <td><code>git diff -- {{path}}</code></td>
+          <td>path 必须在工作区内；<code>--no-ext-diff</code></td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.git_pull</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>拉取远程</td>
+          <td><code>git pull --ff-only</code></td>
+          <td>禁止 <code>--rebase</code> 除非显式开关；失败不自动 force</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.git_commit</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>仅 commit（不 push）</td>
+          <td><code>git add</code> 可限路径 + <code>git commit -m</code></td>
+          <td>默认 <code>humanOnly</code> 或需 confirm；钩子不可跳过</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.git_push</code></td>
+          <td><span class="tier t3">T3</span></td>
+          <td>已有：提交并推送</td>
+          <td>现有 shell 模板</td>
+          <td>改为 confirm + 禁止 push 到 main 除非 <code>allowBranches</code></td>
+          <td class="pri p1">P1 加固</td>
+        </tr>
+        <tr>
+          <td><code>box.git_stash</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>暂存/恢复工作区</td>
+          <td><code>git stash push/pop</code></td>
+          <td>仅 workspace 仓库；pop 前 diff 预览</td>
+          <td class="pri p3">P3</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>二、文件与工作区（T0–T1）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.list_dir</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>列目录（树或平铺）</td>
+          <td>Node <code>readdir</code> 或 <code>Get-ChildItem</code></td>
+          <td>深度/条目上限；跳过 <code>node_modules</code></td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.find_files</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>按 glob 找文件</td>
+          <td>复用 dev-tools glob 逻辑</td>
+          <td>最多 N 条；禁止 <code>**/*</code> 无界</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.read_file</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>读文本片段</td>
+          <td>offset + max_chars</td>
+          <td>与 code-browser 分工或委托；二进制拒绝</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.write_file</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>写/追加文件</td>
+          <td>原子写临时文件再 rename</td>
+          <td>扩展名白名单；单文件大小上限</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.delete_path</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>删文件/空目录</td>
+          <td><code>fs.rm</code> 仅文件</td>
+          <td>禁止删 <code>.git</code>；目录非空需 confirm</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.zip_workspace</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>打包工作区备份</td>
+          <td>PowerShell <code>Compress-Archive</code></td>
+          <td>输出必须在 workspace；排除大目录</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.open_folder</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>已有：资源管理器打开</td>
+          <td><code>explorer.exe</code></td>
+          <td>测试环境 <code>humanOnly</code>；Agent 可只返回路径</td>
+          <td class="pri p1">P1 已有</td>
+        </tr>
+        <tr>
+          <td><code>box.reveal_file</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>在资源管理器中选中文件</td>
+          <td><code>explorer /select,"path"</code></td>
+          <td>同 open_path 边界</td>
+          <td class="pri p2">P2</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>三、开发与构建（T1–T2）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.pnpm_install</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>安装依赖</td>
+          <td><code>pnpm install</code></td>
+          <td>仅 workspace；长超时；禁止 <code>--ignore-scripts</code> 除非配置</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.pnpm_run</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>跑 package.json scripts</td>
+          <td><code>pnpm run {{script}}</code></td>
+          <td><code>script</code> 白名单（build/test/lint/quality）</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.run_tests</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>跑 vitest / 指定路径</td>
+          <td><code>pnpm vitest run {{path}}</code></td>
+          <td>path 限 plugins/* 或 test 目录</td>
+          <td class="pri p1">P1</td>
+        </tr>
+        <tr>
+          <td><code>box.quality_check</code></td>
+          <td><span class="tier t1">T1</span></td>
+          <td>跑仓库 quality 门禁</td>
+          <td><code>pnpm quality</code></td>
+          <td>固定命令，无自由参数</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.open_in_cursor</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>用 Cursor 打开文件/行</td>
+          <td><code>cursor -g file:line</code> 或 URI</td>
+          <td>路径限 workspace；<code>humanOnly</code> 默认</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.open_url</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>系统浏览器打开链接</td>
+          <td>已有 kind <code>open_url</code></td>
+          <td>URL scheme 白名单（http/https）</td>
+          <td class="pri p2">P2</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>四、进程、网络与系统信息（T0–T3）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.env_print</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>查看环境变量（脱敏）</td>
+          <td>Node <code>process.env</code> 过滤</td>
+          <td>屏蔽 <code>*KEY*</code> <code>*TOKEN*</code> <code>*SECRET*</code></td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.which</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>解析可执行文件路径</td>
+          <td><code>where.exe</code> / <code>Get-Command</code></td>
+          <td>只读；无执行</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.port_list</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>查看监听端口</td>
+          <td><code>netstat -ano</code> 或 <code>Get-NetTCPConnection</code></td>
+          <td>输出截断；不杀进程</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.process_list</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>按名查进程</td>
+          <td><code>Get-Process -Name</code></td>
+          <td>仅列信息</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.kill_process</code></td>
+          <td><span class="tier t3">T3</span></td>
+          <td>结束卡死进程</td>
+          <td><code>taskkill /PID</code></td>
+          <td>仅允许白名单进程名；禁止 PID 0/系统进程；confirm</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.curl_get</code></td>
+          <td><span class="tier t3">T3</span></td>
+          <td>HTTP GET 探测</td>
+          <td><code>curl.exe</code> 或 fetch</td>
+          <td>域名白名单；响应大小上限；无 POST 体</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.ping_host</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>网络连通性</td>
+          <td><code>ping -n 4</code></td>
+          <td>主机名白名单或内网段</td>
+          <td class="pri p3">P3</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>五、Windows 桌面交互（T2，偏「为所欲为」但可控）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.clipboard_read</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>读剪贴板文本</td>
+          <td>PowerShell <code>Get-Clipboard</code></td>
+          <td>仅文本；长度上限；默认 <code>humanOnly</code></td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.clipboard_write</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>写入剪贴板</td>
+          <td><code>Set-Clipboard</code></td>
+          <td>长度上限；审计日志</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.notify</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>桌面通知</td>
+          <td>BurntToast / WinRT 或 tray</td>
+          <td>标题+正文长度；无 HTML</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.screenshot</code></td>
+          <td><span class="tier t3">T3</span></td>
+          <td>截屏（全屏/窗口）</td>
+          <td>.NET / PowerShell</td>
+          <td>默认关闭；隐私敏感；存 workspace 临时目录</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.run_app</code></td>
+          <td><span class="tier t2">T2</span></td>
+          <td>启动白名单程序</td>
+          <td><code>Start-Process</code></td>
+          <td>exe 白名单：notepad、calc、explorer、cursor</td>
+          <td class="pri p2">P2</td>
+        </tr>
+        <tr>
+          <td><code>box.send_keys</code></td>
+          <td><span class="tier t4">T4</span></td>
+          <td>模拟按键（自动化）</td>
+          <td>AutoHotkey / UIAutomation</td>
+          <td><b>默认禁用</b>；仅 workflow 人工触发</td>
+          <td class="pri p3">不建议</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>六、包管理与服务（T3–T4，默认关）</h2>
+    <table>
+      <thead>
+        <tr><th>工具名</th><th>等级</th><th>作用</th><th>Windows 实现要点</th><th>必加限制</th><th>优先级</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>box.winget_search</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>搜索可安装包</td>
+          <td><code>winget search</code></td>
+          <td>只读</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.winget_install</code></td>
+          <td><span class="tier t3">T3</span></td>
+          <td>安装软件</td>
+          <td><code>winget install --id</code></td>
+          <td>包 ID 白名单；confirm；非静默需人工</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.service_status</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>查询 Windows 服务状态</td>
+          <td><code>Get-Service</code></td>
+          <td>服务名白名单</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.registry_read</code></td>
+          <td><span class="tier t0">T0</span></td>
+          <td>读注册表键值</td>
+          <td><code>Get-ItemProperty</code></td>
+          <td>路径白名单（HKCU\\Software\\…）</td>
+          <td class="pri p3">P3</td>
+        </tr>
+        <tr>
+          <td><code>box.registry_write</code></td>
+          <td><span class="tier t4">T4</span></td>
+          <td>写注册表</td>
+          <td><code>Set-ItemProperty</code></td>
+          <td><b>默认禁用</b>；备份 + confirm</td>
+          <td class="pri p3">不建议</td>
+        </tr>
+        <tr>
+          <td><code>box.scheduled_task</code></td>
+          <td><span class="tier t4">T4</span></td>
+          <td>创建计划任务</td>
+          <td><code>schtasks</code></td>
+          <td><b>默认禁用</b>；仅指向 workspace 内脚本</td>
+          <td class="pri p3">不建议</td>
+        </tr>
+        <tr>
+          <td><code>box.run_elevated</code></td>
+          <td><span class="tier t4">T4</span></td>
+          <td>提权执行</td>
+          <td>UAC RunAs</td>
+          <td><b>永不给 Agent</b>；仅人工</td>
+          <td class="pri p3">禁止</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>七、与现有插件分工（避免重复造轮子）</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>能力</th><th>建议</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>读代码 / grep / glob</td><td>优先委托 <code>dev-tools</code> 工具，toolbox 只做「一键按钮」封装</td></tr>
+          <tr><td>网页搜索阅读</td><td>用 <code>web-tools</code>，toolbox 不重复</td></tr>
+          <tr><td>发邮件</td><td>封装 <code>send-email</code> 技能脚本 → <code>box.send_email</code>（T3，confirm）</td></tr>
+          <tr><td>定时任务编排</td><td>长周期用 <code>timer</code> 插件，不用 schtasks 替代</td></tr>
+          <tr><td>记忆 / 人格</td><td>用 <code>memory</code> / <code>persona</code>，不进 toolbox</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>八、推荐实施顺序（3 个里程碑）</h2>
+    <div class="card">
+      <p><b>M1 · 安全底座（先做机制再加工具）</b></p>
+      <ul>
+        <li>config 增加 <code>tier</code>、<code>agentCallable</code>、<code>confirm</code>、<code>allowBranches</code></li>
+        <li>runner 审计事件 <code>toolbox/run</code></li>
+        <li>加固现有 <code>git_push</code>（拆分 commit/push、保护 main）</li>
+      </ul>
+      <p><b>M2 · 日常开发 P1 包（约 10 个 box.*）</b></p>
+      <ul>
+        <li>git_status / git_diff / git_pull</li>
+        <li>pnpm_install / pnpm_run / run_tests</li>
+        <li>list_dir / find_files</li>
+      </ul>
+      <p><b>M3 · Windows 体验 P2（人机协作）</b></p>
+      <ul>
+        <li>notify / clipboard_* / reveal_file / open_url</li>
+        <li>port_list / env_print</li>
+        <li>send_email 封装（若你需要邮件按钮）</li>
+      </ul>
+    </div>
+
+    <p style="color: var(--muted); font-size: 12px; margin-top: 24px;">
+      文档路径：<code>docs/planning/toolbox-windows-expansion.html</code> · 与
+      <code>plugins/toolbox/src/runner.ts</code> 工作区边界策略一致。
+    </p>
+  </div>
+</body>
+</html>

@@ -145,7 +145,7 @@ export function renderCore(profile: PersonaProfile): string {
   if (identity.length) bits.push(`# 我是谁\n${identity.join('\n')}`);
 
   const personality = profile.personality.trim();
-  if (personality) bits.push(`# 人格\n${personality}`);
+  if (personality) bits.push(`# 硅格\n${personality}`);
   if (profile.habits.length) {
     bits.push(`# 习惯\n${profile.habits.map((h) => `- ${h}`).join('\n')}`);
   }

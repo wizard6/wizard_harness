@@ -17,7 +17,8 @@ export const PANEL_CSS = `
     .rp-tab-n { font-size:11px; font-weight:600; color:#8b949e; }
     .rp-tab.on .rp-tab-n { color:#79c0ff; }
     .rp-trail { margin-left:auto; display:inline-flex; align-items:center; }
-    .rp-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex:none; }
+    .rp-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex:none; flex-wrap:wrap; }
+    .rp-tag-filters { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
     .rp-sub { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:${MUTED};
               border-radius:6px; padding:3px 10px; height:24px; box-sizing:border-box;
               font-size:11px; cursor:pointer; font-family:inherit; }
@@ -52,6 +53,9 @@ export const PANEL_CSS = `
                border:1px solid rgba(255,255,255,.12); color:${MUTED}; font-weight:600; letter-spacing:.03em; }
     .rp-tier.core { color:${BLUE}; border-color:rgba(121,192,255,.35); background:rgba(121,192,255,.08); }
     .rp-tier.exp { color:#ffa657; border-color:rgba(255,166,87,.35); background:rgba(255,166,87,.08); }
+    .rp-tag { font-size:10px; padding:1px 7px; border-radius:999px; flex:none;
+              border:1px solid rgba(126,231,135,.28); color:${GREEN}; font-weight:600;
+              background:rgba(126,231,135,.08); letter-spacing:.02em; }
     .rp-ver { color:${GREEN}; font-size:11px; font-family:ui-monospace,Consolas,monospace; }
     .rp-foot { display:flex; gap:6px; margin-top:10px; align-items:center; flex-wrap:wrap; }
     .rp-live { font-size:11px; color:${GREEN}; font-weight:600; }

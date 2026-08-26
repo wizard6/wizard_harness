@@ -17,6 +17,8 @@ export { createRegistrar } from './registrar/registrar.js';
 export type { CreateRegistrarOptions } from './registrar/registrar.js';
 export { discoverPlugins } from './discovery.js';
 export type { DiscoverOptions, DiscoverResult } from './discovery.js';
+export { PLUGIN_TAG_SCRIPT_BOX, PLUGIN_TAG_TOOLKIT } from './plugin-tags.js';
+export type { KnownPluginTag } from './plugin-tags.js';
 export { createHarness } from './harness.js';
 export type { BootResult, CreateHarnessOptions, SystemContext, SystemStatus } from './harness.js';
 export { assembleRuntime, syncRuntime } from './shell.js';

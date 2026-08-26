@@ -1,4 +1,5 @@
 import type { Plugin, PluginContext } from '@wizard-harness/core';
+import { PLUGIN_TAG_TOOLKIT } from '@wizard-harness/core';
 import { WEB_TOOLS_SERVICE } from '@wizard-harness/contracts';
 import type { PromptContextService, ToolsService, WebToolsService } from '@wizard-harness/contracts';
 import { WEB_TOOL_NAMES, createWebHost } from './host.js';
@@ -57,6 +58,7 @@ const webToolsPlugin: Plugin = {
     provides: [WEB_TOOLS_SERVICE],
     config: {},
     tier: 'standard',
+    tags: [PLUGIN_TAG_TOOLKIT],
   },
   inject: { tools: true, logger: false, promptContext: false },
   api,

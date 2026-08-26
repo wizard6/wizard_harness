@@ -119,6 +119,14 @@ export type {
 } from './timer.js';
 export { SKILLS_SERVICE } from './skills.js';
 export type { SkillDetail, SkillInfo, SkillsService, SkillsSnapshot } from './skills.js';
+export { GIT_TOOLS_SERVICE, gitToolName } from './git-tools.js';
+export type {
+  GitProbe,
+  GitRunResult,
+  GitToolsInfo,
+  GitToolsRunOpts,
+  GitToolsService,
+} from './git-tools.js';
 export { WEB_TOOLS_SERVICE } from './web-tools.js';
 export type { WebToolsInfo, WebToolsService } from './web-tools.js';
 export { PERSONA_SERVICE } from './persona.js';

@@ -16,9 +16,9 @@
       "aiIssues": []
     },
     "contracts/src/index.ts": {
-      "hash": "67e863201890925702bf855063bdcc90f0345b9b2a3e32930c1e18513fc5aed1",
+      "hash": "ff045b955da6a86807d42224b1cd4b00d70087bffb7e5c1fe690e990b98fc8d1",
       "issues": [],
-      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "67ee9a66334fb1fa81825d4266aa63d9a06c80865464c997011ddac6bc7f777b",
       "aiIssues": []
     },
@@ -793,9 +793,9 @@
       "aiIssues": []
     },
     "contracts/src/persona.ts": {
-      "hash": "29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240",
+      "hash": "3b7e64e80657aa4994e5038fecb5fb3605a18d385e6cd260c834c30810be3cfa",
       "issues": [],
-      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "29e64118e0045957cb8e26d9bce4de59ef7422d36df6023fad35ace7c214c240",
       "aiIssues": []
     },
@@ -898,23 +898,25 @@
       "aiIssues": []
     },
     "plugins/persona/src/host.ts": {
-      "hash": "8465f8495aca622787ba62169b998222aa8d09dec8608e5e496ef7646c249f49",
-      "issues": [],
-      "checkedAt": "2026-08-25T06:34:17.131Z",
+      "hash": "f2996ba0dbbff19e732339eada11ef82fad5ec3810b4b77774e09ba3dcba7878",
+      "issues": [
+        "顶层声明过多 15 个 > 10，职责过多，考虑拆分"
+      ],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "8465f8495aca622787ba62169b998222aa8d09dec8608e5e496ef7646c249f49",
       "aiIssues": []
     },
     "plugins/persona/src/index.ts": {
-      "hash": "576b181e772da3365a2f478083f01b558ba04b6788b4913fb9a4b660efe79788",
+      "hash": "8c593c55c21f0e1e44a154f030e318fb19ddf3755a56b03efda139da1fde10e5",
       "issues": [],
-      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "576b181e772da3365a2f478083f01b558ba04b6788b4913fb9a4b660efe79788",
       "aiIssues": []
     },
     "plugins/persona/src/page.ts": {
-      "hash": "e3456f78d702d578dc8f381d0d45a03acbc4e612fd980df17b3e42ead20bf5d1",
+      "hash": "6baf6318a557d816dc6f3c49114ca4a9cce1883c0bcf26aa15e14d811254537f",
       "issues": [],
-      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "e3456f78d702d578dc8f381d0d45a03acbc4e612fd980df17b3e42ead20bf5d1",
       "aiIssues": []
     },
@@ -926,9 +928,9 @@
       "aiIssues": []
     },
     "plugins/toolbox/src/config.ts": {
-      "hash": "4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c",
+      "hash": "ef1d742305b05b2253dd5421d747e39424851c9533361291160bcf99895dce71",
       "issues": [],
-      "checkedAt": "2026-08-25T05:17:13.109Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "4505908787c86f812a324c24c67a276e7d9682f5530200416719887992882c7c",
       "aiIssues": []
     },
@@ -1024,9 +1026,9 @@
       "aiIssues": []
     },
     "contracts/src/plugin-context.ts": {
-      "hash": "1c9c8cff721cd82ad06d8a9bf1dd7fdb223764badb3df38503487ab1efbf1045",
+      "hash": "e2934e3142adce10aa9f84fca719367c5152140c0a02564066252e9122c891bd",
       "issues": [],
-      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "28ee2bdb306ef466f243d9d3cf49ca6d38134ed6420b4b2416139a69d18f409f",
       "aiIssues": []
     },
@@ -1066,9 +1068,9 @@
       "aiIssues": []
     },
     "contracts/src/plugin-service-types.ts": {
-      "hash": "6a89a7969f18ca36551e8c8ebf208c7ed957d08b885f807ab15e0797357b4b78",
+      "hash": "d236106eef74323751d39562b796961858e5d5ed01a4788b0d4bbd474393337e",
       "issues": [],
-      "checkedAt": "2026-08-25T09:08:52.727Z",
+      "checkedAt": "2026-08-26T01:23:14.287Z",
       "aiHash": "77c4f82a9e8cc3c03c709019214939f2e39b8bfe2997a9f5d5476e4a11fedc52",
       "aiIssues": []
     },
@@ -1192,18 +1194,125 @@
       "checkedAt": "2026-08-25T09:08:52.727Z",
       "aiHash": "b87cd5f1d4a1221fac7c3810fd8eca3f4dcde6780ce8dc7ed60c85662e6fb853",
       "aiIssues": []
+    },
+    "contracts/src/git-toolbox.ts": {
+      "hash": "31447ca1a681dcec71001b2943d278c03fd44c6a39e3f2942a4f3dc776cbf83c",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "31447ca1a681dcec71001b2943d278c03fd44c6a39e3f2942a4f3dc776cbf83c",
+      "aiIssues": []
+    },
+    "contracts/src/memory.ts": {
+      "hash": "6e921fbb78be1990f3eb54db495b1d726004ba4e117c3640ee16dfbd169229b8",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "6e921fbb78be1990f3eb54db495b1d726004ba4e117c3640ee16dfbd169229b8",
+      "aiIssues": []
+    },
+    "plugins/git-toolbox/src/exec.ts": {
+      "hash": "78b85e08bc2856e714ad9587294eaf432739265425b3e61d606eea2d8c037b52",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "78b85e08bc2856e714ad9587294eaf432739265425b3e61d606eea2d8c037b52",
+      "aiIssues": []
+    },
+    "plugins/git-toolbox/src/host.ts": {
+      "hash": "70a5e2bc45b8cc16f6a995f77e707eea9f47dab4833cab80ade385707e31f0b4",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "70a5e2bc45b8cc16f6a995f77e707eea9f47dab4833cab80ade385707e31f0b4",
+      "aiIssues": []
+    },
+    "plugins/git-toolbox/src/index.ts": {
+      "hash": "de469b7850f9f41dc6a4a5eb82de466f0b9caf0b484a5359cb88a1b3151d2b3f",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "de469b7850f9f41dc6a4a5eb82de466f0b9caf0b484a5359cb88a1b3151d2b3f",
+      "aiIssues": []
+    },
+    "plugins/git-toolbox/src/page.ts": {
+      "hash": "609e667845f3501249158c303d1ff2f1ac0db554b5243e0b1591fb73a6b4cc38",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "609e667845f3501249158c303d1ff2f1ac0db554b5243e0b1591fb73a6b4cc38",
+      "aiIssues": []
+    },
+    "plugins/memory/src/decay.ts": {
+      "hash": "1afa45eeddac1da9fa1f4f4d899dc7debf703cafe965ebe845129aac9056978f",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "1afa45eeddac1da9fa1f4f4d899dc7debf703cafe965ebe845129aac9056978f",
+      "aiIssues": []
+    },
+    "plugins/memory/src/host.ts": {
+      "hash": "a686570b8fa9d45225b10ad9580d87722ce4c1daa3d5e4a6d9e7010a0a76a47d",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "a686570b8fa9d45225b10ad9580d87722ce4c1daa3d5e4a6d9e7010a0a76a47d",
+      "aiIssues": []
+    },
+    "plugins/memory/src/index.ts": {
+      "hash": "cf0dfe058adcc1bc6f88b70592691a6001722cc32df326e05943bf70bfe069c0",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "cf0dfe058adcc1bc6f88b70592691a6001722cc32df326e05943bf70bfe069c0",
+      "aiIssues": []
+    },
+    "plugins/memory/src/page.ts": {
+      "hash": "6658d2ff790de9328f319008aca051a0d45322dcdd79346097b29450932a7781",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "6658d2ff790de9328f319008aca051a0d45322dcdd79346097b29450932a7781",
+      "aiIssues": []
+    },
+    "plugins/memory/src/search.ts": {
+      "hash": "ee4471d9bf689b2a8263888b369f9082427696d7c305cb55a265e30e337c8047",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "ee4471d9bf689b2a8263888b369f9082427696d7c305cb55a265e30e337c8047",
+      "aiIssues": []
+    },
+    "plugins/memory/src/surface.ts": {
+      "hash": "1645dd9fa8ebcb07da1a430dffcea81fe4202d68105e9be3d58625fffc08bbaf",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "1645dd9fa8ebcb07da1a430dffcea81fe4202d68105e9be3d58625fffc08bbaf",
+      "aiIssues": []
+    },
+    "plugins/memory/src/types.ts": {
+      "hash": "08abc5c4d743411518cead7c9d9cc6b41048dd08d3934c5b3761367599554be9",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "08abc5c4d743411518cead7c9d9cc6b41048dd08d3934c5b3761367599554be9",
+      "aiIssues": []
+    },
+    "plugins/memory/src/vault.ts": {
+      "hash": "0634d7e19b82abf6f059b79208b4f10b3fb8667a437c919f1d8506e5cf364e2c",
+      "issues": [
+        "顶层声明过多 12 个 > 10，职责过多，考虑拆分"
+      ],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "0634d7e19b82abf6f059b79208b4f10b3fb8667a437c919f1d8506e5cf364e2c",
+      "aiIssues": []
+    },
+    "plugins/persona/src/guide.ts": {
+      "hash": "281993403a75af05983a2e90eb3c03414bdf7945330459473b3f4b90f210d91d",
+      "issues": [],
+      "checkedAt": "2026-08-26T01:23:14.287Z",
+      "aiHash": "281993403a75af05983a2e90eb3c03414bdf7945330459473b3f4b90f210d91d",
+      "aiIssues": []
     }
   },
   "global": {
     "typecheck": {
       "status": "pass",
       "failed": [],
-      "at": "2026-08-25T09:09:50.197Z"
+      "at": "2026-08-26T01:23:14.287Z"
     },
     "test": {
       "status": "pass",
-      "summary": "Test Files 49 passed | Tests 240 passed",
-      "at": "2026-08-25T09:09:50.197Z"
+      "summary": "Test Files 51 passed | Tests 247 passed",
+      "at": "2026-08-26T01:23:14.287Z"
     }
   },
   "rulesVersion": 7

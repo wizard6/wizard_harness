@@ -70,6 +70,18 @@ export async function discoverPlugins(
         warnings.push(`${ent.name}：不是合法插件（缺 manifest.id 或 register）`);
         continue;
       }
+      const pkgTags = (pkg.wizardHarness as { tags?: unknown } | undefined)?.tags;
+      if (Array.isArray(pkgTags)) {
+        const declared = new Set((plugin.manifest.tags ?? []).map(String));
+        for (const t of pkgTags) {
+          const tag = String(t).trim();
+          if (tag && !declared.has(tag)) {
+            warnings.push(
+              `${ent.name}：package.json wizardHarness.tags 含「${tag}」，但 manifest.tags 未声明`,
+            );
+          }
+        }
+      }
       plugins.push(plugin);
     } catch (err) {
       warnings.push(`${ent.name}：加载失败（${String(err)}）`);

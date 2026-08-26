@@ -17,6 +17,7 @@ export type { DevToolsService } from './dev-tools.js';
 export type { ToolboxService } from './toolbox.js';
 export type { TimerService } from './timer.js';
 export type { SkillsService } from './skills.js';
+export type { GitToolsService } from './git-tools.js';
 export type { WebToolsService } from './web-tools.js';
 export type { PersonaService } from './persona.js';
 export type { MemoryService } from './memory.js';

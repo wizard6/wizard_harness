@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createEventBus, createHarness } from '@wizard-harness/core';
+import { createEventBus, createHarness, PLUGIN_TAG_TOOLKIT } from '@wizard-harness/core';
 import { DEV_TOOLS_SERVICE } from '@wizard-harness/contracts';
 import type { DevToolsService, PromptContextService, SessionService, ToolsService } from '@wizard-harness/contracts';
 import sessionPlugin from '../../session/src/index.js';
@@ -29,6 +29,7 @@ describe('dev-tools 插件', () => {
   it('服务名 + 必选 inject tools + ui.rpc', () => {
     expect(DEV_TOOLS_SERVICE).toBe('devTools');
     expect(devToolsPlugin.manifest.provides).toEqual(['devTools']);
+    expect(devToolsPlugin.manifest.tags).toEqual([PLUGIN_TAG_TOOLKIT]);
     expect(devToolsPlugin.inject).toEqual({ tools: true, logger: false, promptContext: false, session: false });
     expect(devToolsPlugin.ui?.rpc).toEqual({ devTools: ['info'] });
     expect(DEV_TOOLS_HTML).toContain('devTools');

@@ -46,7 +46,7 @@ export const TOOLS_HTML = [
   'function groupOf(n){',
   'if(n.indexOf("web_")==0)return {id:"web",label:"网页"};',
   'if(n.indexOf("sandbox_")==0)return {id:"sandbox",label:"沙箱"};',
-  'if(n.indexOf("persona_")==0)return {id:"persona",label:"人格"};',
+  'if(n.indexOf("persona_")==0)return {id:"persona",label:"硅灵"};',
   'if(n==="echo"||n==="now"||n==="upper")return {id:"builtin",label:"内置"};',
   'if(/^(bash|read_file|write_file|str_replace|grep|glob)$/.test(n))return {id:"dev",label:"本地编程"};',
   'return {id:"other",label:"其它"};}',
