@@ -42,6 +42,17 @@ export { AGENT_SERVICE } from './agent.js';
 export type { AgentHandle, AgentInfo, AgentService, AgentSpawnOpts } from './agent.js';
 export { AGENT_LOOP_SERVICE } from './agent-loop.js';
 export type { AgentLoopResult, AgentLoopRunOpts, AgentLoopService } from './agent-loop.js';
+export { QUERY_LOOP_SERVICE } from './query-loop.js';
+export type {
+  QueryHook,
+  QueryHookAction,
+  QueryHookContext,
+  QueryHookResult,
+  QueryLoopInspect,
+  QueryLoopService,
+  QueryStage,
+  QueryToolIntent,
+} from './query-loop.js';
 export { PROMPT_CONTEXT_SERVICE } from './prompt-context.js';
 export type {
   AssembleContext,
@@ -137,22 +148,26 @@ export type {
 } from './git-tools.js';
 export { WEB_TOOLS_SERVICE } from './web-tools.js';
 export type { WebToolsInfo, WebToolsService } from './web-tools.js';
-export { PERSONA_SERVICE } from './persona.js';
+export { KREA_SERVICE } from './krea.js';
 export type {
-  PersonaAgentRef,
-  PersonaApplyInput,
-  PersonaConfigurePatch,
+  KreaGenerateInput,
+  KreaInfo,
+  KreaJobView,
+  KreaModelInfo,
+  KreaService,
+} from './krea.js';
+export { PERSONA_SERVICE, PERSONA_SOUL_LIMIT } from './persona.js';
+export type {
+  PersonaCreateInput,
   PersonaGuide,
   PersonaGuideField,
-  PersonaMemory,
-  PersonaMeta,
-  PersonaPreview,
   PersonaProfile,
   PersonaReadResult,
-  PersonaRememberInput,
   PersonaSavePatch,
   PersonaService,
   PersonaSnapshot,
+  PersonaSummary,
+  PersonaUpdateInput,
 } from './persona.js';
 export { MEMORY_SERVICE } from './memory.js';
 export type {

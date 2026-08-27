@@ -1,68 +1,43 @@
 /**
  * 服务契约层：persona 服务。
  *
- * 当前助手的人格 / 习惯 / 相关记忆。正文经 prompt-context 的 section/context 出门，
- * 本服务不替代组装器。
+ * 硅灵 = 恒定身份基线（soul.md 式 SystemPrompt），不是记忆系统。
+ * 可保存多份、切换当前份；正文经 prompt-context 的 section 出门，本服务不替代组装器。
  */
 export const PERSONA_SERVICE = 'persona';
 
-export interface PersonaMemory {
-  readonly id: string;
-  readonly text: string;
-  readonly pinned: boolean;
-  readonly at: number;
-}
-
-/** 助手元数据：名字、风格、性格等结构化设定 */
-export interface PersonaMeta {
-  readonly role: string;
-  readonly voiceStyle: string;
-  readonly tone: string;
-  readonly traits: readonly string[];
-  readonly boundaries: string;
-  readonly tagline: string;
-}
+/** 当前份 soul 的字数上限（按 Unicode 码点计） */
+export const PERSONA_SOUL_LIMIT = 3000;
 
 export interface PersonaProfile {
   readonly id: string;
   readonly name: string;
-  readonly personality: string;
-  readonly habits: readonly string[];
-  readonly memories: readonly PersonaMemory[];
-  readonly meta: PersonaMeta;
+  /** 模型可见的身份基线（soul.md）；上限 PERSONA_SOUL_LIMIT */
+  readonly soul: string;
   readonly updatedAt: number;
 }
 
-export interface PersonaPreview {
-  readonly core: string;
-  readonly memory: string;
-}
-
-export interface PersonaAgentRef {
+export interface PersonaSummary {
   readonly id: string;
-  readonly sessionId: string;
+  readonly name: string;
+  readonly chars: number;
+  readonly active: boolean;
+  readonly updatedAt: number;
 }
 
 export interface PersonaSnapshot {
   readonly profile: PersonaProfile;
-  readonly preview: PersonaPreview;
-  readonly agents: readonly PersonaAgentRef[];
+  readonly profiles: readonly PersonaSummary[];
+  readonly preview: string;
+  readonly chars: number;
+  readonly limit: number;
 }
 
-export interface PersonaSavePatch {
-  name?: string;
-  personality?: string;
-  habits?: string[];
-  meta?: Partial<PersonaMeta>;
-}
-
-/** 局部修改人格档案（元数据 + 正文） */
-export interface PersonaConfigurePatch extends PersonaSavePatch {}
-
-/** 一次性写入完整自生成人格 */
-export interface PersonaApplyInput {
+export interface PersonaCreateInput {
   name: string;
-  personality: string;
+  soul?: string;
+  /** soul 缺省时由下列字段拼成 markdown */
+  personality?: string;
   role?: string;
   voiceStyle?: string;
   tone?: string;
@@ -70,8 +45,28 @@ export interface PersonaApplyInput {
   boundaries?: string;
   tagline?: string;
   habits?: string[];
-  /** true 时覆盖习惯；false 时与现有习惯去重合并 */
-  replaceHabits?: boolean;
+  /** 创建后是否切为当前份，默认 true */
+  activate?: boolean;
+}
+
+export interface PersonaUpdateInput {
+  /** 缺省 = 当前份 */
+  id?: string;
+  name?: string;
+  soul?: string;
+  personality?: string;
+  role?: string;
+  voiceStyle?: string;
+  tone?: string;
+  traits?: string[];
+  boundaries?: string;
+  tagline?: string;
+  habits?: string[];
+}
+
+export interface PersonaSavePatch {
+  name?: string;
+  soul?: string;
 }
 
 export interface PersonaGuideField {
@@ -85,6 +80,7 @@ export interface PersonaGuideField {
 export interface PersonaGuide {
   readonly version: number;
   readonly persistHint: string;
+  readonly limit: number;
   readonly workflow: readonly string[];
   readonly fields: readonly PersonaGuideField[];
   readonly template: string;
@@ -97,21 +93,20 @@ export interface PersonaReadResult {
   readonly isDefault: boolean;
 }
 
-export interface PersonaRememberInput {
-  text: string;
-  pinned?: boolean;
-  kind?: 'memory' | 'habit';
-}
-
 export interface PersonaService {
   snapshot(): PersonaSnapshot;
-  read(): PersonaReadResult;
+  list(): readonly PersonaSummary[];
+  read(id?: string): PersonaReadResult;
   guide(): PersonaGuide;
+  /** 新建一份硅灵（可带 soul 或结构化字段） */
+  create(input: PersonaCreateInput): PersonaSnapshot;
+  /** 更新指定或当前份 */
+  update(input: PersonaUpdateInput): PersonaSnapshot;
+  /** 切到指定份，之后 assemble 用这份 soul */
+  activate(id: string): PersonaSnapshot;
+  remove(id: string): PersonaSnapshot;
+  /** 保存当前份（弹窗） */
   save(patch: PersonaSavePatch): PersonaSnapshot;
-  configure(patch: PersonaConfigurePatch): PersonaSnapshot;
-  apply(input: PersonaApplyInput): PersonaSnapshot;
-  addMemory(input: { text: string; pinned?: boolean }): PersonaSnapshot;
-  removeMemory(id: string): PersonaSnapshot;
-  pinMemory(id: string, pinned: boolean): PersonaSnapshot;
-  remember(input: PersonaRememberInput): PersonaSnapshot;
+  /** 当前份 soul，给组装器或替换实现读 */
+  soul(): string;
 }

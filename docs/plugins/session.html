@@ -81,10 +81,10 @@
           <li>追加 <code>turn</code> / <code>message</code> / <code>tool-result</code></li>
           <li>只读 <code>replay</code> / <code>deriveMessages</code> / <code>inspect</code> / <code>peek</code></li>
           <li>改元数据 <code>patch</code>（title / workspace）</li>
-          <li><code>compact</code>（丢掉最老条目）</li>
+          <li><code>compact</code>（丢掉最老条目） / <code>remove</code>（删除会话）</li>
           <li>观测台弹窗：列表 + 改 title/workspace（<code>ui.rpc</code>：inspect / peek / patch / open）</li>
           <li>可选落盘：<code>config.persistDir</code> 或 <code>WH_SESSIONS_DIR</code></li>
-          <li>广播 <code>session/start</code>、<code>session/append</code>、<code>session/patch</code>、<code>session/compact</code></li>
+          <li>广播 <code>session/start</code>、<code>session/append</code>、<code>session/patch</code>、<code>session/compact</code>、<code>session/remove</code></li>
         </ul>
       </div>
       <div class="card">
@@ -115,11 +115,12 @@
         <tr><td class="mono">append(kind, data?)</td><td>追加一条冻结条目，seq+1</td><td>未知 kind / data 非 JSON 对象</td></tr>
         <tr><td class="mono">replay()</td><td>只读返回该会话全部条目（保序）</td><td>—</td></tr>
         <tr><td class="mono">get(id) / list() / current()</td><td>查找 / 列举 / 最近 start 的会话</td><td>无则 undefined</td></tr>
-        <tr><td class="mono">inspect()</td><td>元数据列表（id / title / workspace / 条数）+ persistDir</td><td>—</td></tr>
+        <tr><td class="mono">inspect()</td><td>元数据列表（id / title / workspace / 条数 / updatedAt）+ persistDir</td><td>—</td></tr>
         <tr><td class="mono">peek(id)</td><td>元数据 + 全量 entries（给弹窗）</td><td>未知 id 抛错</td></tr>
         <tr><td class="mono">patch(id, { title?, workspace? })</td><td>改标题或工作区；workspace 空字符串则清掉。返回 SessionInfo</td><td>未知 id 抛错</td></tr>
         <tr><td class="mono">deriveMessages(id)</td><td>投影 kind===message 的条目（给 llm）</td><td>未知 id 返回 []</td></tr>
         <tr><td class="mono">compact(id, { keep? })</td><td>丢掉最老条目，保留 keep（默认 40），写一条 compact turn</td><td>未知 id 抛错</td></tr>
+        <tr><td class="mono">remove(id)</td><td>删除会话及落盘文件</td><td>不存在返回 false</td></tr>
       </tbody>
     </table>
     <h3>条目形状</h3>
@@ -170,6 +171,7 @@
         <tr><td class="mono">session/append</td><td>session id</td><td class="mono">{ entry }</td></tr>
         <tr><td class="mono">session/patch</td><td>session id</td><td class="mono">{ title?, workspace? }</td></tr>
         <tr><td class="mono">session/compact</td><td>session id</td><td class="mono">{ dropped, keep }</td></tr>
+        <tr><td class="mono">session/remove</td><td>session id</td><td class="mono">{}</td></tr>
       </tbody>
     </table>
     <p>actor 为 <code>plugin:session</code>。总线若挂了 jsonl sink，观测壳能看到这些事件；<b>那不是会话存储</b>，不能当 replay 源（条目结构在 payload 里，重启后内存 Map 已空）。</p>

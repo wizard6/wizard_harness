@@ -19,6 +19,7 @@ export interface AppChatSessionSummary {
   id: string;
   title?: string;
   startedAt: number;
+  updatedAt: number;
   entryCount: number;
   preview?: string;
 }
@@ -43,4 +44,5 @@ export interface AppChatService {
   cancel(agentId: string): void;
   listSessions(): Promise<readonly AppChatSessionSummary[]>;
   resumeSession(sessionId: string): Promise<AppChatResumeResult>;
+  deleteSession(sessionId: string): Promise<{ ok: true; id: string }>;
 }

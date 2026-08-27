@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>query-loop 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --orange:#ffa657; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+    .kicker { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+    h1 { font-size: 28px; margin: 6px 0 8px; }
+    .lede { color: var(--muted); margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.08); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+    code { color: var(--green); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">wizard-harness · capability plugin</div>
+      <h1>query-loop — 可扩展 query 循环</h1>
+      <p class="lede">现行 Agent 循环。公开架构：assemble → model → tools → 再 assemble，直到没有 tool_use（end_turn）。兼容 <code>agentLoop.run / cancel</code>。</p>
+      <div class="badges">
+        <span class="badge ok">id: query-loop</span>
+        <span class="badge ok">provides: agentLoop · queryLoop</span>
+        <span class="badge">inject: agent · llm · tools · promptContext</span>
+        <span class="badge">bundle: base</span>
+      </div>
+    </header>
+
+    <h2>1. 基本逻辑</h2>
+    <div class="card">
+      <p style="margin:0"><b>一句话：</b>模型决定要不要用工具。要用就执行并把结果写回 session，再问模型；不要用就收工。</p>
+    </div>
+<pre>while turn &lt;= maxSteps:
+  hooks(before-turn)
+  assemble + apply          # 当前 session → 模型看见什么
+  complete(tools?)          # 模型推理
+  hooks(after-model)
+  若没有 tool_use → 退出    # end_turn
+  对每个 tool:
+    hooks(before-tool)
+    tools.call              # 结果进 session
+    hooks(after-tool)
+  hooks(after-turn)
+</pre>
+    <p>Hook 可返回 <code>continue</code> / <code>skip-tools</code> / <code>stop</code>。新能力挂 hook，不要改 while 骨架。</p>
+
+    <h2>2. API</h2>
+    <table>
+      <thead><tr><th>服务</th><th>方法</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">agentLoop</td><td class="mono">run / cancel</td><td>与旧循环同一契约，app-chat 不用改</td></tr>
+        <tr><td class="mono">queryLoop</td><td class="mono">use(hook)</td><td>登记扩展点，返回取消函数</td></tr>
+        <tr><td class="mono">queryLoop</td><td class="mono">inspect()</td><td>paradigm / hooks / maxSteps</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. 给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要把泄露的 Claude Code 源码贴进来。本插件是按公开 query 架构自写的。</li>
+        <li>不要在 llm / tools / agent 里写循环。出口仍是 complete / call。</li>
+        <li>扩展用 <code>queryLoop.use</code>，不要复制一份 while。</li>
+        <li>旧 <a href="./agent-loop.html">agent-loop</a> 源码保留，默认 disabled。</li>
+      </ul>
+    </div>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/query-loop/</span> · 契约 <span class="mono">contracts/src/query-loop.ts</span></p>
+  </div>
+</body>
+</html>

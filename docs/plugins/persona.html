@@ -32,61 +32,66 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="kicker">wizard-harness · capability plugin · v0.2.0</div>
-      <h1>persona — 人格 / 习惯 / 记忆</h1>
-      <p class="lede">当前助手的人设档案。支持 AI 通过工具自生成人格（名字、风格、性格等元数据），正文经 prompt-context 出门。</p>
+      <div class="kicker">wizard-harness · capability plugin · v0.3.0</div>
+      <h1>persona — 硅灵（身份基线）</h1>
+      <p class="lede">soul.md 式 SystemPrompt：恒定人格核心，可保存多份并切换。不管理记忆。正文经 prompt-context 出门，本插件不替代组装器。</p>
       <div class="badges">
         <span class="badge ok">id: persona</span>
         <span class="badge ok">provides: persona</span>
-        <span class="badge">inject: promptContext</span>
+        <span class="badge">inject: promptContext / tools（可选）</span>
         <span class="badge">bundle: base</span>
+        <span class="badge">soul ≤ 3000 字</span>
       </div>
     </header>
 
     <h2>1. 用途与边界</h2>
     <div class="card">
-      <p style="margin:0"><b>一句话：</b>改默认人设只动本插件（或 <code>$WH_HOME/persona.json</code>）。AI 可用 <code>persona_apply</code> 一次性写入自生成人格。</p>
+      <p style="margin:0"><b>一句话：</b>硅灵是 Agent 的身份基线（类似 <code>soul.md</code>），不是记忆系统。跨会话经历用 <a href="./memory.html">memory</a>；本轮对话用 <a href="./session.html">session</a>。</p>
     </div>
     <ul class="tight">
-      <li>管：名称、元数据（角色/风格/语气/性格/边界/自述）、人格正文、习惯、相关记忆</li>
-      <li>不管：跨会话经历桶（见 <a href="./memory.html">memory</a>）、session 历史、loop 步进</li>
+      <li>管：多份 soul（名称 + markdown 正文）、当前份切换、3000 字上限、AI 新建/更新/切换工具</li>
+      <li>不管：记忆、会话历史、loop 步进。不提供记忆系统，也不往上下文塞「相关记忆」</li>
     </ul>
+    <p><code>promptContext</code> 与 <code>tools</code> 均为可选 inject：有则登记 <code>persona:core</code> / <code>persona_*</code>；没有也能单独加载，便于整插件替换。替换方只需仍 <code>provides: persona</code>，并按同样契约实现 <code>soul()</code>。</p>
 
     <h2>2. 怎么进模型</h2>
     <table>
       <thead><tr><th>素材</th><th>出门</th><th>内容</th></tr></thead>
       <tbody>
-        <tr><td class="mono">persona:core</td><td>system section</td><td>「我是谁」元数据 + 人格正文 + 习惯</td></tr>
-        <tr><td class="mono">persona:authoring-hint</td><td>system section</td><td>仍为默认人设时提示调用 persona_guide / persona_apply；定制后为空</td></tr>
-        <tr><td class="mono">persona:memory</td><td>runtime context</td><td>钉住 + 最近 6 条未钉；空则 <code>''</code></td></tr>
+        <tr><td class="mono">persona:core</td><td>system section</td><td>当前份 <code>soul</code>（整段身份基线）</td></tr>
+        <tr><td class="mono">persona:authoring-hint</td><td>system section</td><td>仍为出厂单份默认硅灵时提示 create；定制或多份后为空</td></tr>
       </tbody>
     </table>
-    <p>落盘默认 <code>$WH_HOME/persona.json</code>（含 <code>meta</code> 字段）。旧文件无 meta 时自动补空对象，兼容升级。</p>
+    <p>弹窗左侧切份，右侧编辑 soul，工具栏显示 <code>xxx / 3000</code>（Unicode 码点）。超限拒绝保存。</p>
+    <p>落盘 <code>$WH_HOME/persona.json</code>：<code>{ version: 2, activeId, profiles[] }</code>。旧版单档案（含 memories）启动时迁成一份 soul，记忆字段丢弃。</p>
 
     <h2>3. 服务与工具</h2>
     <table>
       <thead><tr><th>方法 / 工具</th><th>作用</th></tr></thead>
       <tbody>
-        <tr><td class="mono">read / persona_read</td><td>档案 + 预览 + 落盘路径 + 是否默认人设</td></tr>
-        <tr><td class="mono">guide / persona_guide</td><td>自生成字段说明、模板、检查清单</td></tr>
-        <tr><td class="mono">apply / persona_apply</td><td>一次性写入完整人格（推荐首次定制）</td></tr>
-        <tr><td class="mono">configure / persona_configure</td><td>局部修改元数据或正文</td></tr>
-        <tr><td class="mono">save / configure</td><td>弹窗保存（人类编辑）</td></tr>
-        <tr><td class="mono">remember / persona_remember</td><td>记事实或追加习惯</td></tr>
+        <tr><td class="mono">list / persona_list</td><td>全部硅灵：id、名称、字数、是否当前份</td></tr>
+        <tr><td class="mono">read / persona_read</td><td>当前或 <code>args.id</code> 的 soul；不含记忆</td></tr>
+        <tr><td class="mono">guide / persona_guide</td><td>写作模板与 3000 字清单</td></tr>
+        <tr><td class="mono">create / persona_create</td><td>新建。必填 name；soul 或 personality/role/habits 等拼 markdown。默认切为当前份</td></tr>
+        <tr><td class="mono">update / persona_update</td><td>更新当前或指定 id</td></tr>
+        <tr><td class="mono">activate / persona_switch</td><td>切换当前份</td></tr>
+        <tr><td class="mono">save / remove</td><td>弹窗保存当前份 / 删除（至少留一份）</td></tr>
+        <tr><td class="mono">soul()</td><td>当前份正文；组装器读这个，不读其它插件</td></tr>
       </tbody>
     </table>
-    <p><code>persona_apply</code> 必填 <code>name</code>、<code>personality</code>；建议同时提供 <code>role</code>、<code>voice_style</code>、<code>traits</code>。</p>
+    <p>已移除 <code>persona_remember</code> / <code>addMemory</code>。经历类事实请 <code>memory_hold</code>。</p>
 
     <h2>4. 给后续 AI</h2>
     <div class="card ai">
       <ul class="tight">
-        <li>首次定制推荐：<code>persona_read</code> → <code>persona_guide</code> → <code>persona_apply</code>。</li>
-        <li>微调用 <code>persona_configure</code>，不要重复 apply 整份覆盖除非有意重置。</li>
-        <li>跨会话「经历」用 <code>memory_hold</code>，不要把一切都塞进 persona 短记忆。</li>
-        <li>空记忆 / 空 hint 必须返回空字符串，不占 token。</li>
+        <li>新建：<code>persona_list</code> → <code>persona_guide</code> → <code>persona_create</code>（soul ≤ 3000）。</li>
+        <li>更新当前份：<code>persona_update</code>；换人设：<code>persona_switch id=…</code>。</li>
+        <li>不要往 soul 里写会话记忆、待办或项目流水。那些归 memory / session。</li>
+        <li>不要新增 <code>system-prompt</code> 插件。换实现就换本插件，保持服务名 <code>persona</code>。</li>
+        <li>空 authoring-hint 必须返回空字符串。</li>
       </ul>
     </div>
-    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/persona/</span> · 契约 <span class="mono">contracts/src/persona.ts</span></p>
+    <p style="margin-top:28px;color:var(--muted);font-size:12px">源码 <span class="mono">plugins/persona/</span> · 契约 <span class="mono">contracts/src/persona.ts</span> · <span class="mono">PERSONA_SOUL_LIMIT = 3000</span></p>
   </div>
 </body>
 </html>

@@ -13,6 +13,15 @@ const fakeChat: Plugin = {
       return { agentId: 'a1', text: 'hi' };
     },
     cancel() {},
+    async listSessions() {
+      return [];
+    },
+    async resumeSession() {
+      return { agentId: 'a1', sessionId: 's1', messages: [] };
+    },
+    async deleteSession(id: string) {
+      return { ok: true as const, id };
+    },
   } satisfies AppChatService,
   register() {},
 };
@@ -29,13 +38,18 @@ describe('app-ui 插件', () => {
       logger: false,
     });
     expect(appUiPlugin.ui?.rpc).toEqual({
-      appChat: ['send', 'cancel', 'listSessions', 'resumeSession'],
+      appChat: ['send', 'cancel', 'listSessions', 'resumeSession', 'deleteSession'],
       promptContext: ['inspect', 'usage'],
       trajectory: ['latest', 'list', 'snapshot'],
       sandbox: ['info', 'list'],
     });
-    expect(APP_UI_HTML).toContain('历史会话');
+    expect(APP_UI_HTML).toContain('sess-count');
+    expect(APP_UI_HTML).toContain('搜索会话');
     expect(APP_UI_HTML).toContain('pullSessions');
+    expect(APP_UI_HTML).toContain('deleteSession');
+    expect(APP_UI_HTML).toContain('sess-del');
+    expect(APP_UI_HTML).toContain('删除会话');
+    expect(APP_UI_HTML).toContain('renderSessList');
     expect(APP_UI_HTML).toContain('watchDeltas');
     expect(APP_UI_HTML).toContain('humanError');
     expect(APP_UI_HTML).toContain('doCancel');

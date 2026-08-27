@@ -23,16 +23,17 @@ function fakePromptContext(): Plugin {
     variable: () => () => {},
     tools: () => () => {},
     bind: () => ({
-      section: () => () => {},
-      context: () => () => {},
-      variable: () => () => {},
-      tools: () => () => {},
+      section: (s) => api.section(s),
+      context: (e) => api.context(e),
+      variable: (n, p) => api.variable(n, p),
+      tools: (p) => api.tools(p),
     }),
     assemble: () => ({ sections: [], contexts: [], tools: [], variables: {}, systemText: '', contextText: '' }),
     apply: () => {},
     setPersona: () => {},
     getPersona: () => undefined,
     inspect: () => ({ sources: [] }),
+    usage: () => ({ limitTokens: 0, totalTokens: 0, categories: [], at: 0 }),
   };
   return {
     manifest: { id: 'prompt-context', version: '0.1.0', provides: ['promptContext'] },
@@ -59,16 +60,13 @@ describe('app-chat 插件', () => {
     const harness = createHarness({ bus: createEventBus() });
     await harness.registry.register(sessionPlugin);
     await harness.registry.register(agentPlugin);
-    await harness.registry.register({
-      ...fakePromptContext(),
-      api: {
-        ...fakePromptContext().api!,
-        section(s) {
-          sections.push({ name: s.name, text: String(s.text) });
-          return () => {};
-        },
-      },
-    });
+    const pc = fakePromptContext();
+    const api = pc.api as PromptContextService;
+    api.section = (s) => {
+      sections.push({ name: s.name, text: String(s.text) });
+      return () => {};
+    };
+    await harness.registry.register(pc);
     await harness.registry.register(
       fakeLoop(async (opts) => {
         seen.push(opts);
@@ -105,7 +103,7 @@ describe('app-chat 插件', () => {
     sess.append('message', { role: 'assistant', content: '你好呀' });
 
     const listed = await chat.listSessions();
-    expect(listed.some((row) => row.id === sess.id && row.preview?.includes('hi'))).toBe(true);
+    expect(listed.some((row) => row.id === sess.id && row.preview?.includes('hi') && row.updatedAt > 0)).toBe(true);
 
     const resumed = await chat.resumeSession(sess.id);
     expect(resumed.agentId).toBeTruthy();
@@ -114,6 +112,10 @@ describe('app-chat 插件', () => {
 
     const again = await chat.resumeSession(sess.id);
     expect(again.agentId).toBe(resumed.agentId);
+
+    await chat.deleteSession(sess.id);
+    expect((await chat.listSessions()).some((row) => row.id === sess.id)).toBe(false);
+    await expect(chat.deleteSession(sess.id)).rejects.toThrow(/不存在/);
   });
 
   it('无 agentId / sessionId 时把 workspace 转交 loop.run', async () => {

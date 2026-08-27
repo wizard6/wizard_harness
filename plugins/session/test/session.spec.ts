@@ -59,6 +59,11 @@ describe('session 插件', () => {
     expect(snap.currentId).toBe('w2');
     expect(snap.persistDir).toBeUndefined();
     expect(snap.sessions.map((x) => x.id).sort()).toEqual(['w1', 'w2']);
+    expect(snap.sessions.every((x) => x.updatedAt > 0)).toBe(true);
+    expect(svc.remove('w1')).toBe(true);
+    expect(svc.get('w1')).toBeUndefined();
+    expect(svc.remove('w1')).toBe(false);
+    expect(svc.inspect().sessions.map((x) => x.id)).toEqual(['w2']);
   });
 
   it('未知 kind / 重复 id 失败；条目 data 冻结', async () => {
@@ -98,6 +103,11 @@ describe('session 持久化', () => {
       expect(b.get('p')?.replay()).toHaveLength(1);
       expect(b.get('p')?.replay()[0]?.data.content).toBe('hi');
       expect(b.get('p')?.workspace).toBeTruthy();
+      expect(b.remove('p')).toBe(true);
+      expect(b.get('p')).toBeUndefined();
+      const c = createSessionStore(() => {}, { persistDir: dir });
+      expect(c.get('p')).toBeUndefined();
+      expect(c.remove('missing')).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

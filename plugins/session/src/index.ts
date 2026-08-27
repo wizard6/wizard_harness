@@ -26,6 +26,7 @@ const api: SessionService = {
   peek: (id) => live().peek(id),
   deriveMessages: (id) => live().deriveMessages(id),
   compact: (id, opts) => live().compact(id, opts),
+  remove: (id) => live().remove(id),
 };
 
 const sessionPlugin: Plugin = {

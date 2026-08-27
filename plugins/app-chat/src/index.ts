@@ -5,8 +5,10 @@ import {
   attachAgent,
   cfgOf,
   chatRuntime,
+  firstUserPreviewOf,
   lastUserPreviewOf,
   registerPersonaSection,
+  sessionUpdatedAt,
   setAppChatCtx,
 } from './runtime.js';
 
@@ -48,18 +50,35 @@ const api: AppChatService = {
     const rows: AppChatSessionSummary[] = chatRuntime()
       .session
       .list()
-      .map((sess) => ({
-        id: sess.id,
-        title: sess.title,
-        startedAt: sess.startedAt,
-        entryCount: sess.replay().length,
-        preview: lastUserPreviewOf(sess.id),
-      }));
-    rows.sort((a, b) => b.startedAt - a.startedAt);
+      .map((sess) => {
+        const autoTitle = !sess.title || /^agent:/.test(sess.title);
+        const first = firstUserPreviewOf(sess.id);
+        return {
+          id: sess.id,
+          title: autoTitle ? first || sess.title : sess.title,
+          startedAt: sess.startedAt,
+          updatedAt: sessionUpdatedAt(sess.id, sess.startedAt),
+          entryCount: sess.replay().length,
+          preview: lastUserPreviewOf(sess.id),
+        };
+      });
+    rows.sort((a, b) => b.updatedAt - a.updatedAt);
     return rows;
   },
   async resumeSession(sessionId: string) {
     return attachAgent(String(sessionId ?? '').trim());
+  },
+  async deleteSession(sessionId: string) {
+    const id = String(sessionId ?? '').trim();
+    if (!id) throw new Error('sessionId 不能为空');
+    const { agent, session, loop } = chatRuntime();
+    for (const row of agent.list()) {
+      if (row.sessionId !== id) continue;
+      loop.cancel(row.id);
+      await agent.stop(row.id).catch(() => {});
+    }
+    if (!session.remove(id)) throw new Error(`session 不存在：${id}`);
+    return { ok: true as const, id };
   },
 };
 

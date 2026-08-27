@@ -74,6 +74,21 @@ export function lastUserPreviewOf(sessionId: string): string | undefined {
   return undefined;
 }
 
+export function firstUserPreviewOf(sessionId: string): string | undefined {
+  const replay = servicesOf().session.get(sessionId)?.replay() ?? [];
+  for (const entry of replay) {
+    if (entry.kind === 'message' && entry.data.role === 'user') {
+      return previewOf(entry.data.content);
+    }
+  }
+  return undefined;
+}
+
+export function sessionUpdatedAt(sessionId: string, startedAt: number): number {
+  const replay = servicesOf().session.get(sessionId)?.replay() ?? [];
+  return replay[replay.length - 1]?.time ?? startedAt;
+}
+
 export function attachAgent(sessionId: string, title?: string): AppChatResumeResult {
   const { agent, session } = servicesOf();
   const sess = session.get(sessionId);

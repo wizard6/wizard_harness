@@ -5,6 +5,7 @@
       { "id": "sandbox", "name": "sandbox" },
       { "id": "dev-tools", "name": "dev-tools" },
       { "id": "web-tools", "name": "web-tools" },
+      { "id": "krea", "name": "krea" },
       { "id": "workflow", "name": "workflow" },
       { "id": "workflow-nodes", "name": "workflow-nodes" },
       { "id": "toolbox", "name": "toolbox" },

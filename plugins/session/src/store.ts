@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import type {
   Session,
@@ -213,6 +213,22 @@ export function createSessionStore(
       persist(state);
       emit('session/compact', sessionId, { dropped: drop, keep: state.entries.length });
       return drop;
+    },
+    remove(id) {
+      const state = states.get(id);
+      if (!state) return false;
+      states.delete(id);
+      if (currentId === id) currentId = undefined;
+      if (persistDir) {
+        const file = fileOf(persistDir, id);
+        try {
+          if (existsSync(file)) unlinkSync(file);
+        } catch {
+          /* 文件可能已不在 */
+        }
+      }
+      emit('session/remove', id, {});
+      return true;
     },
   };
   return api;

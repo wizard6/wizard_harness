@@ -110,7 +110,7 @@ score = importance
 | Markdown vault | `$WH_HOME/memory/` | 本地真源 |
 | Dashboard | 插件弹窗 | 只做列表 / breath 预览 / 归档，不做完整运维台 |
 | SessionStart hook | `prompt-context` live section `memory:breath` | 开场自动附带浮现摘要 |
-| persona 短记忆 | 仍归 `persona` | memory 管跨会话经历桶，不替代人设 |
+| persona 身份基线 | 仍归 `persona`（soul.md，不存记忆） | memory 管跨会话经历桶，不替代人设 |
 
 ### 已落地（`plugins/memory`）
 

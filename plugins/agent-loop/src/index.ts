@@ -4,6 +4,9 @@ import { createAgentLoop } from './loop.js';
 
 /**
  * agent-loop 插件：Observe → Think → Act；每步 observe 必选 promptContext。
+ *
+ * 【暂停】默认 profile（bundles/base）已 disabled。运行时由 query-loop 提供 agentLoop。
+ * 本目录保留，切回时去掉 agent-loop 的 disabled 并禁用 query-loop。
  * 说明文档：docs/plugins/agent-loop.html
  */
 let impl: AgentLoopService | undefined;

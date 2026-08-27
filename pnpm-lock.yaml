@@ -272,6 +272,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/krea:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/llm:
     dependencies:
       '@wizard-harness/contracts':
@@ -318,6 +327,15 @@ importers:
         version: link:../../core
 
   plugins/prompt-context:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
+  plugins/query-loop:
     dependencies:
       '@wizard-harness/contracts':
         specifier: workspace:^

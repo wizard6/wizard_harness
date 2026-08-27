@@ -2,7 +2,7 @@
  * 服务契约层：memory 服务。
  *
  * 跨会话经历记忆（Ombre-Brain 风格桶模型）。正文经 prompt-context 出门，
- * 不替代 persona（人设）与 session（本轮对话）。
+ * 不替代 persona（身份基线）与 session（本轮对话）。
  */
 export const MEMORY_SERVICE = 'memory';
 

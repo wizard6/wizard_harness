@@ -26,7 +26,7 @@ const appUiPlugin: Plugin = {
     width: 1080,
     height: 720,
     rpc: {
-      appChat: ['send', 'cancel', 'listSessions', 'resumeSession'],
+      appChat: ['send', 'cancel', 'listSessions', 'resumeSession', 'deleteSession'],
       promptContext: ['inspect', 'usage'],
       trajectory: ['latest', 'list', 'snapshot'],
       sandbox: ['info', 'list'],

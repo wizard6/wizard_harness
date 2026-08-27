@@ -1,6 +1,6 @@
 {
-  "name": "@wizard-harness/plugin-persona",
-  "version": "0.3.0",
+  "name": "@wizard-harness/plugin-krea",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -16,7 +16,8 @@
     "@wizard-harness/contracts": "workspace:^"
   },
   "wizardHarness": {
-    "plugin": true
+    "plugin": true,
+    "tags": ["工具套件"]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

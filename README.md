@@ -42,7 +42,7 @@ CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:e
 | `GET /services` | 服务绑定列表（provider/access/lifetime/scoped） |
 | `POST /rpc` | 白名单服务调用：`{ service, method, args }`，未白名单一律 403 |
 
-环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_SANDBOX_DIR`（玩具沙箱 root，默认 `$WH_HOME/sandbox`）、`WH_WORKSPACE`（dev-tools 工作区 root，默认进程 cwd）、`WH_BRAVE_API_KEY` / `WH_SEARX_URL`（web-tools 搜索引擎；默认 DuckDuckGo）、`WH_EVENTS`、`PORT`。
+环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_SANDBOX_DIR`（玩具沙箱 root，默认 `$WH_HOME/sandbox`）、`WH_WORKSPACE`（dev-tools 工作区 root，默认进程 cwd）、`WH_BRAVE_API_KEY` / `WH_SEARX_URL`（web-tools 搜索引擎；默认 DuckDuckGo）、`WH_KREA_API_KEY`（krea 绘图；到 [krea.ai/settings/api-tokens](https://www.krea.ai/settings/api-tokens) 创建）、`WH_EVENTS`、`PORT`。
 
 Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm gui:start` 会先跑 `scripts/ensure-electron.cjs`：缺二进制时补装，必要时用缓存 zip 解压。
 
@@ -58,7 +58,7 @@ obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop / trajectory / sandbox / dev-tools / web-tools / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui）
+plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop（默认禁用） / query-loop / trajectory / sandbox / dev-tools / web-tools / krea / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui）
 docs/README.md          文档索引（从这里进）
 docs/guides/            开发指南、架构画布、排错
 docs/reference/         项目体检、hash 查看器
@@ -87,8 +87,8 @@ docs/logs/              运行时事件/日志（路径固定，非文档）
 3. **tools（已落地薄切片）** — 工具注册表（登记 / 调用）；调用写入 session。内置 echo。说明：[docs/plugins/tools.html](docs/plugins/tools.html)
 4. **agent（已落地薄切片）** — live agent：每个实例一个 `createScope`，绑定一条 session。不管模型/工具循环，不管上下文组装。说明：[docs/plugins/agent.html](docs/plugins/agent.html)
 5. **prompt-context（已落地薄切片）** — 组装 sections / contexts / tools / variables；`assemble` + `apply` 写入 session。弹窗可看素材与成品。说明：[docs/plugins/prompt-context.html](docs/plugins/prompt-context.html)
-6. **persona（已落地薄切片）** — 当前助手的人格 / 习惯 / 相关记忆；经 prompt-context 的 `persona:core` / `persona:memory` 出门。弹窗可改。说明：[docs/plugins/persona.html](docs/plugins/persona.html)
-7. **agent-loop（已落地薄切片）** — Observe → Think → Act；必选 prompt-context，每步 assemble+apply。官方 `tool_calls` 优先，文本协议回退。说明：[docs/plugins/agent-loop.html](docs/plugins/agent-loop.html)
+6. **persona（已落地薄切片）** — 硅灵：soul.md 式身份基线（多份可切换，≤3000 字），不管理记忆。经 prompt-context 的 `persona:core` 出门。说明：[docs/plugins/persona.html](docs/plugins/persona.html)
+7. **query-loop（现行）** — assemble → model → tools，直到没有 tool_use；`queryLoop.use` 挂 hook。仍提供 `agentLoop`。旧 OTA `agent-loop` 保留但在 bundles/base 禁用。说明：[docs/plugins/query-loop.html](docs/plugins/query-loop.html)
 8. **trajectory（已落地薄切片）** — 执行轨迹：拼提示词、HTTP、工具进出、complete。不替代 session。说明：[docs/plugins/trajectory.html](docs/plugins/trajectory.html)
 9. **sandbox（已落地薄切片）** — 玩具工作区路径沙箱：读写不出 root；向 tools 登记 `sandbox_ls` / `sandbox_read` / `sandbox_write`。App demo 顶栏显示 root。说明：[docs/plugins/sandbox.html](docs/plugins/sandbox.html)
 10. **dev-tools（已落地薄切片）** — 本地编程工具套件：对着真实工作区登记 `bash` / `read_file` / `write_file` / `str_replace` / `grep` / `glob`。工具注册表弹窗 `list` 可见全部已登记工具。说明：[docs/plugins/dev-tools.html](docs/plugins/dev-tools.html)
@@ -96,6 +96,7 @@ docs/logs/              运行时事件/日志（路径固定，非文档）
 12. **file-manager + code-browser + code-editor（已落地薄切片）** — 工作区文件树（`file-manager` 弹窗浏览 `WH_WORKSPACE_ROOT`，点文件开 `code-browser` 只读窗口；窗口内可切 `code-editor` 编辑）。说明：[docs/plugins/file-manager.html](docs/plugins/file-manager.html)、[docs/plugins/code-browser.html](docs/plugins/code-browser.html)、[docs/plugins/code-editor.html](docs/plugins/code-editor.html)
 13. **workflow + workflow-nodes + app-workflow（已落地薄切片）** — 调度器按图走节点，并提供 `exec` / `listNodes` / 节点 ctx 上的可选 agentLoop（节点当工具、节点选 agent 的原语；封装未做）。`workflow-nodes` 登记 echo / upper；`app-workflow` 是独立 Demo 窗口。说明：[docs/plugins/workflow.html](docs/plugins/workflow.html)
 14. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口，不传默认人设）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send` / `listSessions` / `resumeSession`，左栏历史会话、右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info` 与会话工作区。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
+15. **krea（已落地薄切片）** — Krea 文生图：Agent 调 `krea_generate` / `krea_job` / `krea_models`。Key 用 `WH_KREA_API_KEY`（稍后配置即可）。说明：[docs/plugins/krea.html](docs/plugins/krea.html)
 
 ## 许可
 

@@ -1,14 +1,11 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Plugin, PluginContext } from '@wizard-harness/core';
-import { PERSONA_SERVICE } from '@wizard-harness/contracts';
+import { PERSONA_SERVICE, PERSONA_SOUL_LIMIT } from '@wizard-harness/contracts';
 import type {
-  AgentService,
-  PersonaApplyInput,
-  PersonaConfigurePatch,
-  PersonaRememberInput,
-  PersonaSavePatch,
+  PersonaCreateInput,
   PersonaService,
+  PersonaUpdateInput,
   PromptContextService,
   ToolsService,
 } from '@wizard-harness/contracts';
@@ -17,7 +14,8 @@ import { createPersonaHost } from './host.js';
 import { PERSONA_HTML } from './page.js';
 
 /**
- * persona（硅灵）：当前助手的 AI格 / 习惯 / 记忆。经 prompt-context 出门，不替代组装器。
+ * persona（硅灵）：soul.md 式身份基线。多份可切换；不管理记忆。
+ * 若装有 prompt-context 则登记 persona:core；tools 可选。
  * 说明文档：docs/plugins/persona.html
  */
 let impl: ReturnType<typeof createPersonaHost> | undefined;
@@ -29,15 +27,15 @@ function live(): ReturnType<typeof createPersonaHost> {
 
 const api: PersonaService = {
   snapshot: () => live().snapshot(),
-  read: () => live().read(),
+  list: () => live().list(),
+  read: (id) => live().read(id),
   guide: () => live().guide(),
-  save: (patch: PersonaSavePatch) => live().save(patch),
-  configure: (patch: PersonaConfigurePatch) => live().configure(patch),
-  apply: (input: PersonaApplyInput) => live().apply(input),
-  addMemory: (input) => live().addMemory(input),
-  removeMemory: (id) => live().removeMemory(id),
-  pinMemory: (id, pinned) => live().pinMemory(id, pinned),
-  remember: (input: PersonaRememberInput) => live().remember(input),
+  create: (input) => live().create(input),
+  update: (input) => live().update(input),
+  activate: (id) => live().activate(id),
+  remove: (id) => live().remove(id),
+  save: (patch) => live().save(patch),
+  soul: () => live().soul(),
 };
 
 function persistFileOf(c: PluginContext): string | undefined {
@@ -49,21 +47,16 @@ function persistFileOf(c: PluginContext): string | undefined {
 
 function wirePrompt(ctx: PluginContext, host: ReturnType<typeof createPersonaHost>) {
   const prompts = ctx.promptContext ?? ctx.get<PromptContextService>('promptContext');
-  if (!prompts) throw new Error('persona 需要 prompt-context');
+  if (!prompts) return;
   prompts.section({
     name: 'persona:core',
     order: 2,
-    text: () => host.renderCore(),
+    text: () => host.soul(),
   });
   prompts.section({
     name: 'persona:authoring-hint',
     order: 3,
     text: () => (host.isDefault() ? PERSONA_AUTHORING_HINT : ''),
-  });
-  prompts.context({
-    name: 'persona:memory',
-    order: 8,
-    text: () => host.renderMemory(),
   });
 }
 
@@ -74,129 +67,139 @@ function asTraits(raw: unknown): string[] | undefined {
   return undefined;
 }
 
+function asHabits(raw: unknown): string[] | undefined {
+  if (raw == null) return undefined;
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string') {
+    return raw
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return undefined;
+}
+
+function createInputOf(args: Record<string, unknown>): PersonaCreateInput {
+  return {
+    name: String(args.name ?? ''),
+    soul: args.soul != null ? String(args.soul) : undefined,
+    personality: args.personality != null ? String(args.personality) : undefined,
+    role: args.role != null ? String(args.role) : undefined,
+    voiceStyle:
+      args.voice_style != null
+        ? String(args.voice_style)
+        : args.voiceStyle != null
+          ? String(args.voiceStyle)
+          : undefined,
+    tone: args.tone != null ? String(args.tone) : undefined,
+    traits: asTraits(args.traits),
+    boundaries: args.boundaries != null ? String(args.boundaries) : undefined,
+    tagline: args.tagline != null ? String(args.tagline) : undefined,
+    habits: asHabits(args.habits),
+    activate: args.activate === false || args.activate === 'false' ? false : true,
+  };
+}
+
+function updateInputOf(args: Record<string, unknown>): PersonaUpdateInput {
+  const patch: PersonaUpdateInput = {};
+  if (args.id != null) patch.id = String(args.id);
+  if (args.name != null) patch.name = String(args.name);
+  if (args.soul != null) patch.soul = String(args.soul);
+  if (args.personality != null) patch.personality = String(args.personality);
+  if (args.role != null) patch.role = String(args.role);
+  if (args.voice_style != null) patch.voiceStyle = String(args.voice_style);
+  else if (args.voiceStyle != null) patch.voiceStyle = String(args.voiceStyle);
+  if (args.tone != null) patch.tone = String(args.tone);
+  if (args.traits != null) patch.traits = asTraits(args.traits);
+  if (args.boundaries != null) patch.boundaries = String(args.boundaries);
+  if (args.tagline != null) patch.tagline = String(args.tagline);
+  if (args.habits != null) patch.habits = asHabits(args.habits);
+  return patch;
+}
+
 function wireTools(ctx: PluginContext) {
   const tools = ctx.tools ?? ctx.get<ToolsService>('tools');
   if (!tools) return;
 
   tools.register({
+    name: 'persona_list',
+    description: '列出全部硅灵（id、名称、字数、是否当前份）。切换前先看这个。无参数。',
+    handler: () => live().list(),
+  });
+
+  tools.register({
     name: 'persona_read',
     description:
-      '读取当前硅灵（AI格）档案：profile、组装预览、落盘路径、是否仍为默认人设。无参数。定制硅灵前先调用。',
-    handler: () => live().read(),
+      '读取硅灵身份基线。可选 args.id；缺省为当前份。返回 name、soul、字数、上限 3000。不包含记忆。',
+    handler: (args) => live().read(args.id != null ? String(args.id) : undefined),
   });
 
   tools.register({
     name: 'persona_guide',
-    description:
-      '获取自生成硅灵的字段说明、写作模板与检查清单。无参数。配合 persona_apply 使用。',
+    description: '获取硅灵写作模板与检查清单。无参数。配合 persona_create / persona_update。',
     handler: () => live().guide(),
   });
 
   tools.register({
-    name: 'persona_apply',
+    name: 'persona_create',
     description:
-      '一次性写入自生成硅灵（AI格）并落盘。args.name、args.personality 必填；建议同时提供 role、voice_style、traits。可选 tone、boundaries、tagline、habits、replace_habits。',
-    handler: (args) =>
-      live().apply({
-        name: String(args.name ?? ''),
-        personality: String(args.personality ?? ''),
-        role: args.role != null ? String(args.role) : undefined,
-        voiceStyle: args.voice_style != null ? String(args.voice_style) : args.voiceStyle != null ? String(args.voiceStyle) : undefined,
-        tone: args.tone != null ? String(args.tone) : undefined,
-        traits: asTraits(args.traits),
-        boundaries: args.boundaries != null ? String(args.boundaries) : undefined,
-        tagline: args.tagline != null ? String(args.tagline) : undefined,
-        habits: Array.isArray(args.habits) ? args.habits.map(String) : undefined,
-        replaceHabits: args.replace_habits === true || args.replace_habits === 'true',
-      }).profile,
+      `新建一份硅灵并落盘。args.name 必填；args.soul 为 markdown 身份基线（≤${PERSONA_SOUL_LIMIT} 字）。也可用 personality/role/voice_style/habits 拼 soul。默认切为当前份；args.activate=false 只创建不切换。`,
+    handler: (args) => live().create(createInputOf(args)).profile,
   });
 
   tools.register({
-    name: 'persona_configure',
+    name: 'persona_update',
     description:
-      '局部修改硅灵档案并落盘。可传 name、personality、habits、role、voice_style、tone、traits、boundaries、tagline（均为可选，只改传入字段）。',
+      `更新硅灵。可选 args.id（缺省当前份）；可传 name、soul，或 personality 等字段重拼 soul。soul ≤${PERSONA_SOUL_LIMIT} 字。`,
+    handler: (args) => live().update(updateInputOf(args)).profile,
+  });
+
+  tools.register({
+    name: 'persona_switch',
+    description: '切换当前硅灵。args.id 必填。之后模型上下文使用该份 soul。',
     handler: (args) => {
-      const patch: PersonaConfigurePatch = {};
-      if (args.name != null) patch.name = String(args.name);
-      if (args.personality != null) patch.personality = String(args.personality);
-      if (Array.isArray(args.habits)) patch.habits = args.habits.map(String);
-      const meta: {
-        role?: string;
-        voiceStyle?: string;
-        tone?: string;
-        traits?: string[];
-        boundaries?: string;
-        tagline?: string;
-      } = {};
-      if (args.role != null) meta.role = String(args.role);
-      if (args.voice_style != null) meta.voiceStyle = String(args.voice_style);
-      else if (args.voiceStyle != null) meta.voiceStyle = String(args.voiceStyle);
-      if (args.tone != null) meta.tone = String(args.tone);
-      if (args.traits != null) meta.traits = asTraits(args.traits);
-      if (args.boundaries != null) meta.boundaries = String(args.boundaries);
-      if (args.tagline != null) meta.tagline = String(args.tagline);
-      if (Object.keys(meta).length) patch.meta = meta;
-      return live().configure(patch).profile;
+      const id = String(args.id ?? '').trim();
+      if (!id) throw new Error('persona_switch 需要 args.id');
+      return live().activate(id).profile;
     },
-  });
-
-  tools.register({
-    name: 'persona_remember',
-    description:
-      '把一条事实写入当前硅灵档案。args.text 必填；可选 args.kind=memory|habit（默认 memory）、args.pinned=true 钉住（每轮都会带上）。习惯会进系统段，记忆进相关记忆（未钉只保留最近几条）。',
-    handler: (args) =>
-      live().remember({
-        text: String(args.text ?? ''),
-        pinned: args.pinned === true || args.pinned === 'true',
-        kind: String(args.kind ?? 'memory') === 'habit' ? 'habit' : 'memory',
-      }).profile,
   });
 }
 
 const personaPlugin: Plugin = {
   manifest: {
     id: 'persona',
-    version: '0.2.1',
+    version: '0.3.0',
     name: '硅灵',
     description:
-      '管理助手硅灵（AI格）：元数据、硅格正文、习惯与相关记忆；提供 persona_apply/configure 等自生成工具；经 prompt-context 拼进模型可见上下文。',
+      'soul.md 式身份基线：多份硅灵切换；不管理记忆。AI 可用 persona_create / persona_update / persona_switch。',
     provides: [PERSONA_SERVICE],
     config: { persistFile: '' },
     tier: 'standard',
   },
-  inject: { promptContext: true, logger: false, tools: false, agent: false },
+  inject: { promptContext: false, logger: false, tools: false },
   api,
   ui: {
     title: '硅灵',
-    width: 860,
-    height: 720,
+    width: 920,
+    height: 740,
     rpc: {
-      persona: [
-        'snapshot',
-        'read',
-        'save',
-        'configure',
-        'addMemory',
-        'removeMemory',
-        'pinMemory',
-      ],
+      persona: ['snapshot', 'list', 'read', 'save', 'create', 'update', 'activate', 'remove'],
     },
     content: PERSONA_HTML,
   },
   register(c) {
     const host = createPersonaHost({
       persistFile: persistFileOf(c),
-      agents: () => c.agent ?? c.get<AgentService>('agent'),
       emit: (action, target, payload) => c.emit({ action, target, payload }),
     });
     impl = host;
-    wirePrompt(c, host);
-    c.logger?.info?.('硅灵（persona）插件就绪 v0.2.1');
+    c.logger?.info?.('硅灵（persona）插件就绪 v0.3.0');
     c.effect(() => () => {
       impl = undefined;
     });
   },
   onStart(c) {
+    if (impl) wirePrompt(c, impl);
     wireTools(c);
   },
 };

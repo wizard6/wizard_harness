@@ -1,6 +1,7 @@
 import type { PluginContext } from '@wizard-harness/core';
 import type {
   AgentLoopService,
+  QueryLoopService,
   AgentService,
   AppChatService,
   AppUiService,
@@ -19,6 +20,7 @@ import type {
   SessionService,
   SkillsService,
   GitToolsService,
+  KreaService,
   ToolboxService,
   TimerService,
   ToolsService,
@@ -41,6 +43,7 @@ declare module '@wizard-harness/core' {
     readonly tools?: ToolsService;
     readonly agent?: AgentService;
     readonly agentLoop?: AgentLoopService;
+    readonly queryLoop?: QueryLoopService;
     readonly promptContext?: PromptContextService;
     readonly appUi?: AppUiService;
     readonly appChat?: AppChatService;
@@ -55,6 +58,7 @@ declare module '@wizard-harness/core' {
     readonly timer?: TimerService;
     readonly skills?: SkillsService;
     readonly webTools?: WebToolsService;
+    readonly krea?: KreaService;
     readonly persona?: PersonaService;
     readonly memory?: MemoryService;
     readonly workflow?: WorkflowService;

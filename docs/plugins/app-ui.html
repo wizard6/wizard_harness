@@ -58,7 +58,7 @@
       <p style="margin:0"><b>一句话：</b>产品窗口是插件，不是观测台硬编码页面。壳只负责 <code>openPlugin('app-ui')</code>。</p>
     </div>
     <ul class="tight">
-      <li>管：窗口布局、气泡（助手 Markdown）、左侧历史会话、顶栏 agentId、当前渲染格式列表、本会话工作区路径、New Session、缺 prompt-context 提示、流式 delta、取消、错误文案、右栏本轮轨迹、顶栏沙箱 root、<code>ui.rpc</code> 白名单</li>
+      <li>管：窗口布局、气泡（助手 Markdown）、左侧会话列表（标题 / 相对时间 / 搜索 / 删除）、顶栏 agentId、当前渲染格式列表、本会话工作区路径、New Session、缺 prompt-context 提示、流式 delta、取消、错误文案、右栏本轮轨迹、顶栏沙箱 root、<code>ui.rpc</code> 白名单</li>
       <li>不管：agentLoop、默认提示词、模型、会话落盘、观测台注册表、轨迹写入</li>
     </ul>
 
@@ -70,7 +70,7 @@
         <tr><td class="mono">title</td><td>窗口标题（当前 <code>App demo</code>）</td></tr>
       </tbody>
     </table>
-    <p><code>ui.rpc</code>：<code>{ appChat: ['send', 'cancel', 'listSessions', 'resumeSession'], promptContext: ['inspect'], trajectory: ['latest', 'list', 'snapshot'], sandbox: ['info', 'list'] }</code>。开页 <code>promptContext.inspect</code> 探测组装器；未装入则禁用发送并提示。发送中轮询 <code>llm/delta</code> 事件流式更新气泡，Cancel 调 <code>appChat.cancel</code>。</p>
+    <p><code>ui.rpc</code>：<code>{ appChat: ['send', 'cancel', 'listSessions', 'resumeSession', 'deleteSession'], promptContext: ['inspect', 'usage'], trajectory: ['latest', 'list', 'snapshot'], sandbox: ['info', 'list'] }</code>。开页 <code>promptContext.inspect</code> 探测组装器；未装入则禁用发送并提示。发送中轮询 <code>llm/delta</code> 事件流式更新气泡，Cancel 调 <code>appChat.cancel</code>。</p>
 
     <h2 id="compose">3. Profile 复合</h2>
     <pre>profiles/default → bundles: ["base", "app"]
@@ -87,7 +87,7 @@ bundles/app      → insert sandbox, workflow, workflow-nodes, app-workflow, app
         <li>右栏轨迹只读 <code>trajectory.latest</code>；沙箱顶栏只读 <code>sandbox.info</code>，不要在 app-ui 里写文件</li>
         <li>不要把聊天拆成输入框/气泡两个插件</li>
         <li>缺 prompt-context 时开页即提示并禁用发送（boot 层 fail-closed 仍是主防护）</li>
-        <li>左侧会话列表经 <code>appChat.listSessions</code>；点选 <code>resumeSession</code> 恢复历史</li>
+        <li>左侧会话列表经 <code>appChat.listSessions</code>；点选 <code>resumeSession</code> 恢复历史；删除走 <code>deleteSession</code>（会停掉绑在该 session 的 agent）</li>
         <li>错误经 <code>humanError</code> 映射后在气泡区展示可读文案</li>
       </ul>
     </div>

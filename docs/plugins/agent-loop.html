@@ -44,6 +44,9 @@
         <span class="badge">inject: agent · llm · tools</span>
         <span class="badge">optional: promptContext · trajectory</span>
       </div>
+      <div class="card issue" style="margin-top:14px">
+        <p style="margin:0"><b>当前默认组合已禁用本插件。</b>运行时由 <a href="./query-loop.html">query-loop</a> 提供 <code>agentLoop</code>。源码保留在 <span class="mono">plugins/agent-loop/</span>，切回时去掉 <span class="mono">bundles/base</span> 里的 <code>disabled</code> 并禁用 query-loop。</p>
+      </div>
       <nav>
         <a href="#why">用途</a>
         <a href="#api">服务 API</a>

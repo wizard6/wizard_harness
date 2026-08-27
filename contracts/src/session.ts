@@ -80,4 +80,6 @@ export interface SessionService {
   deriveMessages(sessionId: string): readonly SessionEntry[];
   /** 丢掉最老的条目，保留 keep 条并记一条 compact turn；返回丢掉的条数 */
   compact(sessionId: string, opts?: { keep?: number }): number;
+  /** 删除会话（含落盘文件）；不存在则返回 false */
+  remove(id: string): boolean;
 }
