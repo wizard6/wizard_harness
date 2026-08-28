@@ -3,7 +3,8 @@
     "after": "query-loop",
     "insert": [
       { "id": "workflow", "name": "workflow" },
-      { "id": "web-pipeline", "name": "web-pipeline" }
+      { "id": "web-pipeline", "name": "web-pipeline" },
+      { "id": "workspace", "name": "workspace" }
     ]
   }
 ]

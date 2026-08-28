@@ -231,6 +231,14 @@ export type {
   WebPipelineRunInput,
   WebPipelineService,
 } from './web-pipeline.js';
+export { WORKSPACE_SERVICE } from './workspace.js';
+export type {
+  WorkspacePluginInfo,
+  WorkspaceService,
+  WorkspaceSnapshot,
+  WorkspaceTile,
+  WorkspaceTileKind,
+} from './workspace.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 

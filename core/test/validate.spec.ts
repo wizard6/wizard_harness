@@ -73,6 +73,17 @@ describe('manifest schema 校验', () => {
     ).rejects.toBeInstanceOf(InvalidPluginError);
   });
 
+  it('ui.hud 非布尔抛 InvalidPluginError', async () => {
+    const harness = createHarness({ bus: createEventBus() });
+    await expect(
+      harness.registry.register({
+        manifest: { id: 'bad-hud', version: '1.0.0' },
+        ui: { content: 'x', hud: 'yes' as never },
+        register() {},
+      }),
+    ).rejects.toBeInstanceOf(InvalidPluginError);
+  });
+
   it('name 非字符串抛 InvalidPluginError', async () => {
     const harness = createHarness({ bus: createEventBus() });
     await expect(

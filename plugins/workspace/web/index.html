@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>个人工作台</title>
+  <link rel="stylesheet" href="./app.css" />
+  <script>
+    if (window.wh && typeof window.wh.setHudHit === 'function') {
+      document.documentElement.classList.add('hud');
+    }
+  </script>
+</head>
+<body>
+  <div class="shell" data-hud-hit>
+    <button type="button" class="hud-close" id="hud-close" aria-label="关闭工作台">关闭</button>
+    <aside>
+      <div class="brand">
+        <strong>工作台</strong>
+      </div>
+      <nav aria-label="工作台分区">
+        <button type="button" class="nav on" data-view="home">概览</button>
+        <button type="button" class="nav" data-view="plugins">插件架</button>
+        <button type="button" class="nav" data-view="publish">发布</button>
+      </nav>
+      <p class="aside-note">点瓷砖进入对应区。空位留给后续插件 <code>registerTile</code>。</p>
+    </aside>
+    <main>
+      <header class="top">
+        <div>
+          <p class="kicker" id="kicker">个人工作台</p>
+          <h1 id="heading">概览</h1>
+        </div>
+        <time id="clock"></time>
+      </header>
+
+      <section id="view-home" class="view">
+        <div class="hero">
+          <p id="hello">你好</p>
+          <p class="muted" id="runtime">正在读取运行时…</p>
+        </div>
+        <div class="tiles" id="tiles"></div>
+        <p class="hint">笔记、待办还是空位，接上真实插件后会出现在这里。</p>
+      </section>
+
+      <section id="view-plugins" class="view" hidden>
+        <p class="lede">当前 profile 已加载的能力。新功能做成插件后会出现在这里。</p>
+        <div class="plugin-grid" id="plugin-grid"></div>
+      </section>
+
+      <section id="view-publish" class="view" hidden>
+        <p class="lede">主产物是静态 Web（<code>/site/</code>）。Nitron 只把同一份站点打成 APK。</p>
+        <div class="row">
+          <button type="button" class="act" id="run">部署 Web</button>
+          <button type="button" id="apk" class="ghost">部署并打 APK</button>
+          <a href="/site/" target="_blank" rel="noreferrer">打开已部署站点</a>
+        </div>
+        <pre class="log" id="pub-out">尚未运行</pre>
+      </section>
+
+      <section id="view-soon" class="view" hidden>
+        <div class="empty">
+          <p class="kicker">空位</p>
+          <h2 id="soon-title">尚未接入</h2>
+          <p class="muted" id="soon-blurb">这块还没接插件。以后在业务插件里 <code>registerTile</code> 即可出现在概览。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

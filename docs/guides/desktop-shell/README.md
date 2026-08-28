@@ -19,6 +19,7 @@
 - 插件生命周期与 `ctx.effect`：[../插件开发约定.md](../插件开发约定.md)
 - Cordis 服务模型：[../cordis-服务与事件.md](../cordis-服务与事件.md)
 - 番茄钟插件说明（能力面）：[../../plugins/pomodoro.html](../../plugins/pomodoro.html)
+- 叠加绘图对照：[../../meta-doc/reference-projects/sao-utils/understanding.html](../../meta-doc/reference-projects/sao-utils/understanding.html)（SAO Utils / NERvSDK；不搬 D3D 引擎）
 
 ## 维护约定
 

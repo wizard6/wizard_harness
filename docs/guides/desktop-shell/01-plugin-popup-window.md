@@ -23,6 +23,7 @@ ui: {
   title: '窗口标题',
   width: 380,      // 可选，默认 360
   height: 480,     // 可选，默认 240（壳会 +38 给标题栏）
+  hud: true,       // 可选。透桌面叠加：覆盖工作区、面板外点击穿透。观测台不要开
   content: '<!doctype html>...',  // 完整 HTML 字符串
   rpc: { ... },    // 见 03-plugin-ui-rpc.md
 }
@@ -36,6 +37,7 @@ ui: {
    - 否则 → `preload-safe.cjs`（仅 `wh.call` 等低风险 API）
 3. **窗口映射**：`popupPluginId.set(popup, id)`，供 RPC 校验「调用来自哪个插件弹窗」。
 4. **关闭**：`closed` 时从 `pluginWindows` 删除。
+5. **`ui.hud`**：不注入实心标题栏；窗口铺满当前显示器工作区、透明底、`alwaysOnTop`；面板外 `setIgnoreMouseEvents({ forward: true })` 点穿到桌面。Esc / 面板「关闭」关窗。
 
 ## 插件作者怎么做
 
@@ -54,3 +56,4 @@ ui: {
 - `app-ui` — 聊天产品面
 - `git-tools` — 工具套件弹窗 + `ui.rpc`
 - `pomodoro` — 番茄钟（托盘 + 弹窗）
+- `workspace` — 个人工作台（托盘 Open Workspace）。外观真源是 `plugins/workspace/web/`，`page.ts` 装配成自包含 HTML。`ui.hud: true` 走透桌面叠加，不要再复制一份 HTML。

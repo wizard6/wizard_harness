@@ -17,15 +17,15 @@ pnpm test
 
 | 命令 | 作用 |
 | --- | --- |
-| `pnpm gui:start` | Electron 运行时台（桌面窗口：观测台含注册表/质量检测两个面板 + 插件弹窗交互） |
+| `pnpm gui:start` | Electron 运行时台（启动只挂托盘，不弹窗；观测台 / 插件窗从托盘按需打开） |
 | `pnpm obs:cli` | 纯 Node 事件回放 / 查询 / tail |
 | `pnpm obs:tui` | ink 实时事件面板 |
 | `pnpm obs:api` | HTTP API（运行时壳：加载插件 + 观测端点 + 白名单 RPC），默认 `http://localhost:8787` |
-| `pnpm web-dev` | **无 Electron**：`profiles/web-dev` + 浏览器控制台 + `/site/` 静态站；工作流部署 Web，Nitron 打 APK 为可选 demo |
+| `pnpm web-dev` | **无 Electron**：个人工作台（`/`）+ 发布流水线 + `/site/` 静态站 |
 | `pnpm gen:events` | 向 `docs/logs/events.jsonl` 写入演示事件 |
 | `pnpm typecheck` | 各包 `tsc --noEmit`（obs/plugins 占位包除外） |
 
-CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`（能力）+ `bundles/app`（产品面 app-ui）；**Web 开发路径**叠 `profiles/web-dev` → `base` + `bundles/web-dev`（workflow + web-pipeline），用浏览器不用 Electron。事件同步落盘同一份 jsonl。
+CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`（能力）+ `bundles/app`（产品面 app-ui）；**Web 开发路径**叠 `profiles/web-dev` → `base` + `bundles/web-dev`（workflow + web-pipeline + workspace），用浏览器工作台不用 Electron。事件同步落盘同一份 jsonl。
 
 ### Bundle / Profile
 
@@ -61,7 +61,7 @@ obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop（默认禁用） / query-loop / trajectory / sandbox / dev-tools / web-tools / krea / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui / web-pipeline）
+plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop（默认禁用） / query-loop / trajectory / sandbox / dev-tools / web-tools / krea / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui / web-pipeline / workspace）
 docs/README.md          文档索引（从这里进）
 docs/guides/            开发指南、架构画布、排错
 docs/reference/         项目体检、hash 查看器
@@ -102,7 +102,8 @@ meta-doc/               外部参考项目：理解 + 拆分（html + md，不�
 14. **primitive（已落地薄切片）** — 思考提示词原子仓库：标签分类、只读弹窗。不注入 prompt-context（区别于 skills）。说明：[docs/plugins/primitive.html](docs/plugins/primitive.html)
 15. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口，不传默认人设）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send` / `listSessions` / `resumeSession`，左栏历史会话、右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info` 与会话工作区。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
 16. **krea（已落地薄切片）** — Krea 文生图：Agent 调 `krea_generate` / `krea_job` / `krea_models`。Key 用 `WH_KREA_API_KEY`（稍后配置即可）。说明：[docs/plugins/krea.html](docs/plugins/krea.html)
-17. **web-pipeline（已落地薄切片）** — Web 优先开发流水线：`web.validate` → `web.deploy`（主产物静态站）→ `nitron.package`（默认 dry-run）。`pnpm web-dev` 用 API + 浏览器，不用 Electron。说明：[docs/plugins/web-pipeline.html](docs/plugins/web-pipeline.html) · 架构：[docs/design/web-dev-architecture.md](docs/design/web-dev-architecture.md)
+17. **web-pipeline（已落地薄切片）** — Web 优先开发流水线：`web.validate` → `web.deploy`（主产物静态站）→ `nitron.package`（默认 dry-run）。说明：[docs/plugins/web-pipeline.html](docs/plugins/web-pipeline.html) · 架构：[docs/design/web-dev-architecture.md](docs/design/web-dev-architecture.md)
+18. **workspace（已落地薄切片）** — 个人工作台 Demo：浏览器壳、瓷砖概览、插件架；托盘「Open Workspace」打开弹窗。说明：[docs/plugins/workspace.html](docs/plugins/workspace.html)
 
 ## 许可
 

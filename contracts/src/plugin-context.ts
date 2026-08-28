@@ -30,6 +30,7 @@ import type {
   WorkflowNodesService,
   WorkflowService,
   WebPipelineService,
+  WorkspaceService,
 } from './plugin-service-types.js';
 
 /**
@@ -68,6 +69,7 @@ declare module '@wizard-harness/core' {
     readonly workflowNodes?: WorkflowNodesService;
     readonly appWorkflow?: AppWorkflowService;
     readonly webPipeline?: WebPipelineService;
+    readonly workspace?: WorkspaceService;
   }
 }
 

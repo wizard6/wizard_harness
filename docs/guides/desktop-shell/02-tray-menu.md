@@ -2,7 +2,7 @@
 
 ## 一句话
 
-系统托盘右键弹出 **独立小窗** `tray-menu.html`；点击项通过 `data-act` → IPC → `handleTrayMenuAction(action)`，其中部分 action 会 `openPluginWindow(...)`。
+`pnpm gui:start` **启动不弹任何窗口**，只创建系统托盘。系统托盘右键弹出 **独立小窗** `tray-menu.html`；点击项通过 `data-act` → IPC → `handleTrayMenuAction(action)`，其中部分 action 会 `openPluginWindow(...)`。
 
 ## 文件
 
@@ -19,10 +19,12 @@
 | `agent` | `openPluginWindow('app-ui')` |
 | `workflow` | `openPluginWindow('app-workflow')` |
 | `quality` | 打开质检窗口 |
+| `pomodoro` | `openPluginWindow('pomodoro')` |
+| `workspace` | `openPluginWindow('workspace')`（透桌面 HUD） |
 | `restart` | 重启应用 |
 | `quit` | 退出 |
 
-托盘 **左键单击**（Windows）→ 观测台，与右键菜单无关。
+托盘 **左键单击**（Windows）→ 观测台，与右键菜单无关。启动阶段不调用 `openRegistryWindow`。
 
 ## 新增一项（例如番茄钟）
 
@@ -57,3 +59,5 @@ else if (action === 'pomodoro') openPluginWindow('pomodoro');
 ## 未来方向（未实现）
 
 通用「插件声明 `trayMenu: { label, order }`」由壳合并渲染——**不要**在插件里假设已存在。
+
+叠加绘制（每像素 alpha、z / 命中、Window→View→Canvas）对照 [SAO Utils](../../../meta-doc/reference-projects/sao-utils/understanding.md)，不要在本文件发明 D3D 宿主。

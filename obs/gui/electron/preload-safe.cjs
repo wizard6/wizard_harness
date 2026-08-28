@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('wh', {
   call: (service, method, args) => ipcRenderer.invoke('wh:plugin-call', { service, method, args }),
   openCodeEditor: (target) => ipcRenderer.invoke('wh:open-code-editor', target),
   openCodeBrowser: (rel) => ipcRenderer.invoke('wh:open-code-browser', rel),
+  setHudHit: (hit) => ipcRenderer.send('wh:hud-hit', !!hit),
 });

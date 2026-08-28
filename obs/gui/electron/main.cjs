@@ -147,6 +147,42 @@ function attachGlass(win) {
   win.once('ready-to-show', () => win.show());
 }
 
+/** 透桌面 HUD：覆盖当前显示器工作区，面板外点击穿透 */
+function hudOptions(extra) {
+  return {
+    show: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: false,
+    thickFrame: false,
+    roundedCorners: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    fullscreenable: false,
+    minimizable: false,
+    maximizable: false,
+    focusable: true,
+    ...(appIcon && !appIcon.isEmpty() ? { icon: appIcon } : {}),
+    ...extra,
+  };
+}
+
+function attachHud(win) {
+  win.once('ready-to-show', () => {
+    if (win.isDestroyed()) return;
+    win.setBackgroundColor('#00000000');
+    win.setIgnoreMouseEvents(true, { forward: true });
+    win.show();
+    win.focus();
+  });
+}
+
+function workAreaForCursor() {
+  const point = screen.getCursorScreenPoint();
+  return screen.getDisplayNearestPoint(point).workArea;
+}
+
 const PLUGIN_CHROME_CSS = `
   html, body {
     height: 100% !important; overflow: hidden !important;
@@ -548,26 +584,49 @@ function openPluginWindow(id) {
     return;
   }
   const title = plugin.ui.title || plugin.manifest.id;
+  const hud = plugin.ui.hud === true;
   // 安全：仅 trusted 插件的弹窗注入 execCommand（任意命令执行能力）；其余插件只给低风险的事件历史
   const preload = plugin.manifest.trusted ? 'preload-console.cjs' : 'preload-safe.cjs';
+  const area = hud ? workAreaForCursor() : null;
   const popup = new BrowserWindow(
-    glassOptions({
-      width: plugin.ui.width || 360,
-      height: (plugin.ui.height || 240) + 38,
-      title,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: path.join(__dirname, preload),
-      },
-    }),
+    hud
+      ? hudOptions({
+          x: area.x,
+          y: area.y,
+          width: area.width,
+          height: area.height,
+          title,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, preload),
+          },
+        })
+      : glassOptions({
+          width: plugin.ui.width || 360,
+          height: (plugin.ui.height || 240) + 38,
+          title,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, preload),
+          },
+        }),
   );
-  attachGlass(popup);
-  injectPluginChrome(popup, title);
+  if (hud) attachHud(popup);
+  else {
+    attachGlass(popup);
+    injectPluginChrome(popup, title);
+  }
   const html = plugin.ui.content || '<p>（无内容）</p>';
   popupPluginId.set(popup, id);
   pluginWindows.set(id, popup);
   popup.on('closed', () => pluginWindows.delete(id));
+  popup.webContents.on('did-finish-load', () => {
+    if (hud && !popup.isDestroyed()) {
+      popup.webContents.executeJavaScript(`document.documentElement.classList.add('hud')`).catch(() => {});
+    }
+  });
   popup.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
@@ -905,13 +964,18 @@ ipcMain.on('wh:window-control', (event, action) => {
   else if (action === 'close') win.close();
 });
 
+ipcMain.on('wh:hud-hit', (event, hit) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win || win.isDestroyed()) return;
+  win.setIgnoreMouseEvents(!hit, { forward: true });
+});
+
 app.whenReady().then(async () => {
   nativeTheme.themeSource = 'dark';
   setupMenu();
   await loadElectronIcons();
   await init();
-  // 启动只开注册表窗口；质量检测按需打开（winbar 按钮 / 托盘 / IPC）
-  openRegistryWindow();
+  // 启动不弹任何窗口，只挂托盘；观测台 / 插件窗一律按需（托盘左键或右键菜单）
   setupTray();
 });
 
@@ -1028,6 +1092,7 @@ function handleTrayMenuAction(action) {
   else if (action === 'workflow') openPluginWindow('app-workflow');
   else if (action === 'quality') openQualityWindow();
   else if (action === 'pomodoro') openPluginWindow('pomodoro');
+  else if (action === 'workspace') openPluginWindow('workspace');
   else if (action === 'restart') restartApp();
   else if (action === 'quit') app.quit();
 }

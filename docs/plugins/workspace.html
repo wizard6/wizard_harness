@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>workspace 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>workspace — 个人工作台 Demo</h1>
+      <p class="lede">浏览器页与 Electron 弹窗共用服务。托盘右键 <code>Open Workspace</code> 打开<strong>透桌面 HUD</strong>。后续插件用 <code>registerTile</code> 往概览加块。</p>
+      <p>
+        <span class="badge ok">id: workspace</span>
+        <span class="badge ok">provides: workspace</span>
+        <span class="badge">bundle: app · web-dev</span>
+        <span class="badge ok">托盘 HUD</span>
+      </p>
+    </header>
+    <h2>边界</h2>
+    <div class="card"><b>一句话：</b>工作台是产品壳，不管调度、不管聊天。瓷砖可登记；<code>pnpm web-dev</code> 挂浏览器实心底页，<code>pnpm gui:start</code> 托盘打开透桌面 HUD。</div>
+    <ul class="tight">
+      <li>管：<code>snapshot</code> / <code>tiles</code> / <code>loaded</code> / <code>registerTile</code>、浏览器 Demo、Electron <code>ui</code></li>
+      <li>不管：workflow 调度、Nitron 构建实现</li>
+    </ul>
+    <h2>启动</h2>
+    <pre>pnpm gui:start
+# 托盘右键 → Open Workspace
+
+pnpm web-dev
+# http://localhost:8787/  同一套工作台（浏览器）</pre>
+    <h2>后续加插件</h2>
+    <pre>inject: { workspace: false }
+register(c) {
+  const stop = c.workspace?.registerTile({ id, title, blurb, kind: 'soon' | 'panel', view });
+  if (stop) c.effect(() => stop);
+}</pre>
+    <h2>文件</h2>
+    <table>
+      <tr><td class="mono">contracts/src/workspace.ts</td><td>瓷砖与快照</td></tr>
+      <tr><td class="mono">plugins/workspace/src/host.ts</td><td>种子瓷砖 + registerTile</td></tr>
+      <tr><td class="mono">plugins/workspace/web/</td><td>UI 真源（html / css / js）</td></tr>
+      <tr><td class="mono">plugins/workspace/src/page.ts</td><td>把 web/ 装配成托盘弹窗自包含 HTML</td></tr>
+    </table>
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>改外观只动 <code>plugins/workspace/web/</code>（index.html / app.css / app.js）。不要再写一份 page.ts 内联 HTML。</li>
+        <li>透桌面只走 <code>ui.hud</code> + 壳 <code>openPluginWindow</code>；不要给观测台开 hud。浏览器页保持实心底。</li>
+        <li>新工作台块：业务插件 registerTile，不要把业务写进 workspace/web</li>
+        <li>托盘项硬编码：改 tray-menu.html + main.cjs 的 workspace action，不要假设插件能自注册托盘</li>
+        <li>种子空位（笔记 / 待办）留给真正的插件替换，不要在本插件里做假数据 CRUD</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

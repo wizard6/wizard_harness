@@ -111,6 +111,9 @@ export function validatePlugin(plugin: Plugin): void {
     if (plugin.ui.content !== undefined && typeof plugin.ui.content !== 'string') {
       throw new InvalidPluginError(`ui.content 必须为字符串（${id}）`);
     }
+    if (plugin.ui.hud !== undefined && typeof plugin.ui.hud !== 'boolean') {
+      throw new InvalidPluginError(`ui.hud 必须为布尔值（${id}）`);
+    }
     if (plugin.ui.rpc !== undefined) validateUiRpc(plugin.ui.rpc, id);
   }
   if (typeof plugin.register !== 'function') {

@@ -7,7 +7,8 @@ meta-doc/
 └── reference-projects/     每个参考仓一个英文子目录
     ├── README.md           索引
     ├── ombre-brain/        理解 + 拆分（html + md）
-    └── yao-meta-skill/
+    ├── yao-meta-skill/
+    └── sao-utils/          桌面 HUD 分层绘图（对照 NERvSDK，不搬引擎）
 ```
 
 约定：

@@ -11,6 +11,7 @@ export const DEFAULT_EXPOSE: ExposeMap = {
 export const WEB_DEV_EXPOSE: ExposeMap = {
   workflow: ['run', 'latest', 'get', 'cancel', 'listNodes'],
   webPipeline: ['pipelineGraph', 'kinds', 'inspect', 'paths', 'runPipeline'],
+  workspace: ['snapshot', 'tiles', 'loaded'],
 };
 
 export function parseExpose(raw: string | undefined): ExposeMap {

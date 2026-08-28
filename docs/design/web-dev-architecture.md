@@ -1,6 +1,6 @@
 # Web 优先软件开发架构（基于当前基座）
 
-> 落地代码：`profiles/web-dev`、`bundles/web-dev`、`plugins/web-pipeline`、`examples/nitron-web`。可视化：[web-dev-architecture.html](./web-dev-architecture.html)
+> 落地代码：`profiles/web-dev`、`bundles/web-dev`、`plugins/workspace`、`plugins/web-pipeline`、`examples/nitron-web`。可视化：[web-dev-architecture.html](./web-dev-architecture.html)
 
 ## 结论
 
@@ -20,7 +20,7 @@
 | 组合 | `profiles/web-dev` = `base` + `web-dev` | `bundles/app`（app-ui / 弹窗 Demo） |
 | 调度 | 现有 `workflow`（`schedule.ts` 顺序走图） | 不把业务 if 写进调度器 |
 | 业务节点 | 新插件 `web-pipeline` `registerNode` | 不改 `workflow-nodes` 的 echo/upper |
-| 人机界面 | 静态页 `plugins/web-pipeline/web` | `plugin.ui` 弹窗、托盘 |
+| 人机界面 | 静态页 `plugins/workspace/web`（工作台）；流水线入口在侧栏「发布」 | `plugin.ui` 弹窗、托盘 |
 
 明确不做（已确认边界）：热插拔、按请求路由到插件、沙箱隔离、用户登录。静态文件是**壳级目录挂载**（`WH_STATIC_DIR` / `WH_SITE_DIR`），不是插件 HTTP 路由。
 
@@ -47,4 +47,4 @@ dist/app.apk                 可选 Android demo（同一份 Web）
 pnpm web-dev
 ```
 
-默认 `http://localhost:8787/` 为流水线控制台，`/site/` 为已部署站点。真正打 APK 需要本机 Node + JRE，以及一次 `npx nitron build`（测试默认不执行）。
+默认 `http://localhost:8787/` 为**个人工作台**，侧栏「发布」跑流水线，`/site/` 为已部署站点。真正打 APK 需要本机 Node + JRE，以及一次 `npx nitron build`（测试默认不执行）。

@@ -122,6 +122,7 @@
 - `app-ui`：薄壳聊天窗口，`inject: appChat`（轨迹 / 沙箱可选），`ui.rpc` 放行 `appChat.send|cancel`、`trajectory.latest|list|snapshot`、`sandbox.info|list`。右栏展示本轮时间线，顶栏显示沙箱 root。
 - `persona`：soul.md 式身份基线（多份、≤3000 字）；不管理记忆。`bundles/base` 在 `prompt-context` 之后插入。弹窗可切换/新建；`persona_create` / `persona_update` / `persona_switch` 登记到 tools。
 - `workflow` / `workflow-nodes` / `app-workflow`：调度、两个节点、独立 Demo 窗口。
-- 组合：`bundles/base` 含 `persona`；`bundles/app` insert `sandbox`、`dev-tools`、`web-tools`、`krea`、`workflow`、`workflow-nodes`、`app-workflow` 再 `app-chat` 再 `app-ui`。观测台只 `openPlugin('app-ui')`；托盘另有 Workflow demo。
-- `web-pipeline`：Web 优先流水线（validate → deploy 静态站 → nitron 可选 APK）。`profiles/web-dev` 叠 base + `bundles/web-dev`；`pnpm web-dev` 用浏览器，不用 Electron。
-- 文档：`docs/plugins/app-chat.html`、`docs/plugins/app-ui.html`、`docs/plugins/persona.html`、`docs/plugins/sandbox.html`、`docs/plugins/dev-tools.html`、`docs/plugins/web-tools.html`、`docs/plugins/krea.html`、`docs/plugins/workflow.html`、`docs/plugins/workflow-nodes.html`、`docs/plugins/app-workflow.html`、`docs/plugins/web-pipeline.html`。
+- 组合：`bundles/base` 含 `persona`；`bundles/app` insert `sandbox`、`dev-tools`、`web-tools`、`krea`、`workflow`、`workflow-nodes`、`workspace`、`app-workflow` 再 `app-chat` 再 `app-ui`。观测台只 `openPlugin('app-ui')`；托盘另有 Workflow demo 与 Workspace。
+- `web-pipeline`：Web 优先流水线（validate → deploy 静态站 → nitron 可选 APK）。`profiles/web-dev` 叠 base + `bundles/web-dev`。
+- `workspace`：工作台 Demo（瓷砖 / 插件架 / 发布）。托盘 Open Workspace。`profiles/web-dev` 与 `bundles/app` 均加载。
+- 文档：`docs/plugins/app-chat.html`、`docs/plugins/app-ui.html`、`docs/plugins/persona.html`、`docs/plugins/sandbox.html`、`docs/plugins/dev-tools.html`、`docs/plugins/web-tools.html`、`docs/plugins/krea.html`、`docs/plugins/workflow.html`、`docs/plugins/workflow-nodes.html`、`docs/plugins/app-workflow.html`、`docs/plugins/web-pipeline.html`、`docs/plugins/workspace.html`。

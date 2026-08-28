@@ -198,6 +198,10 @@ export interface PluginUi {
   width?: number;
   height?: number;
   /**
+   * 透桌面 HUD：透明叠加 + 面板外点击穿透。观测台等普通弹窗不要开。
+   */
+  hud?: boolean;
+  /**
    * 弹窗可调的服务方法白名单（通用 UI 桥薄切片）。
    * 未声明的 service.method 一律拒绝。观测台试跑走壳白名单，不走这里。
    */

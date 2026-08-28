@@ -17,6 +17,8 @@ describe('RPC 白名单', () => {
   it('web-dev 白名单含 workflow / webPipeline，不含 tools.call', () => {
     expect(methodAllowed(WEB_DEV_EXPOSE, 'workflow', 'run')).toBe(true);
     expect(methodAllowed(WEB_DEV_EXPOSE, 'webPipeline', 'runPipeline')).toBe(true);
+    expect(methodAllowed(WEB_DEV_EXPOSE, 'workspace', 'snapshot')).toBe(true);
+    expect(methodAllowed(WEB_DEV_EXPOSE, 'workspace', 'loaded')).toBe(true);
     expect(methodAllowed(WEB_DEV_EXPOSE, 'tools', 'call')).toBe(false);
     expect(methodAllowed(WEB_DEV_EXPOSE, 'console', 'exec')).toBe(false);
   });

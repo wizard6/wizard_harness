@@ -28,7 +28,7 @@ docs/
 | 核对仓库现状与测试数 | [reference/项目体检.md](./reference/项目体检.md) |
 | 下一步做什么 | [planning/product-maturity.html](./planning/product-maturity.html) · [planning/todo.md](./planning/todo.md) |
 | 某个插件怎么用 | [plugins/](./plugins/) |
-| Web 开发（无 Electron） | [design/web-dev-architecture.md](./design/web-dev-architecture.md) · [plugins/web-pipeline.html](./plugins/web-pipeline.html) |
+| Web 开发（无 Electron） | [design/web-dev-architecture.md](./design/web-dev-architecture.md) · [plugins/workspace.html](./plugins/workspace.html) |
 | 外部参考项目 | [meta-doc/reference-projects/](../meta-doc/reference-projects/) |
 | 已确认的设计边界 | [confirmed/](./confirmed/) |
 
@@ -52,6 +52,7 @@ docs/
 - **hash-viewer.html** — `pnpm hash:check` 生成的 hash 查看器
 - **[projects.md](./reference/projects.md)** — 旧入口（跳转到 meta-doc）
 - **[ombre-brain.md](./reference/ombre-brain.md)** — 旧入口（跳转到 Ombre-Brain 理解/拆分）
+- **[sao-utils.md](./reference/sao-utils.md)** — 旧入口（跳转到 SAO Utils 理解/拆分；对照桌面 HUD 绘图）
 
 ### `planning/` — 规划
 

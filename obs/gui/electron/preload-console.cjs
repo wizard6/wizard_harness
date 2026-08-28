@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('wh', {
   eventsHistory: () => ipcRenderer.invoke('wh:events-history'),
   eventsClear: () => ipcRenderer.invoke('wh:events-clear'),
   windowControl: (action) => ipcRenderer.send('wh:window-control', action),
+  setHudHit: (hit) => ipcRenderer.send('wh:hud-hit', !!hit),
 });

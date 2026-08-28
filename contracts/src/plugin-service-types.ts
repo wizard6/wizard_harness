@@ -28,3 +28,4 @@ export type { WorkflowService } from './workflow.js';
 export type { WorkflowNodesService } from './workflow-nodes.js';
 export type { AppWorkflowService } from './app-workflow.js';
 export type { WebPipelineService } from './web-pipeline.js';
+export type { WorkspaceService } from './workspace.js';
