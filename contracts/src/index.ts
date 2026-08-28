@@ -130,6 +130,24 @@ export type {
 } from './timer.js';
 export { SKILLS_SERVICE } from './skills.js';
 export type { SkillDetail, SkillInfo, SkillsService, SkillsSnapshot } from './skills.js';
+export { PRIMITIVE_SERVICE, APPROVED_PRIMITIVE_TAGS } from './primitive.js';
+export type {
+  ApprovedPrimitiveTag,
+  PrimitiveInfo,
+  PrimitiveLink,
+  PrimitiveNeighbor,
+  PrimitiveRecord,
+  PrimitiveRoute,
+  PrimitiveRouteLane,
+  PrimitiveRouteOpts,
+  PrimitiveRouteStep,
+  PrimitiveRouteVia,
+  PrimitiveService,
+  PrimitiveSnapshot,
+  PrimitiveTagCount,
+  PrimitiveThinkKind,
+  PrimitiveTreeNode,
+} from './primitive.js';
 export { POMODORO_SERVICE } from './pomodoro.js';
 export type {
   PomodoroConfigurePatch,

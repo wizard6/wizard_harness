@@ -11,6 +11,7 @@
       { "id": "toolbox", "name": "toolbox" },
       { "id": "git-tools", "name": "git-tools" },
       { "id": "skills", "name": "skills" },
+      { "id": "primitive", "name": "primitive" },
       { "id": "timer", "name": "timer" },
       { "id": "pomodoro", "name": "pomodoro" },
       { "id": "app-workflow", "name": "app-workflow" },

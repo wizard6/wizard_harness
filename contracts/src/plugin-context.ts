@@ -19,6 +19,7 @@ import type {
   SandboxService,
   SessionService,
   SkillsService,
+  PrimitiveService,
   GitToolsService,
   KreaService,
   ToolboxService,
@@ -57,6 +58,7 @@ declare module '@wizard-harness/core' {
     readonly gitTools?: GitToolsService;
     readonly timer?: TimerService;
     readonly skills?: SkillsService;
+    readonly primitive?: PrimitiveService;
     readonly webTools?: WebToolsService;
     readonly krea?: KreaService;
     readonly persona?: PersonaService;

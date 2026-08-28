@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ombre-Brain · 理解</title>
+  <link rel="stylesheet" href="../doc.css" />
+  <script src="../doc.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">meta-doc · ombre-brain</div>
+      <h1>Ombre-Brain · 理解</h1>
+      <p class="lede">源仓 <a href="https://github.com/P0luz/Ombre-Brain">P0luz/Ombre-Brain</a>。本地副本可放 <code>temp/Ombre-Brain</code>（不入库）。</p>
+      <nav class="nav">
+        <a class="on" href="./understanding.html">理解</a>
+        <a href="./breakdown.html">拆分</a>
+        <a href="../index.html">项目列表</a>
+        <a href="./understanding.md">Markdown</a>
+      </nav>
+    </header>
+
+    <h2>1. 它是什么</h2>
+    <p>给 <b>模型自己</b> 用的长期情绪记忆系统：Markdown 桶 + Russell 效价/唤醒度坐标 + 改进艾宾浩斯衰减 + 混合检索（关键词 / BM25 / 向量）+ 器官化工具（<code>breath</code> / <code>hold</code> / <code>grow</code> / <code>trace</code> …）。</p>
+    <div class="card ai">
+      <p style="margin:0"><b>一句话：</b>不是键值库，是让模型「过日子」的连续记忆。</p>
+    </div>
+
+    <h2>2. 架构快照</h2>
+    <pre>MCP / REST / Dashboard
+        ↓
+  tools（breath · hold · grow · trace · dream · …）
+        ↓
+  bucket_manager + decay_engine + search + embedding(outbox)
+        ↓
+  Markdown vault（真源） + embeddings.db（可重建）</pre>
+    <table>
+      <thead><tr><th>目录</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr><td><code>src/tools/</code></td><td>器官工具实现</td></tr>
+        <tr><td><code>src/decay_engine.py</code></td><td>遗忘分数与归档周期</td></tr>
+        <tr><td><code>src/ombrebrain/retrieval/</code></td><td>混合打分</td></tr>
+        <tr><td><code>frontend/</code></td><td>人类 Dashboard（产品壳）</td></tr>
+        <tr><td><code>kernel/rust/</code></td><td>账本脚手架，尚未接线</td></tr>
+      </tbody>
+    </table>
+    <p><b>真源</b>：<code>buckets_dir</code> 下 Markdown。向量 / BM25 可丢可重建。</p>
+
+    <h2>3. 数据模型</h2>
+    <p>一条记忆 = 一个 <code>.md</code>：YAML frontmatter + 正文。</p>
+    <table>
+      <thead><tr><th>字段</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code> / <code>name</code> / <code>domain</code> / <code>tags</code></td><td>标识与分类</td></tr>
+        <tr><td><code>valence</code> / <code>arousal</code> ∈ [0,1]</td><td>Russell 环形情感坐标（连续，非离散心情标签）</td></tr>
+        <tr><td><code>importance</code> 1–10</td><td>普通评分，<b>不是</b>硬精英配额</td></tr>
+        <tr><td><code>type</code></td><td><code>dynamic</code> / <code>permanent</code> / <code>feel</code> / <code>plan</code> / <code>letter</code> / <code>archived</code> …</td></tr>
+        <tr><td><code>created</code> / <code>last_active</code> / <code>activation_count</code></td><td>时间与触达</td></tr>
+        <tr><td><code>pinned</code></td><td>核心准则，配额约 20，固定高分</td></tr>
+        <tr><td><code>protected</code></td><td>抗衰减但不自发浮现</td></tr>
+        <tr><td><code>anchor</code></td><td>冷坐标系，硬上限 24，不进普通 breath</td></tr>
+        <tr><td><code>resolved</code> / <code>digested</code> / <code>dont_surface</code></td><td>降权 / 隐藏自发浮现 / 主动遗忘</td></tr>
+        <tr><td><code>why_remembered</code></td><td>元描述，<b>不参与</b>衰减打分</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>状态</th><th>自发 breath</th><th>显式搜索</th><th>衰减</th></tr></thead>
+      <tbody>
+        <tr><td>普通未解决</td><td>按分数</td><td>是</td><td>是</td></tr>
+        <tr><td>pinned</td><td>核心块</td><td>是</td><td>否（满分短路）</td></tr>
+        <tr><td>protected / anchor</td><td>否</td><td>是</td><td>否 / 跳过</td></tr>
+        <tr><td>resolved</td><td>降权</td><td>是</td><td>更快淡</td></tr>
+        <tr><td>archived</td><td>否</td><td>可发现 + 邀恢复</td><td>终端</td></tr>
+      </tbody>
+    </table>
+    <p><b>硬规则</b>：遗忘 = 淡入 <code>archive/</code>，不是物理删除；读 ≠ 强化，强化需显式 <code>trace(reinforce=True)</code>。</p>
+
+    <h2>4. 核心算法</h2>
+    <h3>4.1 遗忘曲线（<code>decay_engine</code>）</h3>
+    <pre>score = importance
+      × activation_count^0.3
+      × e^(-λ × days_since)     # λ≈0.05
+      × combined_weight
+      × resolved_factor
+      × urgency_boost</pre>
+    <ul class="tight">
+      <li><code>time_weight = 1 + e^(-hours/36)</code>（约 36h 半衰期）</li>
+      <li><code>emotion_weight = 1 + arousal × 0.8</code></li>
+      <li>≤3 天：<code>combined = time×0.7 + emotion×0.3</code>；之后反转权重</li>
+      <li>unresolved=<code>1</code>；resolved=<code>0.05</code>；resolved∧digested=<code>0.02</code></li>
+      <li>arousal&gt;0.7 且未 resolved → <code>×1.5</code></li>
+      <li>周期：低重要度久未活动可 auto-resolve；<code>score &lt; 0.3</code> → archive</li>
+    </ul>
+    <h3>4.2 breath 浮现（权重池，不是搜索）</h3>
+    <ol>
+      <li>pinned / permanent →「核心准则」</li>
+      <li>过滤 dont_surface / digested / anchor / protected / feel / plan …</li>
+      <li>按 <code>calculate_score</code> 排序；冷启动插入（activation=0 且 importance≥8，最多 2）</li>
+      <li>近 7 天保留约 3 个 recent slots</li>
+      <li>尾部「久未浮现」1–2 条高重要度冷桶</li>
+    </ol>
+    <h3>4.3 混合检索</h3>
+    <p>主题（模糊匹配）+ 情感距离 + 时间 + importance + touch +（可选）语义 + BM25。向量离线时降级关键词，不静默失读。</p>
+
+    <h2>5. 工具节奏（给模型）</h2>
+    <pre>开场 → breath()                 # 0 参数，必做
+谈及 → breath_search(query)
+写入 → hold / grow
+收束 → trace(resolve / pin / …)
+可选 → dream / feel / plan / pulse / anchor</pre>
+    <p>器官化命名（hold/grow/trace），避免 CRUD 动词占领工具位。</p>
+    <p class="foot">成对文档：<a href="./breakdown.html">拆分</a> · Markdown <a href="./understanding.md">understanding.md</a></p>
+  </div>
+</body>
+</html>

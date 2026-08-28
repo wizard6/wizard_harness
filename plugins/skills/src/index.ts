@@ -5,6 +5,10 @@ import type { PromptContextService, SkillsService, ToolsService } from '@wizard-
 import { createSkillsHost, type SkillsHost } from './host.js';
 import { SKILLS_HTML } from './page.js';
 
+/**
+ * skills：发现与按需加载 SKILL.md。借鉴纪律见 meta-doc/reference-projects/yao-meta-skill/
+ */
+
 let impl: SkillsHost | undefined;
 let syncAlways: (() => void) | undefined;
 

@@ -6,7 +6,7 @@
 docs/
 ├── README.md           ← 本页（导航）
 ├── guides/             开发指南、架构图、排错
-├── reference/          体检、工具页（核对现状用）
+├── reference/          体检、工具页（核对现状用；外部参考项目已迁到仓库根 meta-doc/）
 ├── planning/           路线图与待办
 ├── design/             设计评审、底座诊断（历史/决策）
 ├── confirmed/          人类确认意图契约
@@ -28,7 +28,7 @@ docs/
 | 核对仓库现状与测试数 | [reference/项目体检.md](./reference/项目体检.md) |
 | 下一步做什么 | [planning/product-maturity.html](./planning/product-maturity.html) · [planning/todo.md](./planning/todo.md) |
 | 某个插件怎么用 | [plugins/](./plugins/) |
-| 外部参考项目 | [reference/projects.md](./reference/projects.md) |
+| 外部参考项目 | [meta-doc/reference-projects/](../meta-doc/reference-projects/) |
 | 已确认的设计边界 | [confirmed/](./confirmed/) |
 
 ## 目录说明
@@ -45,12 +45,12 @@ docs/
 
 ### `reference/` — 参考
 
-与当前代码对齐的核对清单与辅助工具页。
+与当前代码对齐的核对清单与辅助工具页。外部参考项目的理解/拆分在仓库根 [meta-doc/reference-projects/](../meta-doc/reference-projects/)（html + md 成对）。
 
 - **项目体检.md** — 包数、测试、架构快照、遗留项
 - **hash-viewer.html** — `pnpm hash:check` 生成的 hash 查看器
-- **[projects.md](./reference/projects.md)** — 外部参考项目列表
-- **[ombre-brain.md](./reference/ombre-brain.md)** — Ombre-Brain 记忆系统对照分析（→ `plugins/memory`）
+- **[projects.md](./reference/projects.md)** — 旧入口（跳转到 meta-doc）
+- **[ombre-brain.md](./reference/ombre-brain.md)** — 旧入口（跳转到 Ombre-Brain 理解/拆分）
 
 ### `planning/` — 规划
 
@@ -66,6 +66,7 @@ docs/
 - **设计评审.md** — 注册器 / boot / GUI 等问题清单
 - **插件底座缺口清单.md**
 - **插件底座完善-诊断与方案.md**
+- **[启发式思考框架.md](./design/启发式思考框架.md)** / **[可视化](./design/启发式思考框架.html)** — 积累经验、怎么想；Primitive 仓库已落地，其余未实现
 
 ### `confirmed/` — 确认稿
 
@@ -94,4 +95,5 @@ docs/
 1. 改插件行为 → 同步 `docs/plugins/<id>.html`
 2. 改基座机制 → 更新 `guides/插件开发约定.md` 或 `reference/项目体检.md`
 3. 新文档放对应子目录，**不要**再堆到 `docs/` 根目录
-4. 根 [README.md](../README.md) 只保留简短索引，详情链到本页
+4. 外部参考项目写进 `meta-doc/reference-projects/<english-name>/`（理解 + 拆分，html + md）
+5. 根 [README.md](../README.md) 只保留简短索引，详情链到本页

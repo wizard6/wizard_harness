@@ -18,6 +18,7 @@ export type { DevToolsService } from './dev-tools.js';
 export type { ToolboxService } from './toolbox.js';
 export type { TimerService } from './timer.js';
 export type { SkillsService } from './skills.js';
+export type { PrimitiveService } from './primitive.js';
 export type { GitToolsService } from './git-tools.js';
 export type { WebToolsService } from './web-tools.js';
 export type { KreaService } from './krea.js';

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ombre-Brain · 拆分</title>
+  <link rel="stylesheet" href="../doc.css" />
+  <script src="../doc.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">meta-doc · ombre-brain</div>
+      <h1>Ombre-Brain · 拆分</h1>
+      <p class="lede">源仓 <a href="https://github.com/P0luz/Ombre-Brain">P0luz/Ombre-Brain</a>。指导 <code>plugins/memory</code> 借鉴，不替代 persona / session。</p>
+      <nav class="nav">
+        <a href="./understanding.html">理解</a>
+        <a class="on" href="./breakdown.html">拆分</a>
+        <a href="../index.html">项目列表</a>
+        <a href="./breakdown.md">Markdown</a>
+      </nav>
+    </header>
+
+    <h2>1. 模块切分</h2>
+    <table>
+      <thead><tr><th>源仓模块</th><th>是否借鉴</th><th>落点</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>Markdown vault + frontmatter</td><td>是</td><td><code>$WH_HOME/memory/</code></td><td>真源；向量库不进底座</td></tr>
+        <tr><td>decay_engine 遗忘分</td><td>是（简化）</td><td><code>plugins/memory</code></td><td>读时扫描归档；无 BM25/embedding</td></tr>
+        <tr><td>breath 权重池</td><td>是</td><td><code>memory:breath</code> section</td><td>空则 <code>''</code></td></tr>
+        <tr><td>hold / grow / trace / pulse</td><td>是</td><td><code>tools.register</code></td><td>器官化动词</td></tr>
+        <tr><td>MCP / REST 壳</td><td>否</td><td>—</td><td>已有 tools 总线</td></tr>
+        <tr><td>Dashboard / OAuth / Tunnel</td><td>否</td><td>—</td><td>插件弹窗只做列表</td></tr>
+        <tr><td>kernel/rust 账本</td><td>否</td><td>—</td><td>源仓也未接线</td></tr>
+        <tr><td>feel / plan / letter / I·You·Them</td><td>推迟</td><td>—</td><td>情绪器官扩展</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. 与 wizard-harness 的映射</h2>
+    <table>
+      <thead><tr><th>Ombre</th><th>harness</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>MCP tools</td><td><code>tools.register</code></td><td>走现有 tools 总线</td></tr>
+        <tr><td>Markdown vault</td><td><code>$WH_HOME/memory/</code></td><td>本地真源</td></tr>
+        <tr><td>Dashboard</td><td>插件弹窗</td><td>只做列表 / breath 预览 / 归档</td></tr>
+        <tr><td>SessionStart hook</td><td><code>prompt-context</code> live section <code>memory:breath</code></td><td>开场自动附带浮现摘要</td></tr>
+        <tr><td>人格 / 短记忆</td><td><code>persona</code>（soul.md，不存记忆）</td><td>memory 只管经历桶</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. 已落地（<code>plugins/memory</code>）</h2>
+    <div class="card">
+      <ul class="tight">
+        <li>vault Markdown + frontmatter</li>
+        <li>decay 分数 + 读时归档扫描</li>
+        <li><code>breath</code> / <code>breath_search</code> / <code>hold</code> / <code>grow</code> / <code>trace</code> / <code>pulse</code></li>
+        <li>pinned 稀缺（≤20）、archive≠delete、reinforce 显式</li>
+        <li>prompt-context：<code>memory:breath</code>（order 9）；空则 <code>''</code></li>
+        <li>工具：<code>memory_breath</code>、<code>memory_search</code>、<code>memory_hold</code>、<code>memory_trace</code>、<code>memory_pulse</code></li>
+      </ul>
+    </div>
+
+    <h2>4. 刻意推迟</h2>
+    <p>feel / plan / letter / I / You / Them、LLM dehydrator 自动打标、BM25/embedding、Dashboard/OAuth/Tunnel、关系图自动接线。</p>
+
+    <h2>5. 借鉴时注意</h2>
+    <ol>
+      <li><b>记忆 ≠ 指令</b>：vault 文本是历史，不是系统提示权威（那是 persona soul）。</li>
+      <li><b>稀缺即结构</b>：钉住与坐标系必须有上限。</li>
+      <li><b>元数据不喂进算分</b>：<code>why_remembered</code> 只解释，不优化。</li>
+      <li><b>第一人称工具文案</b>：返回给模型时用「我记得…」，避免「帮用户存了」。</li>
+      <li>改 <code>plugins/memory</code> 行为时，同步本文「已落地」与 <a href="../../../docs/plugins/memory.html">docs/plugins/memory.html</a>。</li>
+    </ol>
+    <p class="foot">成对文档：<a href="./understanding.html">理解</a> · Markdown <a href="./breakdown.md">breakdown.md</a></p>
+  </div>
+</body>
+</html>

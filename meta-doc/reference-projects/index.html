@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reference projects · meta-doc</title>
+  <link rel="stylesheet" href="./doc.css" />
+  <script src="./doc.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">meta-doc · reference-projects</div>
+      <h1>外部参考项目</h1>
+      <p class="lede">对照外部仓时吸收数据模型、算法与产品哲学，不整仓搬迁。每个项目一份「理解」+ 一份「拆分」，html 与 md 成对。</p>
+      <nav class="nav">
+        <a class="on" href="./index.html">项目列表</a>
+        <a href="./README.md">Markdown 索引</a>
+        <a href="../README.md">meta-doc</a>
+      </nav>
+    </header>
+
+    <div class="grid two">
+      <article class="card">
+        <div class="kicker">P0luz / Ombre-Brain</div>
+        <h2>Ombre-Brain</h2>
+        <p>长期情绪记忆：Markdown 桶、遗忘曲线、breath 浮现、器官化工具。</p>
+        <div class="badges">
+          <span class="badge ok">已吸收 → plugins/memory</span>
+        </div>
+        <p>
+          <a href="./ombre-brain/understanding.html">理解</a>
+          · <a href="./ombre-brain/breakdown.html">拆分</a>
+          · <a href="https://github.com/P0luz/Ombre-Brain">源仓</a>
+        </p>
+      </article>
+      <article class="card">
+        <div class="kicker">yaojingang / yao-meta-skill</div>
+        <h2>Yao Meta Skill</h2>
+        <p>可复用 Agent Skill 的工程化：瘦入口、触发面评测、分层资源、治理门禁。</p>
+        <div class="badges">
+          <span class="badge warn">待借鉴 → plugins/skills</span>
+        </div>
+        <p>
+          <a href="./yao-meta-skill/understanding.html">理解</a>
+          · <a href="./yao-meta-skill/breakdown.html">拆分</a>
+          · <a href="https://github.com/yaojingang/yao-meta-skill">源仓</a>
+        </p>
+      </article>
+    </div>
+
+    <h2>对照原则</h2>
+    <ul class="tight">
+      <li><b>哲学优先于产品壳</b>：只搬「怎么写 / 怎么浮现 / 怎么触发 / 怎么评测」；MCP、Dashboard、OAuth、Telemetry Host 等部署壳不进底座。</li>
+      <li><b>边界清晰</b>：<code>session</code> = 本轮说过什么；<code>persona</code> = 身份基线（soul.md）；<code>memory</code> = 跨会话经历；<code>skills</code> = 可发现的 SKILL.md 能力包。</li>
+      <li><b>本地可跑</b>：默认无向量服务、无外部评测 SaaS 也能工作。</li>
+      <li><b>分析与代码同步</b>：改对应插件时，更新该项目拆分文的「已落地 / 刻意推迟」。</li>
+    </ul>
+
+    <h2>本地克隆（可选，勿提交）</h2>
+    <pre>git clone --depth 1 https://github.com/P0luz/Ombre-Brain.git temp/Ombre-Brain
+git clone --depth 1 https://github.com/yaojingang/yao-meta-skill.git temp/yao-meta-skill</pre>
+    <p class="foot">源仓不要整仓搬进本仓库。<code>temp/</code> 已在 <code>.gitignore</code>。</p>
+  </div>
+</body>
+</html>

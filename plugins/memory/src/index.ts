@@ -17,7 +17,7 @@ import { MEMORY_HTML } from './page.js';
 /**
  * memory：跨会话经历记忆（对照 Ombre-Brain）。经 prompt-context 出门，不替代 persona / session。
  * 说明文档：docs/plugins/memory.html
- * 参考分析：docs/reference/ombre-brain.md
+ * 参考分析：meta-doc/reference-projects/ombre-brain/
  */
 let impl: ReturnType<typeof createMemoryHost> | undefined;
 

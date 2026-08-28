@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>primitive 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>primitive — 思考提示词仓库</h1>
+      <p class="lede">更小维度的提示词原子（Primitive），不是 Skill。仓库 + 树/链 + 内部路由预览；不注入 prompt-context。</p>
+      <p>
+        <span class="badge ok">id: primitive</span>
+        <span class="badge ok">provides: primitive</span>
+        <span class="badge">bundle: app</span>
+        <span class="badge">tools: primitive_*</span>
+      </p>
+    </header>
+    <h2>边界</h2>
+    <div class="card"><b>一句话：</b>Skill 是整份说明书、常驻/按需<strong>直接注入</strong>上下文。Primitive 是更小维度的思考提示词；选用哪几条走内部路由或 AI 工具，不准整包注入。</div>
+    <ul class="tight">
+      <li>管：注册表、标签、树、双向链、内部路由 <code>route</code>、只读弹窗（仓库 / 路由两页）、可选工具 <code>primitive_*</code></li>
+      <li>已认可标签（英文、绿色）：<code>behavior</code> / <code>evaluate</code> / <code>guide</code></li>
+      <li>不管：写入仓库、注入 <code>prompt-context</code>、影子轨、问题分类全套、元评价</li>
+    </ul>
+    <p>含义：把「怎么想」拆成比 Skill 更小的提示词原子，供框架以后按问题类编排。目标是<strong>积累思考经验</strong>，不是给 Agent 再喂一份说明书去挽救单次任务。</p>
+    <h2>和 skills 的差</h2>
+    <table>
+      <tr><th></th><th>skills</th><th>primitive</th></tr>
+      <tr><td>粒度</td><td>一份 SKILL.md</td><td>一小段思考约束</td></tr>
+      <tr><td>进模型</td><td>目录 + alwaysApply 直接注入</td><td>本切片不注入</td></tr>
+      <tr><td>结构</td><td>目录文件</td><td>树（分解）+ 有向边双向索引</td></tr>
+    </table>
+    <h2>服务</h2>
+    <p>服务名 <code>PRIMITIVE_SERVICE = 'primitive'</code>。弹窗 <code>ui.rpc</code> 放行下列只读方法。</p>
+    <table>
+      <tr><td class="mono">snapshot</td><td>全部条目摘要 + 标签计数</td></tr>
+      <tr><td class="mono">list</td><td>全部摘要（无正文）</td></tr>
+      <tr><td class="mono">get(id)</td><td>含 <code>body</code> 的一条</td></tr>
+      <tr><td class="mono">tags</td><td>标签及条数（含 thinkKind）</td></tr>
+      <tr><td class="mono">listByTag(tag)</td><td>按标签或 thinkKind 过滤；空字符串=全部</td></tr>
+      <tr><td class="mono">tree</td><td>森林：根节点及 <code>children</code></td></tr>
+      <tr><td class="mono">links</td><td>有向边列表（<code>source / target / kind</code>）</td></tr>
+      <tr><td class="mono">neighbors(id)</td><td>父、子、链上另一端（<code>dir: in|out</code>）</td></tr>
+      <tr><td class="mono">route(opts?)</td><td>内部路由：hint / startId / tag → 有限步骤（guide→evaluate→behavior，默认负荷 5）</td></tr>
+    </table>
+    <h2>内部路由（简单）</h2>
+    <p>入口（线索 / 起点 / 标签 / 否则树根）→ 树分解一层 → 沿双向链（<code>then</code> 优先）→ 按 <code>guide → evaluate → behavior</code> 排序 → 负荷封顶。弹窗「路由」页可试跑并看图。这不是工作流，不管「做什么」。 </p>
+    <h2>AI 怎么调</h2>
+    <p>工具：<code>primitive_route</code> → 只对返回 id 调 <code>primitive_get</code>；关系用 <code>primitive_neighbors</code>；列表用 <code>primitive_list</code>。</p>
+    <p>Skill 说明（触发面，不 alwaysApply）：<span class="mono">.cursor/skills/primitive-warehouse/SKILL.md</span></p>
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>不要在本插件把 Primitive 正文 <code>prompts.section</code> / <code>alwaysApply</code></li>
+        <li>编排用 <code>primitive_route</code>，不要把仓库全读进上下文</li>
+        <li>意图见 <span class="mono">docs/design/启发式思考框架.md</span></li>
+      </ul>
+    </div>
+    <p style="color:var(--muted);font-size:12px">源码 plugins/primitive/ · 种子 catalog.ts · 对照 plugins/skills（注入 prompt-context，本仓库不做）</p>
+  </div>
+</body>
+</html>

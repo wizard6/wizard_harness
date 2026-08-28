@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yao Meta Skill · 理解</title>
+  <link rel="stylesheet" href="../doc.css" />
+  <script src="../doc.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">meta-doc · yao-meta-skill</div>
+      <h1>Yao Meta Skill · 理解</h1>
+      <p class="lede">源仓 <a href="https://github.com/yaojingang/yao-meta-skill">yaojingang/yao-meta-skill</a>（MIT）。本地副本可放 <code>temp/yao-meta-skill</code>（不入库）。</p>
+      <nav class="nav">
+        <a class="on" href="./understanding.html">理解</a>
+        <a href="./breakdown.html">拆分</a>
+        <a href="../index.html">项目列表</a>
+        <a href="./understanding.md">Markdown</a>
+      </nav>
+    </header>
+
+    <h2>1. 它是什么</h2>
+    <p><code>YAO</code> = <b>Yielding AI Outcomes</b>：目标不是再写一堆 prompt，而是产出<b>可复用的 AI 资产</b>和可运营结果。</p>
+    <p><code>yao-meta-skill</code> 本身是一个 <b>meta-skill</b>（教 Agent 如何创建 / 改进 / 评测 / 打包其它 skill）。1.0 把重复工作流变成可安装的 <code>SKILL.md</code> 包；2.0 扩成 Skill OS：一份语义合同（Skill IR）→ 多端编译 → 评测证据 → 发布门禁 → 运营漂移闭环。</p>
+    <div class="card ai">
+      <p style="margin:0"><b>一句话：</b>把「口头流程 / 聊天习惯」变成带触发面、评测和治理的技能包工厂。</p>
+    </div>
+    <p>对照它自己的定位：Anthropic Skill Creator 偏对话式写 skill；OpenAI skill-creator 偏精简写作指南；Yao 偏工程化、评测、跨端与发布证据。</p>
+
+    <h2>2. 架构（Skill OS 2.0）</h2>
+    <pre>输入（workflow / prompt / transcript / docs）
+        ↓
+意图模型（job / outputs / exclusions / standards）
+        ↓
+Skill IR（触发、契约、资源、证据）
+        ↓
+    ┌─── 技能包 SKILL.md / references / scripts / reports
+    └─── 目标编译 OpenAI / Claude / generic / Agent Skills / VS Code
+        ↓
+Eval Lab（trigger / output / benchmark / runtime）
+        ↓
+Review Studio（门禁 / 警告 / waiver）
+        ↓
+发布边界（包校验 / 安装模拟 / claim guard）
+        ↓
+SkillOps（feedback / adoption drift / 下一轮）</pre>
+    <p>读十秒：先把任务说清楚，再把语义合同和平台格式分开，评测变成可审的证据，发布不许超出现有证据，运营信号只驱动下一轮而不是静默改包。</p>
+
+    <h2>3. 包形态（必须理解）</h2>
+    <p>一个可安装 skill 的最小形状：</p>
+    <table>
+      <thead><tr><th>路径</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr><td><code>SKILL.md</code></td><td><b>唯一入口</b>。YAML <code>name</code> + <code>description</code> 是触发面；正文是触发后才加载的说明书，必须瘦。</td></tr>
+        <tr><td><code>agents/interface.yaml</code></td><td>中立元数据（显示名、兼容性），不绑死某一家客户端路径</td></tr>
+        <tr><td><code>references/</code></td><td>长文教义，禁止塞进 <code>SKILL.md</code></td></tr>
+        <tr><td><code>scripts/</code></td><td>可执行逻辑（评测、打包、校验）</td></tr>
+        <tr><td><code>evals/</code></td><td>trigger / packaging 用例（train / dev / holdout）</td></tr>
+        <tr><td><code>reports/</code></td><td>证据与审阅页（HTML/JSON），不是运行时指令</td></tr>
+        <tr><td><code>examples/</code></td><td>示例入口用 <code>SKILL.example.md</code>，避免被递归发现成真 skill</td></tr>
+      </tbody>
+    </table>
+    <p>源仓自己的 <code>SKILL.md</code> 就是这份纪律的样板：Router Rules → Modes（Scaffold / Production / Library / Governed）→ Compact Workflow → Output Contract → 指向 <code>references/</code>。</p>
+
+    <h2>4. 触发面（description）</h2>
+    <p>Agent 是否启用某 skill，几乎只看 frontmatter <code>description</code>（含何时用、何时不用）。正文里的「When to use」帮不上路由。</p>
+    <p>Yao 把 description 当<b>可评测资产</b>：</p>
+    <ul class="tight">
+      <li>正例 / 近邻 / 排除概念</li>
+      <li>train 调、dev 排名、visible holdout 不回退、blind holdout 验收、adversarial holdout 防抢路由</li>
+      <li>改路由必须跑 <code>trigger_eval.py</code>，不能只改散文</li>
+    </ul>
+    <div class="card">
+      <p style="margin:0">Compact workflow 的第一刀：<b>没有「重复使用 + 可复用产出合同」就不要建 skill</b>（one-off / 纯翻译 / 纯总结 = no-skill，不写文件）。</p>
+    </div>
+
+    <h2>5. 四种档位</h2>
+    <table>
+      <thead><tr><th>Mode</th><th>用途</th><th>门禁厚度</th></tr></thead>
+      <tbody>
+        <tr><td>Scaffold</td><td>探索、个人草稿</td><td>最轻</td></tr>
+        <tr><td>Production</td><td>团队复用</td><td>接口 + 基础评测</td></tr>
+        <tr><td>Library</td><td>共享基建</td><td>兼容矩阵、资源边界</td></tr>
+        <tr><td>Governed</td><td>高信任 / 发布关键</td><td>Skill IR、trust report、output scorecard、rollback、不许伪造证据</td></tr>
+      </tbody>
+    </table>
+    <p>原则：<b>门禁按风险加，不按仪式加。</b> 先写瘦入口，结构只有「赚回成本」才加。</p>
+
+    <h2>6. 方法教义（源仓 <code>references/</code>）</h2>
+    <p>当作一等资产，不是散落注释：</p>
+    <ul class="tight">
+      <li>工程方法、意图对话、参考扫描（只扫 3–5 个、默认沉默、只浮上冲突）</li>
+      <li>模式抽取、产出风险、写作纪律、skill 原型、门禁选择</li>
+      <li>非 skill 决策树、回归原因分类、人工审阅模板</li>
+      <li>Skill IR / Output Eval / Review Studio / SkillOps 决策策略</li>
+    </ul>
+    <p>意图对话：非核心缺口自行推断；每轮只问一个核心分叉，最多两轮；中文语气偏陪伴。</p>
+
+    <h2>7. 评测与治理（理解边界即可）</h2>
+    <p>源仓把「看起来像世界级」和「证据已接受」拆开：ledger 未闭合时，claim guard 会挡住公开完成表述。Harness 借鉴时只要记住：</p>
+    <ul class="tight">
+      <li>评测是门禁，不是装饰</li>
+      <li>证据可以缺失，但必须标 <code>missing evidence</code>，禁止编造</li>
+      <li>遥测只收元数据（命令名 / 结果），不收原文和参数</li>
+    </ul>
+
+    <h2>8. 不读它的产品壳</h2>
+    <p>以下是工厂自己的运营系统，<b>不是</b> Agent 运行时必需：Review Studio HTML、World-class ledger、Native Messaging telemetry host、zip 多端 packager、GitHub PR 诊断 CLI。借鉴开发时不要把这层搬进 wizard-harness 底座。</p>
+    <p class="foot">成对文档：<a href="./breakdown.html">拆分</a> · Markdown <a href="./understanding.md">understanding.md</a></p>
+  </div>
+</body>
+</html>

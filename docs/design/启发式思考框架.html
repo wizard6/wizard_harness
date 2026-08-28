@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>启发式思考控制 · 经验固化为刚性执行体</title>
+<style>
+  :root {
+    --bg: #101018; --panel: #1b1b28; --line: #2c2c3e; --text: #e6e6ef; --muted: #a8a8bd;
+    --blue: #79c0ff; --green: #7ee787; --gold: #e3b341; --red: #ff7b72; --violet: #d2a8ff;
+    --live: #7ee787; --shadow: #d2a8ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header.top {
+    padding: 22px 28px 16px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #161622, #101018);
+  }
+  header.top h1 { margin: 0 0 6px; font-size: 1.28rem; font-weight: 650; }
+  header.top .lede { margin: 0; color: var(--muted); font-size: 0.92rem; max-width: 920px; }
+  .thesis {
+    margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .pill {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .pill.on { color: var(--green); border-color: rgba(126,231,135,.35); background: rgba(126,231,135,.07); }
+  .pill.warn { color: var(--gold); border-color: rgba(227,179,65,.35); background: rgba(227,179,65,.08); }
+  nav.tabs {
+    display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 28px 0;
+  }
+  nav.tabs button {
+    background: #26263a; color: var(--text); border: 1px solid #33334a; border-radius: 8px;
+    font-size: 12.5px; padding: 6px 12px; cursor: pointer;
+  }
+  nav.tabs button:hover { background: #2f2f48; }
+  nav.tabs button.active { border-color: #4a6aa0; background: rgba(74,106,160,.22); color: var(--blue); }
+  main { padding: 16px 28px 48px; max-width: 1280px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .row2 { display: grid; grid-template-columns: 1.35fr .65fr; gap: 14px; align-items: start; }
+  @media (max-width: 980px) { .row2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  }
+  .card h2 { margin: 0 0 8px; font-size: 15px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; width: 108px; }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--green); }
+  .graph-wrap { position: relative; min-height: 420px; }
+  svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .gnode {
+    position: absolute; width: 148px; background: #222232; border: 1px solid #33334a;
+    border-radius: 10px; padding: 8px 10px; cursor: pointer; user-select: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  .gnode:hover { border-color: #4a6aa0; }
+  .gnode.sel { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(121,192,255,.28); }
+  .gnode .k { font-size: 10px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  .gnode .n { font-size: 13px; font-weight: 650; margin-top: 2px; }
+  .gnode .ai {
+    margin-top: 6px; font-size: 10px; color: var(--violet);
+    border: 1px solid rgba(210,168,255,.3); background: rgba(210,168,255,.08);
+    display: inline-block; padding: 1px 6px; border-radius: 8px;
+  }
+  .gnode .ai.off { display: none; }
+  .gnode.frozen { border-color: rgba(126,231,135,.4); }
+  .gnode.forbid { border-color: rgba(255,123,114,.45); }
+  .gnode.gate { border-color: rgba(227,179,65,.5); }
+  .inspect .kv { margin: 6px 0; font-size: 13px; }
+  .inspect .kv b { display: block; color: var(--muted); font-weight: 600; font-size: 11px; margin-bottom: 2px; }
+  .rails { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rail h3 { margin: 0 0 8px; font-size: 13px; }
+  .rail.live h3 { color: var(--live); }
+  .rail.shadow h3 { color: var(--shadow); }
+  .step {
+    font-size: 12.5px; padding: 7px 8px; border-left: 3px solid var(--line); margin: 6px 0;
+    background: #161622; border-radius: 0 8px 8px 0;
+  }
+  .rail.live .step { border-left-color: var(--live); }
+  .rail.shadow .step { border-left-color: var(--shadow); }
+  .rail.shadow .step.diff { background: rgba(210,168,255,.08); }
+  .slider-row { display: flex; align-items: center; gap: 12px; margin: 8px 0 14px; }
+  input[type=range] { flex: 1; accent-color: var(--blue); }
+  .level { font-family: ui-monospace, Consolas, monospace; color: var(--gold); min-width: 42px; }
+  .gates { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+  .gate {
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #161622; cursor: pointer;
+  }
+  .gate.on { border-color: rgba(126,231,135,.4); }
+  .gate.off { opacity: .55; }
+  .gate .gs { font-size: 11px; color: var(--muted); }
+  .gate .gt { font-weight: 650; font-size: 13px; }
+  .gate .gv { font-size: 11px; margin-top: 4px; color: var(--green); }
+  .gate.off .gv { color: var(--red); }
+  .tagp { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; margin:0 4px 4px 0; }
+  .tagp.ok { color: var(--green); border:1px solid rgba(126,231,135,.45); background:rgba(126,231,135,.08); }
+  .load { height:8px; background:#12121a; border-radius:99px; overflow:hidden; margin:6px 0 12px; }
+  .load > i { display:block; height:100%; background: var(--gold); }
+  .orch { display:grid; grid-template-columns: 160px 1fr 200px; gap:10px; min-height:280px; }
+  @media (max-width: 900px) { .orch { grid-template-columns: 1fr; } }
+  .orch .col { background:#161622; border:1px solid var(--line); border-radius:10px; padding:10px; }
+  .orch .item { font-size:12.5px; padding:6px 8px; margin:6px 0; border-radius:8px; border:1px solid var(--line); }
+  .orch .item.b { border-color: rgba(126,231,135,.4); }
+  .orch .item.e { border-color: rgba(227,179,65,.45); }
+  .orch .item.g { border-color: rgba(121,192,255,.45); }
+  footer { color: #6a6a82; font-size: 12px; padding: 8px 28px 24px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>启发式思考控制 · 经验固化为刚性执行体</h1>
+  <p class="lede">
+    需求是<strong>积累经验</strong>，不是挽救单次任务。
+    节点长得像工作流，管的不是「AI 做什么」，而是<strong>AI 怎么想、按什么想</strong>。
+    执行权在图；人与 AI 只改图。当前只落地 <strong>Primitive 仓库</strong>，其余先不要实现。
+  </p>
+  <div class="thesis">
+    <span class="pill on">业务目标稳定</span>
+    <span class="pill on">允许较长冷启动</span>
+    <span class="pill warn">必须消除执行方差</span>
+    <span class="pill">AI = 工人，不是导演</span>
+    <span class="pill on">behavior / evaluate / guide</span>
+    <span class="pill">出问题只改框架</span>
+  </div>
+</header>
+<nav class="tabs">
+  <button class="active" data-tab="overview">总览</button>
+  <button data-tab="primitive">Primitive</button>
+  <button data-tab="graph">思考图</button>
+  <button data-tab="shadow">影子模式</button>
+  <button data-tab="wheels">训练轮</button>
+  <button data-tab="stack">评价与负荷</button>
+  <button data-tab="meta">元评价</button>
+  <button data-tab="orch">问题分类与编排</button>
+  <button data-tab="control">可控闸门</button>
+  <button data-tab="vs">对照</button>
+</nav>
+<main>
+  <section class="panel active" id="tab-overview">
+    <div class="row2">
+      <div class="card">
+        <h2>一句话</h2>
+        <p>把反复出现的「正确想法」铸成可执行思考图：先验骨架冷启动 → 影子对照积累 → 训练轮把 AI 从导演降为格子工人 → 必要时蒸馏成边缘小模型。运行时不准临场发挥。</p>
+        <p class="muted">比程序灵活（图可改、格内可挂 AI），比 Agent 可控（怎么想事先写死，方差闸门默认 0）。<strong>先不要实现 Primitive 仓库以外的东西。</strong></p>
+        <table>
+          <tr><th>积累</th><td>接受影子 diff = 经验进图。修好这一次 ≠ 积累。</td></tr>
+          <tr><th>冷启动</th><td>AI 辅助抽 Seed Graph，人闸门确认。骨架是图，不是 prompt。</td></tr>
+          <tr><th>刚性体</th><td>Freeze 之后同一输入必须走出同一条思考路径。</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h2>四段机制</h2>
+        <p class="kv"><b class="mono">1 Seed</b> 先验骨架 · AI 抽规则，人确认</p>
+        <p class="kv"><b class="mono">2 Shadow</b> 活轨执行旧图 · 影子只提案</p>
+        <p class="kv"><b class="mono">3 Wheels</b> L0→L4 阶梯衰减 AI 依赖</p>
+        <p class="kv"><b class="mono">4 Edge</b> 剩余模糊格 → 轻量模型，仍受图调度</p>
+        <p class="muted" style="margin-top:12px">点「思考图」看节点；点节点看它控制哪一种「想」。拖训练轮看 AI 徽章消失。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-primitive">
+    <div class="row2">
+      <div class="card">
+        <h2>Primitive 仓库（已落地 · 只读）</h2>
+        <p>更小维度的 skill 提示词。不是 Skill：不准目录式直接注入；选用哪几条必须由启发式或 AI 编排（编排未做）。</p>
+        <p class="muted">目标是把「怎么想」的原子经验管起来，供以后按问题类编排。不是给 Agent 再喂一份说明书去挽救单次任务。</p>
+        <p>
+          <span class="tagp ok">behavior 行为</span>
+          <span class="tagp ok">evaluate 评价</span>
+          <span class="tagp ok">guide 指导</span>
+        </p>
+        <table>
+          <tr><th>behavior</th><td>做 / 停 / 禁。这一格允许和禁止的动作。</td></tr>
+          <tr><th>evaluate</th><td>判。证据够不够、过不过闸、算不算失败。</td></tr>
+          <tr><th>guide</th><td>想。先看什么、怎么拆、按什么角色想。</td></tr>
+        </table>
+        <p class="muted" style="margin-top:10px">代码：<span class="mono">plugins/primitive</span> · 说明：<a href="../plugins/primitive.html">primitive.html</a></p>
+      </div>
+      <div class="card">
+        <h2>和 Skill 的差</h2>
+        <table>
+          <tr><th>粒度</th><td>Skill 是一份说明书；Primitive 是一小段思考约束。</td></tr>
+          <tr><th>注入</th><td>Skill 可 alwaysApply；Primitive 禁止整包注入。</td></tr>
+          <tr><th>编排</th><td>Skill 交给模型临场用；Primitive 必须启发式 / AI 编排。</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-graph">
+    <div class="row2">
+      <div class="card">
+        <h2>思考图 · 点节点看「怎么想」</h2>
+        <p class="muted">边是思考顺序。绿边框 = 已 Freeze。紫标 = 当前训练轮仍允许 AI 碰这一格。</p>
+        <div class="graph-wrap" id="graph" style="height:440px">
+          <svg class="wires" id="wires"></svg>
+        </div>
+      </div>
+      <div class="card inspect" id="inspect">
+        <h2>节点检视</h2>
+        <p class="muted">选一个节点。这里只解释思考权，不解释业务动作。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-shadow">
+    <div class="card" style="margin-bottom:12px">
+      <h2>影子模式</h2>
+      <p class="muted">同一输入两轨并行。左边决定结果；右边只产生改图提案。接受提案才是积累经验。</p>
+    </div>
+    <div class="rails">
+      <div class="card rail live">
+        <h3>活轨 · 刚性执行（出结果）</h3>
+        <div class="step">Observe：必须先读规范器与 S261 条件</div>
+        <div class="step">Forbid：禁止在 ShotSupport 临场硬填</div>
+        <div class="step">Evidence：缺操作门诊则停，不准猜登录门诊</div>
+        <div class="step">Cell：按已 Freeze 的图写入 normalizeInputShot</div>
+        <div class="step">结果：走铸定路径，与模型心情无关</div>
+      </div>
+      <div class="card rail shadow">
+        <h3>影子轨 · 只提案（不出结果）</h3>
+        <div class="step">Observe：同样读这次失败现场</div>
+        <div class="step diff">Propose：建议把「空则从 operate 带入」做成 Observe 的派生边</div>
+        <div class="step diff">Propose：建议新增 ShotItemCodec 节点，替换 toShotItem 拆字段</div>
+        <div class="step">Gate：diff 等人接受 · 未接受不进活图</div>
+        <div class="step">影子失败不影响这一次活轨结果</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-wheels">
+    <div class="card">
+      <h2>阶梯式 AI 依赖衰减</h2>
+      <p class="muted">档位只降不随便升。升档 = 承认经验还没铸住，必须重新过闸门。</p>
+      <div class="slider-row">
+        <span class="muted">导演</span>
+        <input type="range" id="wheel" min="0" max="4" value="1" />
+        <span class="level" id="wheelLabel">L1</span>
+        <span class="muted">刚性 / 边缘</span>
+      </div>
+      <p id="wheelCopy" class="muted"></p>
+      <table>
+        <tr><th>L0 抽骨架</th><td>AI 提议节点与边；人盯禁区与闸门</td></tr>
+        <tr><th>L1 影子</th><td>AI 只提案，不执行；人盯 diff</td></tr>
+        <tr><th>L2 格子工人</th><td>只在 Cell 内干活；人盯输入输出契约</td></tr>
+        <tr><th>L3 去 AI</th><td>Cell 换成确定性算子</td></tr>
+        <tr><th>L4 边缘模型</th><td>剩余模糊格蒸馏成小模型，仍受 Freeze 约束</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-stack">
+    <div class="row2">
+      <div class="card">
+        <h2>评价体系 · 思考模型 · 概念</h2>
+        <p class="muted">未实现。评价的是「想得对不对」，不是任务做完没有。</p>
+        <table>
+          <tr><th>评价体系</th><td>路径有没有踩 Forbid、证据门槛过了没有、方差有没有冒出来。</td></tr>
+          <tr><th>思考模型</th><td>按什么想（先观察再分岔）。挂在图上，不写进 soul.md。</td></tr>
+          <tr><th>概念拆解</th><td>拆开、归纳、应用到同类问题。Seed 抽的是这种结构，不是步骤清单。</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h2>认知负荷心理表征</h2>
+        <p class="muted">每一步在工作记忆里占多重。编排用它限制同时激活的 Primitive，避免堆回一整份 Skill。</p>
+        <div>Observe + Evidence<span class="muted"> · 中</span></div>
+        <div class="load"><i style="width:45%"></i></div>
+        <div>再叠 6 条 guide<span class="muted"> · 过载（编排应拒绝）</span></div>
+        <div class="load"><i style="width:92%"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-meta">
+    <div class="card">
+      <h2>元评价体系 · Skill 颗粒度</h2>
+      <p>换位思考：用「对方会怎么想」来审自己的默认。</p>
+      <p><strong>default 纠正补丁</strong>：发现默认想法有偏就打一块补丁；偏出现时自己装上，纠正后自己卸掉。</p>
+      <p class="muted">装/卸颗粒度是 Skill 级（针对某一份能力说明书），不是整个人格，也不是单次对话。元评价管补丁该不该在，不替 Primitive 直接注入上下文。未实现。</p>
+      <table>
+        <tr><th>装上</th><td>换位思考判定：这份 skill 的默认会漏掉对方视角。</td></tr>
+        <tr><th>卸掉</th><td>同类问题连续过闸，偏已纠正，补丁自动卸。</td></tr>
+        <tr><th>口子</th><td>装卸仍走同一个改框架口，不准运行时临场改这一步。</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-orch">
+    <div class="card" style="margin-bottom:12px">
+      <h2>问题分类 + 可视化编排（方案，未实现）</h2>
+      <p class="muted">先分类，再编排 Primitive。图画的是怎么想，不是做什么。没有这一层，仓库只是一堆绿色标签。</p>
+    </div>
+    <div class="orch">
+      <div class="col">
+        <div class="muted">1 问题类</div>
+        <div class="item">缺证据就停</div>
+        <div class="item" style="opacity:.45">另开图（目标不稳）</div>
+        <div class="item" style="opacity:.45">…</div>
+      </div>
+      <div class="col">
+        <div class="muted">2 编排进来的 Primitive（绿=已认可类）</div>
+        <div class="item g">guide · 先观察</div>
+        <div class="item e">evaluate · 缺证据则停</div>
+        <div class="item b">behavior · 禁止错误层硬补</div>
+      </div>
+      <div class="col">
+        <div class="muted">3 怎么想（不是做什么）</div>
+        <div class="item">必须先看证据</div>
+        <div class="item">不够 → 停</div>
+        <div class="item">不准在当前层硬补</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-control">
+    <div class="card">
+      <h2>高可控 · 闸门默认全关，逐项打开</h2>
+      <p class="muted">人与 AI 共用一个改图口。点闸切换（仅演示；真正实现要写进框架，不准写进一次对话）。</p>
+      <div class="gates" id="gates"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-vs">
+    <div class="card">
+      <h2>和 Agent / 工作流 / Skill 的差</h2>
+      <table>
+        <tr><th></th><th style="width:auto">控制在谁手里</th><th style="width:auto">节点在管什么</th><th style="width:auto">失败时</th></tr>
+        <tr><td>传统 Agent</td><td>判断和节奏都交给 AI</td><td>临场想下一步做什么</td><td>再问一次 / 加 prompt</td></tr>
+        <tr><td>工作流</td><td>人画「做什么」</td><td>任务步骤</td><td>改流程图，但图通常不是思考经验</td></tr>
+        <tr><td>Skill</td><td>说明书交给 AI 决定怎么用</td><td>文本经验</td><td>执行方式仍临场确定</td></tr>
+        <tr><td>本框架</td><td>执行权在图；人与 AI 只改图</td><td>怎么想、按什么想</td><td>只准改框架，不准挽救这一次</td></tr>
+      </table>
+      <p class="muted" style="margin-top:12px">尚未拍板：跑歪时是停住改图再接着走，还是本轮按旧图走完、改的是下一轮。元评价补丁的自己装/卸由框架触发，还是提议后再过同一改图口。</p>
+    </div>
+  </section>
+</main>
+<footer>
+  wizard-harness / docs/design · 意图草稿未确认 · 文本真源
+  <a href="./启发式思考框架.md">启发式思考框架.md</a>
+</footer>
+<script>
+const NODES = [
+  { id:"lock",  x:24,  y:24,  kind:"Freeze",  name:"目标冻结",  cls:"frozen",
+    think:"先锁业务目标。不稳定的问题不准进这张图。",
+    allow:"无。目标变化只能另开图。",
+    forbid:"禁止用一次任务的例外改目标节点。",
+    knob:"Freeze 开" },
+  { id:"seed",  x:210, y:24,  kind:"Propose", name:"先验骨架",  ai:"L0",
+    think:"AI 辅助抽取 Observe / Split / Forbid。产出是图，不是 prompt。",
+    allow:"抽节点与边的草案。",
+    forbid:"抽完不得直接当活图；必须过 Gate。",
+    knob:"Seed-extract 闸" },
+  { id:"obs",   x:24,  y:150, kind:"Observe", name:"观察约束",  cls:"frozen",
+    think:"必须先看哪些证据。没看完，后面的想都不算。",
+    allow:"列出必读字段与来源。",
+    forbid:"禁止「先做再补看」。",
+    knob:"清单只增不默删" },
+  { id:"evi",   x:210, y:150, kind:"Evidence",name:"证据门槛",
+    think:"证据不足则停。不准用模型补全缺口。",
+    allow:"停、升级到 Gate、或走 Forbid。",
+    forbid:"禁止猜登录门诊、禁止猜字段。",
+    knob:"缺证据 = 失败，不是警告" },
+  { id:"forb",  x:396, y:150, kind:"Forbid",  name:"思考禁区",  cls:"forbid",
+    think:"哪些想法永远不准出现（例如在错误层硬补）。",
+    allow:"无。禁区没有例外通道。",
+    forbid:"临场发挥、单次挽救、改 common 泄压。",
+    knob:"Forbid 覆盖一切 Cell" },
+  { id:"spl",   x:24,  y:276, kind:"Split",   name:"分岔提问",
+    think:"只在预先写死的分歧上分岔。",
+    allow:"编译期列好的分支。",
+    forbid:"运行期由模型发明新分岔（Variance=0）。",
+    knob:"Variance budget" },
+  { id:"cell",  x:210, y:276, kind:"Cell",    name:"格子工人",  ai:"L2",
+    think:"可以干活（确定性代码或调用模型），不能决定下一格怎么想。",
+    allow:"在契约内计算 / 可选调 AI。",
+    forbid:"改边、改 Freeze、改 Forbid。",
+    knob:"Cell-AI 闸" },
+  { id:"shad",  x:396, y:24,  kind:"Propose", name:"影子提案",  ai:"L1",
+    think:"用同一输入模拟「它会怎么想」，只出 diff。",
+    allow:"增删改节点与边的提案。",
+    forbid:"写入活轨、影响这一次结果。",
+    knob:"Shadow-only" },
+  { id:"gate",  x:396, y:276, kind:"Gate",    name:"人闸门",    cls:"gate",
+    think:"任何改图必须经此。人与 AI 同一口。",
+    allow:"接受 / 拒绝 / 退回影子。",
+    forbid:"静默合并、对话里直接改执行。",
+    knob:"Diff-before-apply" },
+  { id:"edge",  x:582, y:276, kind:"Cell",    name:"边缘模型",  ai:"L4",
+    think:"L3 仍模糊的格子才蒸馏。小模型是工人，图仍是导演。",
+    allow:"在 Freeze 约束下填模糊格。",
+    forbid:"模型反向改图。",
+    knob:"蒸馏另开闸（未拍板）" }
+];
+const EDGES = [
+  ["lock","seed"],["seed","obs"],["seed","shad"],["obs","evi"],["evi","forb"],
+  ["obs","spl"],["spl","cell"],["evi","cell"],["shad","gate"],["cell","gate"],["gate","edge"]
+];
+const WHEEL = {
+  0: { label:"L0", copy:"抽骨架：Propose / Seed 亮起。活图尚未铸满。" },
+  1: { label:"L1", copy:"影子：AI 只在影子轨提案。活轨已可按骨架跑。" },
+  2: { label:"L2", copy:"格子工人：只剩 Cell 能调 AI。导演权已从图外拿走。" },
+  3: { label:"L3", copy:"去 AI：Cell 换确定性算子。紫标应全部消失。" },
+  4: { label:"L4", copy:"边缘：仅剩余模糊格挂小模型，仍 Freeze。" }
+};
+function aiVisible(level, tag) {
+  if (!tag) return false;
+  const n = Number(tag.slice(1));
+  if (level <= 1) return n <= 1 || tag === "L0" || tag === "L1";
+  if (level === 2) return tag === "L2";
+  if (level === 3) return false;
+  return tag === "L4";
+}
+const graph = document.getElementById("graph");
+const inspect = document.getElementById("inspect");
+NODES.forEach(n => {
+  const el = document.createElement("div");
+  el.className = "gnode " + (n.cls || "");
+  el.id = "n-" + n.id;
+  el.style.left = n.x + "px";
+  el.style.top = n.y + "px";
+  el.innerHTML = `<div class="k">${n.kind}</div><div class="n">${n.name}</div><div class="ai" data-ai="${n.ai||""}">${n.ai ? "AI "+n.ai : ""}</div>`;
+  el.addEventListener("click", () => select(n.id));
+  graph.appendChild(el);
+});
+function drawWires() {
+  const svg = document.getElementById("wires");
+  const wr = graph.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${graph.clientWidth} ${graph.clientHeight}`);
+  svg.innerHTML = EDGES.map(([a,b]) => {
+    const A = document.getElementById("n-"+a);
+    const B = document.getElementById("n-"+b);
+    const x1 = A.offsetLeft + A.offsetWidth;
+    const y1 = A.offsetTop + A.offsetHeight/2;
+    const x2 = B.offsetLeft;
+    const y2 = B.offsetTop + B.offsetHeight/2;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3a3a52" stroke-width="1.6"/>`;
+  }).join("");
+}
+function select(id) {
+  document.querySelectorAll(".gnode").forEach(e => e.classList.toggle("sel", e.id === "n-"+id));
+  const n = NODES.find(x => x.id === id);
+  inspect.innerHTML = `<h2>${n.name}</h2>
+    <p class="mono">${n.kind} · ${n.id}</p>
+    <div class="kv"><b>这一格在控制哪种「想」</b>${n.think}</div>
+    <div class="kv"><b>AI 允许</b>${n.allow}</div>
+    <div class="kv"><b>AI 禁止</b>${n.forbid}</div>
+    <div class="kv"><b>可控旋钮</b>${n.knob}</div>`;
+}
+function applyWheel(level) {
+  document.getElementById("wheelLabel").textContent = WHEEL[level].label;
+  document.getElementById("wheelCopy").textContent = WHEEL[level].copy;
+  document.querySelectorAll(".gnode .ai").forEach(el => {
+    const tag = el.getAttribute("data-ai");
+    el.classList.toggle("off", !aiVisible(level, tag));
+  });
+}
+document.getElementById("wheel").addEventListener("input", e => applyWheel(Number(e.target.value)));
+document.querySelectorAll("nav.tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "graph") requestAnimationFrame(drawWires);
+  });
+});
+const GATES = [
+  ["Freeze", true, "已铸节点运行时不可被 AI 改"],
+  ["Shadow-only", true, "AI 提案只进影子轨"],
+  ["Diff-before-apply", true, "改图必须出 diff，人点接受"],
+  ["Variance=0", true, "同输入禁止思考路径分叉"],
+  ["Cell-AI", false, "格子内才允许调用模型"],
+  ["Seed-extract", false, "才允许 AI 辅助抽骨架"]
+];
+const gatesEl = document.getElementById("gates");
+GATES.forEach(([name, on, desc]) => {
+  const d = document.createElement("div");
+  d.className = "gate " + (on ? "on" : "off");
+  d.innerHTML = `<div class="gs">${desc}</div><div class="gt">${name}</div><div class="gv">${on ? "默认开" : "默认关"}</div>`;
+  d.addEventListener("click", () => {
+    d.classList.toggle("on"); d.classList.toggle("off");
+    const now = d.classList.contains("on");
+    d.querySelector(".gv").textContent = now ? "开" : "关";
+  });
+  gatesEl.appendChild(d);
+});
+window.addEventListener("resize", drawWires);
+select("obs");
+applyWheel(1);
+requestAnimationFrame(drawWires);
+</script>
+</body>
+</html>

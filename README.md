@@ -68,6 +68,7 @@ docs/confirmed/         人类确认意图
 docs/plugins/           插件说明（HTML，给人与后续 AI）
 docs/reports/           pnpm quality 产出
 docs/logs/              运行时事件/日志（路径固定，非文档）
+meta-doc/               外部参考项目：理解 + 拆分（html + md，不进运行时）
 ```
 
 依赖方向：core 不依赖插件；插件依赖 core 契约。
@@ -95,8 +96,9 @@ docs/logs/              运行时事件/日志（路径固定，非文档）
 11. **web-tools（已落地薄切片）** — 网页搜索与阅读：`web_search` → `web_outline` → `web_read`（markdown 留结构 / text 去掉；可按 heading / offset 取一截）。说明：[docs/plugins/web-tools.html](docs/plugins/web-tools.html)
 12. **file-manager + code-browser + code-editor（已落地薄切片）** — 工作区文件树（`file-manager` 弹窗浏览 `WH_WORKSPACE_ROOT`，点文件开 `code-browser` 只读窗口；窗口内可切 `code-editor` 编辑）。说明：[docs/plugins/file-manager.html](docs/plugins/file-manager.html)、[docs/plugins/code-browser.html](docs/plugins/code-browser.html)、[docs/plugins/code-editor.html](docs/plugins/code-editor.html)
 13. **workflow + workflow-nodes + app-workflow（已落地薄切片）** — 调度器按图走节点，并提供 `exec` / `listNodes` / 节点 ctx 上的可选 agentLoop（节点当工具、节点选 agent 的原语；封装未做）。`workflow-nodes` 登记 echo / upper；`app-workflow` 是独立 Demo 窗口。说明：[docs/plugins/workflow.html](docs/plugins/workflow.html)
-14. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口，不传默认人设）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send` / `listSessions` / `resumeSession`，左栏历史会话、右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info` 与会话工作区。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
-15. **krea（已落地薄切片）** — Krea 文生图：Agent 调 `krea_generate` / `krea_job` / `krea_models`。Key 用 `WH_KREA_API_KEY`（稍后配置即可）。说明：[docs/plugins/krea.html](docs/plugins/krea.html)
+14. **primitive（已落地薄切片）** — 思考提示词原子仓库：标签分类、只读弹窗。不注入 prompt-context（区别于 skills）。说明：[docs/plugins/primitive.html](docs/plugins/primitive.html)
+15. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口，不传默认人设）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send` / `listSessions` / `resumeSession`，左栏历史会话、右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info` 与会话工作区。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
+16. **krea（已落地薄切片）** — Krea 文生图：Agent 调 `krea_generate` / `krea_job` / `krea_models`。Key 用 `WH_KREA_API_KEY`（稍后配置即可）。说明：[docs/plugins/krea.html](docs/plugins/krea.html)
 
 ## 许可
 
