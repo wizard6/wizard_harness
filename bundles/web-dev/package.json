@@ -1,0 +1,7 @@
+{
+  "name": "@wizard-harness/bundle-web-dev",
+  "private": true,
+  "wizardHarness": {
+    "bundle": { "patch": "./wizard.patch.json" }
+  }
+}

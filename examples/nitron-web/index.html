@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wizard Web Demo</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main>
+    <p class="kicker">wizard-harness · web first</p>
+    <h1>同一份 Web</h1>
+    <p class="lede">这是产品本体：静态 HTML。浏览器打开它，Nitron 也只是把它装进 Android WebView。没有 Electron。</p>
+    <ol class="steps">
+      <li><b>开发</b> 改本目录的 HTML / CSS / JS</li>
+      <li><b>部署</b> 工作流拷到 <code>/site/</code>（Web，不是应用端）</li>
+      <li><b>可选</b> <code>npx nitron build</code> 打 APK</li>
+    </ol>
+    <p class="clock" id="now"></p>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>

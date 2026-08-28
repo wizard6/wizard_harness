@@ -3,6 +3,7 @@ dist/
 .reasonix/
 *.log
 docs/logs/*.jsonl
+*.apk
 obs/gui/electron/renderer.bundle.js
 obs/gui/electron/renderer.bundle.js.map
 temp/

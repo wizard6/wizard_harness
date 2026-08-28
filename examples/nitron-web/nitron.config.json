@@ -1,0 +1,16 @@
+{
+  "name": "Wizard Web Demo",
+  "packageId": "com.wizardharness.webdemo",
+  "version": "0.1.0",
+  "entry": "index.html",
+  "orientation": "portrait",
+  "statusBar": true,
+  "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+  "webview": {
+    "backButton": "history",
+    "clearCacheOnStart": false
+  },
+  "splashScreen": {
+    "backgroundColor": "#101018"
+  }
+}

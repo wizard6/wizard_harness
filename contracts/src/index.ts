@@ -224,6 +224,13 @@ export { WORKFLOW_NODES_SERVICE } from './workflow-nodes.js';
 export type { WorkflowNodeKindInfo, WorkflowNodesService } from './workflow-nodes.js';
 export { APP_WORKFLOW_SERVICE } from './app-workflow.js';
 export type { AppWorkflowService } from './app-workflow.js';
+export { WEB_PIPELINE_SERVICE } from './web-pipeline.js';
+export type {
+  WebPipelineInspect,
+  WebPipelinePaths,
+  WebPipelineRunInput,
+  WebPipelineService,
+} from './web-pipeline.js';
 /** 事件查询契约（core reader 定义，契约包统一转发） */
 export type { EventQuery } from '@wizard-harness/core';
 

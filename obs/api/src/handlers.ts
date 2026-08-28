@@ -1,3 +1,4 @@
+import { createReadStream } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { queryEvents, readEvents, tailEvents } from '@wizard-harness/core';
 import type { CompositionSnapshot, PluginEvent, SystemContext } from '@wizard-harness/core';
@@ -5,6 +6,7 @@ import { registrySpec } from '@wizard-harness/obs-core';
 
 import type { ExposeMap } from './expose.js';
 import { methodAllowed } from './expose.js';
+import { isApiPath, mimeFor, resolveStaticFile, siteSubpath } from './static.js';
 
 export type { ExposeMap };
 
@@ -17,6 +19,10 @@ export interface HandlerDeps {
   getHarness(): SystemContext | undefined;
   /** 当前 profile 组合快照（未使用 profile 时为 undefined） */
   getComposition?(): CompositionSnapshot | undefined;
+  /** 浏览器控制台静态根（WH_STATIC_DIR）；壳级挂载，不是按插件路由 */
+  staticDir?: string;
+  /** 已部署站点静态根（WH_SITE_DIR），挂在 /site/ */
+  siteDir?: string;
   /** 运行时再扫描插件目录（POST /plugins/scan） */
   scanPlugins?: () => Promise<{
     ok: boolean;
@@ -38,11 +44,13 @@ export interface ApiHandlers {
   services(req: IncomingMessage, res: ServerResponse): void;
   rpc(req: IncomingMessage, res: ServerResponse): Promise<void>;
   notFound(res: ServerResponse): void;
+  /** GET 非 API 路径：控制台或 /site/；未命中返回 false */
+  tryStatic(req: IncomingMessage, res: ServerResponse, pathname: string): boolean;
 }
 
 /** 组装各 HTTP 端点处理（依赖经 deps 注入，main.ts 只做路由分发） */
 export function createHandlers(deps: HandlerDeps): ApiHandlers {
-  const { file, expose, getHarness, getComposition, scanPlugins } = deps;
+  const { file, expose, getHarness, getComposition, scanPlugins, staticDir, siteDir } = deps;
 
   function sendJson(res: ServerResponse, code: number, body: unknown): void {
     res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -202,6 +210,23 @@ export function createHandlers(deps: HandlerDeps): ApiHandlers {
     },
     notFound(res) {
       sendJson(res, 404, { error: 'not found' });
+    },
+    tryStatic(req, res, pathname) {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+      if (isApiPath(pathname)) return false;
+      const siteRel = siteSubpath(pathname);
+      const file = siteRel !== undefined
+        ? (siteDir ? resolveStaticFile(siteDir, siteRel) : undefined)
+        : (staticDir ? resolveStaticFile(staticDir, pathname) : undefined);
+      if (!file) return false;
+      const mime = mimeFor(file);
+      res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache' });
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+      createReadStream(file).pipe(res);
+      return true;
     },
   };
 }

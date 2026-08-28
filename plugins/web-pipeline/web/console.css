@@ -1,0 +1,29 @@
+:root {
+  --bg: #101018; --panel: #1b1b28; --line: #2c2c3e; --text: #e6e6ef;
+  --muted: #a8a8bd; --blue: #79c0ff; --green: #7ee787;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.55 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+header, .row, .card { max-width: 860px; margin-left: auto; margin-right: auto; }
+header { padding: 28px 20px 8px; }
+.kicker { letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-size: 11px; }
+h1 { font-size: 26px; margin: 6px 0 8px; }
+.lede { color: var(--muted); }
+code { color: var(--green); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 20px 8px; }
+button {
+  background: #26263a; color: var(--text); border: 1px solid #33334a;
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px;
+}
+button:hover { background: #2f2f48; }
+button.ghost { opacity: .9; }
+a { color: var(--blue); }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; margin: 10px 20px; white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+}
+.log { min-height: 140px; color: var(--muted); }

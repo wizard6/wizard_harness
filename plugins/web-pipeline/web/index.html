@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web 开发流水线</title>
+  <link rel="stylesheet" href="./console.css" />
+</head>
+<body>
+  <header>
+    <p class="kicker">wizard-harness · web-dev</p>
+    <h1>Web 开发流水线</h1>
+    <p class="lede">浏览器客户端 + API 运行时。部署目标是静态站 <code>/site/</code>，不是 Electron。Nitron 只把同一份 Web 打成 APK。</p>
+  </header>
+  <section class="row">
+    <button type="button" id="run">跑流水线（部署 Web）</button>
+    <button type="button" id="apk" class="ghost">跑流水线并打 APK</button>
+    <a href="/site/" target="_blank" rel="noreferrer">打开已部署站点</a>
+  </section>
+  <pre id="status" class="card">正在读取流水线…</pre>
+  <pre id="out" class="card log"></pre>
+  <script src="./console.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web 优先开发架构 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .flow span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+    .flow i { color: var(--muted); font-style: normal; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Web 优先软件开发架构</h1>
+    <p class="lede">基于现有插件底座：API 运行时 + workflow 按图调度 + 浏览器客户端。不经过 Electron。正文见 <a href="./web-dev-architecture.md">web-dev-architecture.md</a>。</p>
+    <div class="card"><b>一句话：</b>开发与部署的主产物是静态 Web；Nitron 只把同一份 Web 打成 APK 作 Android demo。</div>
+    <h2>运行时</h2>
+    <div class="flow">
+      <span>浏览器控制台</span><i>→</i>
+      <span>obs-api /rpc</span><i>→</i>
+      <span>profile web-dev</span><i>→</i>
+      <span>workflow + web-pipeline</span>
+    </div>
+    <h2>工作流</h2>
+    <div class="flow">
+      <span>web.validate</span><i>→</i>
+      <span>web.deploy（主产物 /site/）</span><i>→</i>
+      <span>nitron.package（默认 dry-run）</span>
+    </div>
+    <h2>对照</h2>
+    <table>
+      <tr><th></th><th>本路径</th><th>默认 App</th></tr>
+      <tr><td>壳</td><td>API + 浏览器</td><td>Electron GUI</td></tr>
+      <tr><td>组合</td><td>base + web-dev</td><td>base + app</td></tr>
+      <tr><td>发布</td><td>静态站</td><td>桌面弹窗</td></tr>
+      <tr><td>Android</td><td>可选 Nitron 包同一份 Web</td><td>无</td></tr>
+    </table>
+    <h2>启动</h2>
+    <pre>pnpm web-dev
+# http://localhost:8787/      流水线控制台
+# http://localhost:8787/site/ 已部署 Web</pre>
+  </div>
+</body>
+</html>

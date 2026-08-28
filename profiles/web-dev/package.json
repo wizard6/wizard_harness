@@ -1,0 +1,9 @@
+{
+  "name": "wh-profile-web-dev",
+  "private": true,
+  "wizardHarness": {
+    "profile": {
+      "bundles": ["base", "web-dev"]
+    }
+  }
+}

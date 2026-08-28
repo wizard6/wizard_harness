@@ -28,6 +28,7 @@ docs/
 | 核对仓库现状与测试数 | [reference/项目体检.md](./reference/项目体检.md) |
 | 下一步做什么 | [planning/product-maturity.html](./planning/product-maturity.html) · [planning/todo.md](./planning/todo.md) |
 | 某个插件怎么用 | [plugins/](./plugins/) |
+| Web 开发（无 Electron） | [design/web-dev-architecture.md](./design/web-dev-architecture.md) · [plugins/web-pipeline.html](./plugins/web-pipeline.html) |
 | 外部参考项目 | [meta-doc/reference-projects/](../meta-doc/reference-projects/) |
 | 已确认的设计边界 | [confirmed/](./confirmed/) |
 
@@ -67,6 +68,7 @@ docs/
 - **插件底座缺口清单.md**
 - **插件底座完善-诊断与方案.md**
 - **[启发式思考框架.md](./design/启发式思考框架.md)** / **[可视化](./design/启发式思考框架.html)** — 积累经验、怎么想；Primitive 仓库已落地，其余未实现
+- **[web-dev-architecture.md](./design/web-dev-architecture.md)** / **[可视化](./design/web-dev-architecture.html)** — Web 优先开发路径：API + 浏览器 + Nitron demo，不用 Electron
 
 ### `confirmed/` — 确认稿
 

@@ -27,3 +27,4 @@ export type { MemoryService } from './memory.js';
 export type { WorkflowService } from './workflow.js';
 export type { WorkflowNodesService } from './workflow-nodes.js';
 export type { AppWorkflowService } from './app-workflow.js';
+export type { WebPipelineService } from './web-pipeline.js';

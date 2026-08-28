@@ -7,6 +7,12 @@ export const DEFAULT_EXPOSE: ExposeMap = {
   agentLoop: ['run', 'cancel'],
 };
 
+/** web-dev 控制台：只放行流水线，不含 console.exec / tools.call */
+export const WEB_DEV_EXPOSE: ExposeMap = {
+  workflow: ['run', 'latest', 'get', 'cancel', 'listNodes'],
+  webPipeline: ['pipelineGraph', 'kinds', 'inspect', 'paths', 'runPipeline'],
+};
+
 export function parseExpose(raw: string | undefined): ExposeMap {
   if (raw === undefined || raw.trim() === '') return { ...DEFAULT_EXPOSE };
   if (raw.trim() === 'off' || raw.trim() === '{}') return {};

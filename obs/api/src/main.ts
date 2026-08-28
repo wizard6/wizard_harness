@@ -23,6 +23,8 @@ import type { ExposeMap } from './expose.js';
  *
  * 环境变量：
  *   WH_EVENTS   事件文件路径（默认 <cwd>/docs/logs/events.jsonl）
+ *   WH_STATIC_DIR 浏览器控制台静态根（GET 非 API 路径；壳级挂载，不是插件路由）
+ *   WH_SITE_DIR 已部署 Web 站点根，挂在 /site/
  *   WH_PLUGINS_DIR 插件包目录（默认 <cwd>/plugins）
  *   WH_DISABLED 逗号分隔的禁用插件 id
  *   WH_ENABLE_EXPERIMENTAL 逗号分隔的显式启用 experimental 插件 id
@@ -108,6 +110,8 @@ async function init(): Promise<void> {
 const handlers = createHandlers({
   file: FILE,
   expose: apiExpose,
+  staticDir: process.env.WH_STATIC_DIR?.trim() || undefined,
+  siteDir: process.env.WH_SITE_DIR?.trim() || undefined,
   getHarness: () => runtime.harness,
   getComposition: () => runtime.composition,
   scanPlugins: async () => {
@@ -148,6 +152,7 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   }
   if (req.method === 'GET' && url.pathname === '/services') return handlers.services(req, res);
   if (req.method === 'POST' && url.pathname === '/rpc') return void handlers.rpc(req, res);
+  if (handlers.tryStatic(req, res, url.pathname)) return;
   handlers.notFound(res);
 });
 
@@ -156,6 +161,8 @@ init().then(() => {
     console.log(`obs-api listening on http://localhost:${PORT}`);
     console.log(`events file: ${FILE}`);
     console.log(`plugins dir: ${PLUGINS_DIR}`);
+    if (process.env.WH_STATIC_DIR?.trim()) console.log(`static dir: ${process.env.WH_STATIC_DIR.trim()} → /`);
+    if (process.env.WH_SITE_DIR?.trim()) console.log(`site dir: ${process.env.WH_SITE_DIR.trim()} → /site/`);
     console.log(`exposed services: ${Object.keys(apiExpose).join(', ') || '(无，/rpc 全部拒绝)'}`);
   });
 });

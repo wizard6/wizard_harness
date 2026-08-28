@@ -21,10 +21,11 @@ pnpm test
 | `pnpm obs:cli` | 纯 Node 事件回放 / 查询 / tail |
 | `pnpm obs:tui` | ink 实时事件面板 |
 | `pnpm obs:api` | HTTP API（运行时壳：加载插件 + 观测端点 + 白名单 RPC），默认 `http://localhost:8787` |
+| `pnpm web-dev` | **无 Electron**：`profiles/web-dev` + 浏览器控制台 + `/site/` 静态站；工作流部署 Web，Nitron 打 APK 为可选 demo |
 | `pnpm gen:events` | 向 `docs/logs/events.jsonl` 写入演示事件 |
 | `pnpm typecheck` | 各包 `tsc --noEmit`（obs/plugins 占位包除外） |
 
-CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`（能力）+ `bundles/app`（产品面 app-ui）；事件同步落盘同一份 jsonl。
+CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:events`。API 是运行时壳：启动时经 `assembleRuntime` 装配（与 GUI 同链路），默认叠 `profiles/default` → `bundles/base`（能力）+ `bundles/app`（产品面 app-ui）；**Web 开发路径**叠 `profiles/web-dev` → `base` + `bundles/web-dev`（workflow + web-pipeline），用浏览器不用 Electron。事件同步落盘同一份 jsonl。
 
 ### Bundle / Profile
 
@@ -41,8 +42,10 @@ CLI / TUI 读取 `docs/logs/events.jsonl`。文件不存在时请先 `pnpm gen:e
 | `GET` / `POST /plugins/scan` | 再扫描 `plugins/`，把尚未注册的可加载插件装进当前运行时 |
 | `GET /services` | 服务绑定列表（provider/access/lifetime/scoped） |
 | `POST /rpc` | 白名单服务调用：`{ service, method, args }`，未白名单一律 403 |
+| `GET /` 等 | 若设 `WH_STATIC_DIR`：壳级静态控制台（`pnpm web-dev` 默认挂上） |
+| `GET /site/` | 若设 `WH_SITE_DIR`：已部署 Web 站点 |
 
-环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_SANDBOX_DIR`（玩具沙箱 root，默认 `$WH_HOME/sandbox`）、`WH_WORKSPACE`（dev-tools 工作区 root，默认进程 cwd）、`WH_BRAVE_API_KEY` / `WH_SEARX_URL`（web-tools 搜索引擎；默认 DuckDuckGo）、`WH_KREA_API_KEY`（krea 绘图；到 [krea.ai/settings/api-tokens](https://www.krea.ai/settings/api-tokens) 创建）、`WH_EVENTS`、`PORT`。
+环境变量：`WH_PLUGINS_DIR`（插件目录）、`WH_DISABLED`（禁用插件，逗号分隔）、`WH_ENABLE_EXPERIMENTAL`、`WH_PROFILE`（profile 名或路径，默认 `profiles/default`；`off` 关闭组合、退回目录发现）、`WH_HOME`（机级 home，默认 `~/.wizard-harness`）、`WH_STATIC_DIR` / `WH_SITE_DIR`（obs-api 壳级静态根：控制台与已部署站 `/site/`）、`WH_NITRON`（`1` 时 web-pipeline 真正执行 `npx nitron build`）、`WH_EXPOSE`（RPC 白名单 JSON。未设置时默认暴露 agent 试跑：`agent.list|stop`、`promptContext.assemble|apply|setPersona|getPersona|inspect`、`agentLoop.run|cancel`；`off` 关闭全部）、`WH_LLM_PROVIDER` / `WH_LLM_BASE_URL` / `WH_LLM_API_KEY` / `WH_LLM_MODEL`（覆盖 llm 配置）、`WH_SESSIONS_DIR`（session 落盘目录，GUI/API 默认 `~/.wizard-harness/sessions`）、`WH_SANDBOX_DIR`（玩具沙箱 root，默认 `$WH_HOME/sandbox`）、`WH_WORKSPACE`（dev-tools 工作区 root，默认进程 cwd）、`WH_BRAVE_API_KEY` / `WH_SEARX_URL`（web-tools 搜索引擎；默认 DuckDuckGo）、`WH_KREA_API_KEY`（krea 绘图；到 [krea.ai/settings/api-tokens](https://www.krea.ai/settings/api-tokens) 创建）、`WH_EVENTS`、`PORT`。
 
 Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm gui:start` 会先跑 `scripts/ensure-electron.cjs`：缺二进制时补装，必要时用缓存 zip 解压。
 
@@ -51,14 +54,14 @@ Windows + Node 26 下，Electron 官方 `install.js` 可能解压失败。`pnpm 
 ```
 core/                 注册器、事件总线、分发器、插件发现、Profile/Bundle 组合、运行时装配、JSONL 读写
 contracts/            服务契约层（服务名 ↔ 接口绑定：LoggerService / EventsService / ConsoleService，独立于任何插件）
-bundles/              可分发 patch 层（base = 能力插件含 trajectory；app = app-chat + app-ui）
-profiles/             可运行组合（default 叠 base + app；可选 wizard.patch.json 本地覆盖）
+bundles/              可分发 patch 层（base = 能力插件含 trajectory；app = app-chat + app-ui；web-dev = workflow + web-pipeline）
+profiles/             可运行组合（default 叠 base + app；web-dev 叠 base + web-dev，无 Electron）
 obs/spec/             观测契约（ObsSpec）
 obs/core/             注册表观测定义 + React 面板
 obs/cli|tui/          观测器壳（读 events.jsonl）
 obs/api|gui/          运行时壳（加载插件：HTTP 白名单 RPC / Electron 交互台）
 obs/plugins/          各插件观测台占位
-plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop（默认禁用） / query-loop / trajectory / sandbox / dev-tools / web-tools / krea / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui）
+plugins/              业务插件包（hello / logger / events / console / session / prompt-context / persona / llm / tools / agent / agent-loop（默认禁用） / query-loop / trajectory / sandbox / dev-tools / web-tools / krea / file-manager / code-browser / code-editor / workflow / workflow-nodes / app-workflow / app-chat / app-ui / web-pipeline）
 docs/README.md          文档索引（从这里进）
 docs/guides/            开发指南、架构画布、排错
 docs/reference/         项目体检、hash 查看器
@@ -99,6 +102,7 @@ meta-doc/               外部参考项目：理解 + 拆分（html + md，不�
 14. **primitive（已落地薄切片）** — 思考提示词原子仓库：标签分类、只读弹窗。不注入 prompt-context（区别于 skills）。说明：[docs/plugins/primitive.html](docs/plugins/primitive.html)
 15. **app-chat + app-ui（已落地薄切片）** — 产品面拆两插件：`app-chat` 适配 `agentLoop`（无窗口，不传默认人设）；`app-ui` 是聊天薄壳，`ui.rpc` 调 `appChat.send` / `listSessions` / `resumeSession`，左栏历史会话、右栏只读 `trajectory.latest`，顶栏只读 `sandbox.info` 与会话工作区。工作流不进这个窗口。观测台只 `openPlugin('app-ui')`。说明：[docs/plugins/app-chat.html](docs/plugins/app-chat.html)、[docs/plugins/app-ui.html](docs/plugins/app-ui.html)
 16. **krea（已落地薄切片）** — Krea 文生图：Agent 调 `krea_generate` / `krea_job` / `krea_models`。Key 用 `WH_KREA_API_KEY`（稍后配置即可）。说明：[docs/plugins/krea.html](docs/plugins/krea.html)
+17. **web-pipeline（已落地薄切片）** — Web 优先开发流水线：`web.validate` → `web.deploy`（主产物静态站）→ `nitron.package`（默认 dry-run）。`pnpm web-dev` 用 API + 浏览器，不用 Electron。说明：[docs/plugins/web-pipeline.html](docs/plugins/web-pipeline.html) · 架构：[docs/design/web-dev-architecture.md](docs/design/web-dev-architecture.md)
 
 ## 许可
 

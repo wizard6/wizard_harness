@@ -416,6 +416,15 @@ importers:
         specifier: workspace:^
         version: link:../../core
 
+  plugins/web-pipeline:
+    dependencies:
+      '@wizard-harness/contracts':
+        specifier: workspace:^
+        version: link:../../contracts
+      '@wizard-harness/core':
+        specifier: workspace:^
+        version: link:../../core
+
   plugins/web-tools:
     dependencies:
       '@wizard-harness/contracts':

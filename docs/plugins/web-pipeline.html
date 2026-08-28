@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>web-pipeline 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    .ai { border-color: rgba(121,192,255,.4); }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>web-pipeline — Web 开发流水线</h1>
+      <p class="lede">向 <code>workflow</code> 登记 <code>web.validate</code> / <code>web.deploy</code> / <code>nitron.package</code>。部署目标是静态站，不是 Electron 应用。Nitron 默认 dry-run。</p>
+      <p>
+        <span class="badge ok">id: web-pipeline</span>
+        <span class="badge ok">provides: webPipeline</span>
+        <span class="badge">inject: workflow</span>
+        <span class="badge">profile: web-dev</span>
+        <span class="badge">无 ui</span>
+      </p>
+    </header>
+    <h2>边界</h2>
+    <div class="card"><b>一句话：</b>节点种类住在这里。调度器不认识 validate / deploy / nitron。控制台不是插件弹窗，是 <code>plugins/web-pipeline/web</code> 经 API 静态挂载。</div>
+    <ul class="tight">
+      <li>管：三种 handler、<code>pipelineGraph</code>、<code>runPipeline</code>、源站/发布目录</li>
+      <li>不管：顺序调度、Electron 窗口、<code>tools.register</code>、真正的 HTTP 路由到本插件</li>
+    </ul>
+    <h2>图</h2>
+    <pre>web.validate  → 检查 examples/nitron-web/index.html
+web.deploy    → 拷到 $WH_HOME/web-deploy（主产物，浏览器 /site/）
+nitron.package → 默认打印 `npx --yes nitron build`；WH_NITRON=1 或 runPipeline({ runNitron:true }) 才构建</pre>
+    <h2>启动</h2>
+    <pre>pnpm web-dev
+# 控制台 http://localhost:8787/
+# 站点   http://localhost:8787/site/   （先跑一次流水线）</pre>
+    <h2>文件</h2>
+    <table>
+      <tr><td class="mono">contracts/src/web-pipeline.ts</td><td>webPipeline 服务</td></tr>
+      <tr><td class="mono">plugins/web-pipeline/src/nodes.ts</td><td>三种 handler + 默认图</td></tr>
+      <tr><td class="mono">plugins/web-pipeline/web/</td><td>浏览器控制台（非 Electron）</td></tr>
+      <tr><td class="mono">examples/nitron-web/</td><td>产品 demo + nitron.config.json</td></tr>
+    </table>
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>再加开发步骤：本插件加 handler 并 registerNode，不要改 schedule.ts</li>
+        <li>不要给本插件加 <code>ui</code> / Electron 弹窗</li>
+        <li>不要把 nitron 做成默认 CI 步骤（无 JRE 会失败）；测试只覆盖 dry-run</li>
+        <li>架构说明：<a href="../design/web-dev-architecture.html">docs/design/web-dev-architecture.html</a></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -18,6 +18,7 @@
     "obs:cli": "node --import tsx obs/cli/src/main.ts",
     "obs:tui": "node --import tsx obs/tui/src/main.tsx",
     "obs:api": "node --import tsx obs/api/src/main.ts",
+    "web-dev": "node --import tsx scripts/web-dev.ts",
     "gui:start": "pnpm --filter @wizard-harness/gui start"
   },
   "devDependencies": {
