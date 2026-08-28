@@ -143,23 +143,65 @@ document.getElementById('apk')?.addEventListener('click', () => void run(true));
 function enableHudSurface() {
   if (!window.wh || typeof window.wh.setHudHit !== 'function') return;
   document.documentElement.classList.add('hud');
+  const shell = document.querySelector('.shell');
+  const dragBar = document.getElementById('hud-drag');
   let hit = false;
+  let dragging = false;
   const send = (next) => {
     if (next === hit) return;
     hit = next;
     window.wh.setHudHit(hit);
   };
   document.addEventListener('mousemove', (e) => {
+    if (dragging) return;
     const el = e.target;
     send(!!(el && el.closest && el.closest('[data-hud-hit]')));
   });
-  document.addEventListener('mouseleave', () => send(false));
+  document.addEventListener('mouseleave', () => {
+    if (!dragging) send(false);
+  });
   document.getElementById('hud-close')?.addEventListener('click', () => {
     window.wh.windowControl('close');
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') window.wh.windowControl('close');
   });
+
+  if (shell) {
+    const handles = [dragBar, document.querySelector('.brand'), document.querySelector('.top')].filter(Boolean);
+    let origin = null;
+    const moveTo = (clientX, clientY) => {
+      if (!origin) return;
+      const maxX = Math.max(0, window.innerWidth - shell.offsetWidth);
+      const maxY = Math.max(0, window.innerHeight - shell.offsetHeight);
+      const x = Math.max(0, Math.min(maxX, origin.left + (clientX - origin.x)));
+      const y = Math.max(0, Math.min(maxY, origin.top + (clientY - origin.y)));
+      shell.style.left = x + 'px';
+      shell.style.top = y + 'px';
+      shell.style.transform = 'none';
+    };
+    const onMove = (e) => moveTo(e.clientX, e.clientY);
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      origin = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    for (const handle of handles) {
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest('button, a, input, textarea')) return;
+        const rect = shell.getBoundingClientRect();
+        dragging = true;
+        origin = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top };
+        send(true);
+        e.preventDefault();
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
+    }
+  }
   send(false);
 }
 

@@ -127,7 +127,7 @@ a { color: var(--blue); }
 }
 
 /* 透桌面 HUD：仅 Electron ui.hud。浏览器页保持实心底。 */
-.hud-close { display: none; }
+.hud-close, .hud-drag { display: none; }
 html.hud, html.hud body {
   background: transparent !important;
   overflow: hidden;
@@ -139,6 +139,7 @@ html.hud .shell {
   transform: translate(-50%, -50%);
   width: min(960px, calc(100vw - 48px));
   height: min(640px, calc(100vh - 72px));
+  padding-top: 28px;
   border-radius: 16px;
   overflow: hidden;
   background: rgba(16, 17, 26, .78);
@@ -151,14 +152,37 @@ html.hud aside {
   background: rgba(12, 13, 20, .45);
   border-right-color: rgba(255, 255, 255, .08);
 }
-html.hud .brand { -webkit-app-region: drag; }
+html.hud .hud-drag {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 72px;
+  height: 28px;
+  z-index: 2;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+}
+html.hud .hud-drag::after {
+  content: "";
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .28);
+}
+html.hud .hud-drag:active,
+html.hud .brand:active,
+html.hud .top:active { cursor: grabbing; }
+html.hud .brand,
+html.hud .top { cursor: grab; user-select: none; }
 html.hud .hud-close {
   display: inline-flex;
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 6px;
+  right: 10px;
   z-index: 3;
-  -webkit-app-region: no-drag;
   background: rgba(42, 44, 64, .85);
   color: var(--text);
   border: 1px solid rgba(255, 255, 255, .12);

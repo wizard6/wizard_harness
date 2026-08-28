@@ -37,7 +37,7 @@ ui: {
    - 否则 → `preload-safe.cjs`（仅 `wh.call` 等低风险 API）
 3. **窗口映射**：`popupPluginId.set(popup, id)`，供 RPC 校验「调用来自哪个插件弹窗」。
 4. **关闭**：`closed` 时从 `pluginWindows` 删除。
-5. **`ui.hud`**：不注入实心标题栏；窗口铺满当前显示器工作区、透明底、`alwaysOnTop`；面板外 `setIgnoreMouseEvents({ forward: true })` 点穿到桌面。Esc / 面板「关闭」关窗。
+5. **`ui.hud`**：不注入实心标题栏；窗口铺满当前显示器工作区、透明底、`alwaysOnTop`；面板外 `setIgnoreMouseEvents({ forward: true })` 点穿到桌面。拖动是搬面板（顶栏 / 侧栏标题 / 页眉），不要用 `-webkit-app-region`（和点击穿透打架）。Esc / 面板「关闭」关窗。
 
 ## 插件作者怎么做
 
