@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>pie-menu · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; --line:#2c2c3e; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 system-ui,"Segoe UI","PingFang SC",sans-serif; }
+    .wrap { max-width:820px; margin:0 auto; padding:28px 20px 64px; }
+    .lede { color:var(--muted); }
+    a { color:var(--blue); }
+    code { font-family:ui-monospace,Consolas,monospace; font-size:12.5px; color:var(--green); }
+    .badge { font-size:11px; padding:3px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); margin-right:6px; }
+    .badge.ok { color:var(--green); }
+    h2 { font-size:17px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:14px; }
+    ul.tight li { margin:4px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>pie-menu — Kando marking 手势</h1>
+    <p class="lede">对照 <a href="../../meta-doc/reference-projects/kando/understanding.html">Kando</a>：按住拖动进子菜单（原点跟手），松手激活叶子。不是逐级点击。</p>
+    <p><span class="badge ok">id: pie-menu</span><span class="badge ok">托盘: Pie Menu</span></p>
+    <h2>怎么用才快</h2>
+    <ul class="tight">
+      <li>托盘打开后<strong>按住左键拖</strong>向目标扇区</li>
+      <li>拖到「工具」等子菜单外圈 → 自动进入，菜单跟到指针</li>
+      <li>继续拖到叶子 → <strong>松手</strong>执行（打开插件）</li>
+      <li>Esc / 中心：返回上一层或关闭</li>
+    </ul>
+    <h2>参考</h2>
+    <p><a href="../../meta-doc/reference-projects/kando/understanding.html">理解</a> · <a href="../../meta-doc/reference-projects/kando/breakdown.html">拆分</a></p>
+  </div>
+</body>
+</html>

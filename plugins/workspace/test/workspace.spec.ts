@@ -22,6 +22,9 @@ describe('workspace 插件', () => {
     expect(WORKSPACE_HTML).toContain('data-hud-hit');
     expect(WORKSPACE_HTML).toContain('id="hud-close"');
     expect(WORKSPACE_HTML).toContain('id="hud-drag"');
+    expect(WORKSPACE_HTML).toContain('id="boot-splash"');
+    expect(WORKSPACE_HTML).toContain('finishBootSplash');
+    expect(WORKSPACE_HTML).toContain('boot-spin');
   });
 
   it('种子瓷砖含概览 / 插件架 / 发布与空位', () => {

@@ -22,6 +22,10 @@ import type {
   PrimitiveService,
   GitToolsService,
   KreaService,
+  ElementTableService,
+  MechanicsTableService,
+  PomodoroService,
+  PieMenuService,
   ToolboxService,
   TimerService,
   ToolsService,
@@ -63,6 +67,11 @@ declare module '@wizard-harness/core' {
     readonly primitive?: PrimitiveService;
     readonly webTools?: WebToolsService;
     readonly krea?: KreaService;
+    readonly pomodoro?: PomodoroService;
+    readonly pieMenu?: PieMenuService;
+    readonly elementTable?: ElementTableService;
+    /** @deprecated 使用 elementTable */
+    readonly mechanicsTable?: MechanicsTableService;
     readonly persona?: PersonaService;
     readonly memory?: MemoryService;
     readonly workflow?: WorkflowService;

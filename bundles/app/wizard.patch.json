@@ -14,6 +14,8 @@
       { "id": "primitive", "name": "primitive" },
       { "id": "timer", "name": "timer" },
       { "id": "pomodoro", "name": "pomodoro" },
+      { "id": "pie-menu", "name": "pie-menu" },
+      { "id": "element-table", "name": "element-table" },
       { "id": "workspace", "name": "workspace" },
       { "id": "app-workflow", "name": "app-workflow" },
       { "id": "app-chat", "name": "app-chat" },

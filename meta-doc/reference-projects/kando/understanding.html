@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kando · 理解</title>
+  <link rel="stylesheet" href="../doc.css" />
+  <script src="../doc.js" defer></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">kando-menu / kando</div>
+      <h1>Kando · 理解</h1>
+      <p class="lede">源仓 <a href="https://github.com/kando-menu/kando">kando-menu/kando</a> · <a href="https://kando.menu/">kando.menu</a>。本地可放 <code>temp/kando</code>。</p>
+      <nav class="nav">
+        <a class="on" href="./understanding.html">理解</a>
+        <a href="./breakdown.html">拆分</a>
+        <a href="../index.html">项目列表</a>
+      </nav>
+    </header>
+    <h2>它是什么</h2>
+    <p>跨平台桌面<strong>扇形 / marking 菜单</strong>：用方向选择代替点小按钮。整屏是目标；嵌套子菜单靠<strong>一条连续拖动手势</strong>穿过。</p>
+    <h2>交互（要借的核心）</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Marking</b>：按住拖过扇区；进子菜单后菜单跟手；松手激活叶子</li>
+        <li><b>Point-and-click</b>：点扇区任意处（Fitts）</li>
+        <li>Turbo / Hover：更快，本阶段不优先</li>
+      </ul>
+    </div>
+    <h2>边界</h2>
+    <p>Kando 是 OS 级启动器。harness 只借<strong>几何与 marking 手势</strong>，用来快开插件，不复制全局钩子与键鼠宏。</p>
+  </div>
+</body>
+</html>

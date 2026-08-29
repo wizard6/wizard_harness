@@ -12,7 +12,15 @@
   </script>
 </head>
 <body>
-  <div class="shell" data-hud-hit>
+  <div class="boot-splash" id="boot-splash" aria-hidden="false" role="status" aria-live="polite">
+    <div class="boot-mark" aria-hidden="true">
+      <span class="boot-ring"></span>
+      <span class="boot-core"></span>
+    </div>
+    <p class="boot-title">工作台</p>
+    <p class="boot-sub" id="boot-sub">正在唤醒…</p>
+  </div>
+  <div class="shell is-booting" data-hud-hit>
     <div class="hud-drag" id="hud-drag" title="拖动工作台"></div>
     <button type="button" class="hud-close" id="hud-close" aria-label="关闭工作台">关闭</button>
     <aside>

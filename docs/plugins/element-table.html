@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>element-table 插件 · wizard-harness</title>
+  <style>
+    :root { --bg:#101018; --panel:#1b1b28; --line:#2c2c3e; --text:#e6e6ef; --muted:#a8a8bd; --blue:#79c0ff; --green:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--blue); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 64px; }
+    .lede { color: var(--muted); }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+    .badge.ok { color: var(--green); }
+    h2 { font-size: 18px; margin: 32px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    code, .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--green); }
+    ul.tight li { margin: 4px 0; }
+    pre { background: #14141e; border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: 12.5px; }
+    .ai { border-color: rgba(121,192,255,.4); background: rgba(121,192,255,.06); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>element-table — 通用周期元素表 v0.3</h1>
+      <p class="lede">多 catalog 框架：游戏机制、小说元素… 同一套周期网格 / 正式·演示分层 / 登记 API。</p>
+      <p>
+        <span class="badge ok">id: element-table</span>
+        <span class="badge ok">provides: elementTable (+ mechanicsTable 兼容)</span>
+        <span class="badge">托盘: Element Table</span>
+      </p>
+    </header>
+
+    <h2>内置 catalog</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><code>mechanics</code> — 游戏机制（动机 / 挑战 / 经济 / 空间 / 时间 / 社交）</li>
+        <li><code>novel</code> — 小说元素（人物 / 情节 / 世界 / 主题 / 文笔 / 节奏）</li>
+      </ul>
+      <p style="margin:8px 0 0;color:var(--muted);font-size:13px">正式库均为空；演示集各 24 格样例。数据在 <code>plugins/mechanics-table/src/catalogs/&lt;id&gt;/</code>。</p>
+    </div>
+
+    <h2>扩展新表（如影视）</h2>
+    <pre>ctx.elementTable?.registerCatalog({ id: 'film', title: '影视元素', periods: 4 });
+ctx.elementTable?.registerGroup('film', { id: 'shot', symbol: 'Sh', name: '镜头', tone: 'space' });
+ctx.elementTable?.registerElement({
+  catalogId: 'film',
+  id: 'film-cut',
+  symbol: 'Cu',
+  name: '剪辑点',
+  group: 'shot',
+  period: 1,
+  kind: 'formal',
+  demo: 'generic',
+});</pre>
+
+    <h2>或加内置目录</h2>
+    <pre>plugins/mechanics-table/src/catalogs/
+  mechanics/   groups.ts · formal-elements.ts · demo-elements.ts
+  novel/       …
+  your-id/     新建后在 catalogs/index.ts 的 BUILTIN_CATALOGS 登记</pre>
+
+    <h2>打开</h2>
+    <ul class="tight">
+      <li>托盘 → <code>Element Table</code></li>
+      <li>顶栏左侧切换 catalog；右侧胶囊：正式 / 演示 / 全部</li>
+    </ul>
+
+    <h2>给后续 AI</h2>
+    <div class="card ai">
+      <ul class="tight">
+        <li>领域内容进对应 catalog，不要塞进别的表的 demo。</li>
+        <li>新动画：<code>page.ts</code> 的 demoHtml map；元素只引用键名。</li>
+        <li><code>ctx.mechanicsTable</code> 仍可用（同实现），新代码用 <code>ctx.elementTable</code>。</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

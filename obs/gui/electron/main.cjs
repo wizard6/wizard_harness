@@ -585,36 +585,74 @@ function openPluginWindow(id) {
   }
   const title = plugin.ui.title || plugin.manifest.id;
   const hud = plugin.ui.hud === true;
+  const pieOverlay = id === 'pie-menu';
   // 安全：仅 trusted 插件的弹窗注入 execCommand（任意命令执行能力）；其余插件只给低风险的事件历史
   const preload = plugin.manifest.trusted ? 'preload-console.cjs' : 'preload-safe.cjs';
-  const area = hud ? workAreaForCursor() : null;
-  const popup = new BrowserWindow(
-    hud
-      ? hudOptions({
-          x: area.x,
-          y: area.y,
-          width: area.width,
-          height: area.height,
-          title,
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            preload: path.join(__dirname, preload),
-          },
-        })
-      : glassOptions({
-          width: plugin.ui.width || 360,
-          height: (plugin.ui.height || 240) + 38,
-          title,
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            preload: path.join(__dirname, preload),
-          },
-        }),
-  );
-  if (hud) attachHud(popup);
-  else {
+  const preloadPath = path.join(__dirname, preload);
+  const area = hud || pieOverlay ? workAreaForCursor() : null;
+  const cursor = screen.getCursorScreenPoint();
+
+  let popup;
+  if (pieOverlay) {
+    // Windows 上全透明 HUD 经常“看不见”；扇形菜单用实色遮罩层更稳
+    popup = new BrowserWindow({
+      x: area.x,
+      y: area.y,
+      width: area.width,
+      height: area.height,
+      show: false,
+      frame: false,
+      transparent: false,
+      backgroundColor: '#0c1018',
+      hasShadow: false,
+      thickFrame: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      fullscreenable: false,
+      minimizable: false,
+      maximizable: false,
+      focusable: true,
+      ...(appIcon && !appIcon.isEmpty() ? { icon: appIcon } : {}),
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: preloadPath,
+      },
+    });
+    popup.once('ready-to-show', () => {
+      if (popup.isDestroyed()) return;
+      popup.show();
+      popup.focus();
+    });
+  } else if (hud) {
+    popup = new BrowserWindow(
+      hudOptions({
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        title,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          preload: preloadPath,
+        },
+      }),
+    );
+    attachHud(popup);
+  } else {
+    popup = new BrowserWindow(
+      glassOptions({
+        width: plugin.ui.width || 360,
+        height: (plugin.ui.height || 240) + 38,
+        title,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          preload: preloadPath,
+        },
+      }),
+    );
     attachGlass(popup);
     injectPluginChrome(popup, title);
   }
@@ -623,8 +661,16 @@ function openPluginWindow(id) {
   pluginWindows.set(id, popup);
   popup.on('closed', () => pluginWindows.delete(id));
   popup.webContents.on('did-finish-load', () => {
-    if (hud && !popup.isDestroyed()) {
+    if (popup.isDestroyed()) return;
+    if (hud && !pieOverlay) {
       popup.webContents.executeJavaScript(`document.documentElement.classList.add('hud')`).catch(() => {});
+    }
+    if (pieOverlay) {
+      const lx = Math.max(0, Math.min(area.width, cursor.x - area.x));
+      const ly = Math.max(0, Math.min(area.height, cursor.y - area.y));
+      popup.webContents
+        .executeJavaScript(`window.__PIE_ORIGIN__={x:${lx},y:${ly}};if(window.__piePlace)window.__piePlace();`)
+        .catch(() => {});
     }
   });
   popup.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
@@ -1092,6 +1138,8 @@ function handleTrayMenuAction(action) {
   else if (action === 'workflow') openPluginWindow('app-workflow');
   else if (action === 'quality') openQualityWindow();
   else if (action === 'pomodoro') openPluginWindow('pomodoro');
+  else if (action === 'pie-menu') openPluginWindow('pie-menu');
+  else if (action === 'element-table' || action === 'mechanics-table') openPluginWindow('element-table');
   else if (action === 'workspace') openPluginWindow('workspace');
   else if (action === 'restart') restartApp();
   else if (action === 'quit') app.quit();

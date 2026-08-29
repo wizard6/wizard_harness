@@ -5,6 +5,7 @@
 | 项目 | 文档 |
 | --- | --- |
 | Ombre-Brain | [理解](../../meta-doc/reference-projects/ombre-brain/understanding.md) · [拆分](../../meta-doc/reference-projects/ombre-brain/breakdown.md) |
+| Kando | [理解](../../meta-doc/reference-projects/kando/understanding.md) · [拆分](../../meta-doc/reference-projects/kando/breakdown.md) |
 | Yao Meta Skill | [理解](../../meta-doc/reference-projects/yao-meta-skill/understanding.md) · [拆分](../../meta-doc/reference-projects/yao-meta-skill/breakdown.md) |
 | SAO Utils | [理解](../../meta-doc/reference-projects/sao-utils/understanding.md) · [拆分](../../meta-doc/reference-projects/sao-utils/breakdown.md) |
 

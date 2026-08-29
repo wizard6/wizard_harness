@@ -156,6 +156,41 @@ export type {
   PomodoroService,
   PomodoroState,
 } from './pomodoro.js';
+export { PIE_MENU_SERVICE } from './pie-menu.js';
+export type {
+  PieActivateEffect,
+  PieItemKind,
+  PieMenuItem,
+  PieMenuItemInput,
+  PieMenuService,
+  PieMenuSnapshot,
+} from './pie-menu.js';
+export {
+  ELEMENT_TABLE_SERVICE,
+  MECHANICS_TABLE_SERVICE,
+} from './element-table.js';
+export type {
+  ElementCatalogInput,
+  ElementCatalogMeta,
+  ElementGroup,
+  ElementGroupId,
+  ElementGroupInput,
+  ElementKind,
+  ElementListOpts,
+  ElementTableService,
+  ElementTableSnapshot,
+  TableElement,
+  TableElementInput,
+  MechanicsElement,
+  MechanicsElementInput,
+  MechanicsElementKind,
+  MechanicsGroup,
+  MechanicsGroupId,
+  MechanicsGroupInput,
+  MechanicsListOpts,
+  MechanicsTableService,
+  MechanicsTableSnapshot,
+} from './element-table.js';
 export { GIT_TOOLS_SERVICE, gitToolName } from './git-tools.js';
 export type {
   GitProbe,

@@ -121,9 +121,89 @@ a { color: var(--blue); }
   .aside-note { display: none; }
   main { padding: 16px 16px 36px; }
 }
+/* 启动闪屏：打开工作台时短暂呈现，boot 完成后淡出 */
+.boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 42%, rgba(189, 176, 245, .14), transparent 62%),
+    var(--bg);
+  transition: opacity .45s ease, visibility .45s ease;
+}
+.boot-splash.is-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.boot-mark {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+.boot-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(189, 176, 245, .28);
+  border-top-color: var(--accent);
+  animation: boot-spin 1s linear infinite;
+}
+.boot-core {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(189, 176, 245, .55), rgba(121, 192, 255, .2));
+  box-shadow: 0 0 24px rgba(189, 176, 245, .25);
+  animation: boot-pulse 1.4s ease-in-out infinite;
+}
+.boot-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: .08em;
+  animation: boot-rise .55s ease both;
+}
+.boot-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  letter-spacing: .04em;
+  animation: boot-rise .55s ease .08s both;
+}
+.shell.is-booting {
+  opacity: 0;
+  transform: translateY(8px) scale(.985);
+}
+.shell.is-ready {
+  opacity: 1;
+  transform: none;
+  transition: opacity .5s ease, transform .5s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes boot-pulse {
+  0%, 100% { transform: scale(.92); opacity: .75; }
+  50% { transform: scale(1); opacity: 1; }
+}
+@keyframes boot-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tile, .pcard { transition: none; }
   .tile:hover { transform: none; }
+  .boot-ring, .boot-core, .boot-title, .boot-sub { animation: none; }
+  .shell.is-booting { opacity: 1; transform: none; }
+  .shell.is-ready { transition: none; }
+  .boot-splash { transition: opacity .2s ease; }
 }
 
 /* 透桌面 HUD：仅 Electron ui.hud。浏览器页保持实心底。 */
@@ -131,6 +211,23 @@ a { color: var(--blue); }
 html.hud, html.hud body {
   background: transparent !important;
   overflow: hidden;
+}
+html.hud .boot-splash {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: min(960px, calc(100vw - 48px));
+  height: min(640px, calc(100vh - 72px));
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 42%, rgba(189, 176, 245, .16), transparent 62%),
+    rgba(16, 17, 26, .88);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
 }
 html.hud .shell {
   position: absolute;
@@ -147,6 +244,12 @@ html.hud .shell {
   box-shadow: 0 28px 80px rgba(0, 0, 0, .5);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
+}
+html.hud .shell.is-booting {
+  transform: translate(-50%, calc(-50% + 8px)) scale(.985);
+}
+html.hud .shell.is-ready {
+  transform: translate(-50%, -50%);
 }
 html.hud aside {
   background: rgba(12, 13, 20, .45);

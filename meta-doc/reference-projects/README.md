@@ -5,6 +5,7 @@
 | 项目 | 源仓 | 对照能力 | 文档 | 状态 |
 | --- | --- | --- | --- | --- |
 | Ombre-Brain | [P0luz/Ombre-Brain](https://github.com/P0luz/Ombre-Brain) | 长期情绪记忆：桶、遗忘曲线、breath、器官化工具 | [理解](./ombre-brain/understanding.md) · [拆分](./ombre-brain/breakdown.md) | 已吸收 → `plugins/memory` |
+| Kando | [kando-menu/kando](https://github.com/kando-menu/kando) | 桌面扇形 / marking 菜单：方向选择、连续拖动手势 | [理解](./kando/understanding.md) · [拆分](./kando/breakdown.md) | **已暂停** → `plugins/pie-menu`（交互未达标） |
 | Yao Meta Skill | [yaojingang/yao-meta-skill](https://github.com/yaojingang/yao-meta-skill) | 可复用 Agent Skill 的工程化、评测、治理与跨端打包 | [理解](./yao-meta-skill/understanding.md) · [拆分](./yao-meta-skill/breakdown.md) | 待借鉴 → `plugins/skills` |
 | SAO Utils | [NERvGear/SAO-Utils](https://github.com/NERvGear/SAO-Utils) | 桌面 HUD 底层绘图：分层合成、场景图、动画插值（对照 [NERvSDK](https://github.com/NERvGear/NERvSDK)） | [理解](./sao-utils/understanding.md) · [拆分](./sao-utils/breakdown.md) | 待借鉴 → `obs/gui` 叠加层 |
 
@@ -22,6 +23,7 @@
 
 ```bash
 git clone --depth 1 https://github.com/P0luz/Ombre-Brain.git temp/Ombre-Brain
+git clone --depth 1 https://github.com/kando-menu/kando.git temp/kando
 git clone --depth 1 https://github.com/yaojingang/yao-meta-skill.git temp/yao-meta-skill
 git clone --depth 1 https://github.com/NERvGear/SAO-Utils.git temp/SAO-Utils
 git clone --depth 1 https://github.com/NERvGear/NERvSDK.git temp/NERvSDK

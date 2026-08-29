@@ -65,6 +65,7 @@ register(c) {
     <div class="card ai">
       <ul class="tight">
         <li>改外观只动 <code>plugins/workspace/web/</code>（index.html / app.css / app.js）。不要再写一份 page.ts 内联 HTML。</li>
+        <li>启动闪屏在 <code>#boot-splash</code>：数据就绪后淡出；尊重 <code>prefers-reduced-motion</code>。</li>
         <li>透桌面只走 <code>ui.hud</code> + 壳 <code>openPluginWindow</code>；不要给观测台开 hud。浏览器页保持实心底。</li>
         <li>新工作台块：业务插件 registerTile，不要把业务写进 workspace/web</li>
         <li>托盘项硬编码：改 tray-menu.html + main.cjs 的 workspace action，不要假设插件能自注册托盘</li>

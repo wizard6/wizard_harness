@@ -89,30 +89,63 @@ function renderPlugins(list) {
   }
 }
 
+function finishBootSplash(ok) {
+  const splash = document.getElementById('boot-splash');
+  const shell = document.querySelector('.shell');
+  const sub = document.getElementById('boot-sub');
+  if (sub) sub.textContent = ok ? '就绪' : '已打开';
+  if (shell) {
+    shell.classList.remove('is-booting');
+    shell.classList.add('is-ready');
+  }
+  if (!splash) return;
+  const reduced =
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hold = reduced ? 80 : 420;
+  window.setTimeout(() => {
+    splash.classList.add('is-done');
+    splash.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => splash.remove(), reduced ? 220 : 520);
+  }, hold);
+}
+
 async function boot() {
+  const started = Date.now();
   if (window.wh && typeof window.wh.call === 'function') {
     const site = document.querySelector('a[href="/site/"]');
     if (site) site.hidden = true;
   }
   document.getElementById('hello').textContent = hourHello();
-  const snap = await rpc('workspace', 'snapshot');
-  if (snap.ok && snap.result) {
-    document.getElementById('kicker').textContent = snap.result.title || '个人工作台';
-    renderTiles(snap.result.tiles || []);
-  } else {
-    document.getElementById('runtime').textContent =
-      snap.error || 'workspace 未暴露。请用 pnpm web-dev 或托盘打开。';
-  }
-  const ld = await rpc('workspace', 'loaded');
-  if (ld.ok) {
-    const list = ld.result || [];
-    document.getElementById('runtime').textContent = '运行中 · ' + list.length + ' 个插件';
-    renderPlugins(list);
-  } else if (snap.ok) {
-    document.getElementById('runtime').textContent = '运行中';
-    renderPlugins([]);
-  } else {
-    document.getElementById('runtime').textContent = String(ld.error || '无法读取插件列表');
+  let ok = false;
+  try {
+    const snap = await rpc('workspace', 'snapshot');
+    if (snap.ok && snap.result) {
+      document.getElementById('kicker').textContent = snap.result.title || '个人工作台';
+      renderTiles(snap.result.tiles || []);
+      ok = true;
+    } else {
+      document.getElementById('runtime').textContent =
+        snap.error || 'workspace 未暴露。请用 pnpm web-dev 或托盘打开。';
+    }
+    const ld = await rpc('workspace', 'loaded');
+    if (ld.ok) {
+      const list = ld.result || [];
+      document.getElementById('runtime').textContent = '运行中 · ' + list.length + ' 个插件';
+      renderPlugins(list);
+      ok = true;
+    } else if (snap.ok) {
+      document.getElementById('runtime').textContent = '运行中';
+      renderPlugins([]);
+    } else {
+      document.getElementById('runtime').textContent = String(ld.error || '无法读取插件列表');
+    }
+  } finally {
+    const minMs =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 0
+        : 700;
+    const wait = Math.max(0, minMs - (Date.now() - started));
+    window.setTimeout(() => finishBootSplash(ok), wait);
   }
 }
 
